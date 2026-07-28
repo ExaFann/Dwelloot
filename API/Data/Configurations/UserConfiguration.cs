@@ -8,7 +8,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
-        builder.ToTable("users");
+        // The users table rename lives in AppDbContext.OnModelCreating, not here: it has to
+        // happen before any other configuration declares a foreign key to users, and the order
+        // ApplyConfigurationsFromAssembly runs configurations in is not guaranteed.
 
         // Identity names these two explicitly ("UserNameIndex" / "EmailIndex"), so the
         // snake_case convention leaves them alone and they end up as the only quoted,

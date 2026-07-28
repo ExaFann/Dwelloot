@@ -21,25 +21,29 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 {
     public DbSet<Household> Households => Set<Household>();
     public DbSet<Activity> Activities => Set<Activity>();
+    public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Picks up every IEntityTypeConfiguration in this assembly, so entities added in
-        // later tasks register themselves without this method having to grow.
-        //
-        // Runs before the Identity renames below on purpose: UserConfiguration renames the
-        // users table, and foreign key constraint names are derived from the principal
-        // table's name. Renaming users afterwards would leave the child tables carrying
-        // constraints called fk_user_claims_asp_net_users_user_id.
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
-
         // Identity's own tables, renamed off their AspNet* defaults to match the names in
         // relational-model.md. These are framework plumbing rather than entities in the ER
         // diagram, which is why they are configured here instead of in Data/Configurations.
+        //
+        // This must run BEFORE ApplyConfigurationsFromAssembly. Foreign key constraint names
+        // are derived from the principal table's name, so any configuration declaring an FK to
+        // users while it is still called AspNetUsers bakes that into the constraint name -
+        // producing fk_activity_logs_asp_net_users_logged_by_user_id against a table called
+        // users. ApplyConfigurationsFromAssembly gives no ordering guarantee, so relying on
+        // UserConfiguration happening to run first is not a fix.
+        modelBuilder.Entity<User>().ToTable("users");
         modelBuilder.Entity<IdentityUserClaim<int>>().ToTable("user_claims");
         modelBuilder.Entity<IdentityUserLogin<int>>().ToTable("user_logins");
         modelBuilder.Entity<IdentityUserToken<int>>().ToTable("user_tokens");
+
+        // Picks up every IEntityTypeConfiguration in this assembly, so entities added in
+        // later tasks register themselves without this method having to grow.
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }
