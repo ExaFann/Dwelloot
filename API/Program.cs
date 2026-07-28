@@ -17,7 +17,11 @@ if (string.IsNullOrWhiteSpace(connectionString))
         "or the ConnectionStrings__Default environment variable when deployed.");
 }
 
-builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+// Snake_case keeps the physical schema identical to the relational model.md, and
+// matches PostgreSQL convention, instead of EF's default quoted "Households"."InviteCode".
+builder.Services.AddDbContext<AppDbContext>(options => options
+    .UseNpgsql(connectionString)
+    .UseSnakeCaseNamingConvention());
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
