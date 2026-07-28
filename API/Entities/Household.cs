@@ -29,4 +29,10 @@ public class Household
 
     /// <summary>True once the second member has joined, closing the household.</summary>
     public bool IsFull { get; set; }
+
+    /// <summary>
+    /// The one or two partners in this household. Capped at two in application code — see
+    /// the remarks above.
+    /// </summary>
+    public ICollection<User> Members { get; set; } = [];
 }
