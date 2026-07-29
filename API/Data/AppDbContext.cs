@@ -23,6 +23,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Activity> Activities => Set<Activity>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<Reward> Rewards => Set<Reward>();
+    public DbSet<Redemption> Redemptions => Set<Redemption>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
