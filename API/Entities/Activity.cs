@@ -27,4 +27,22 @@ public class Activity
     public int HouseholdId { get; set; }
 
     public Household Household { get; set; } = null!;
+
+    /// <summary>
+    /// When this chore was removed from the catalog, or null while it is still offered.
+    /// </summary>
+    /// <remarks>
+    /// Removing a chore archives it rather than deleting the row, because
+    /// <see cref="ActivityLog.ActivityId"/> cascades: a hard delete would take every log of that
+    /// chore with it. That is not merely a lost audit trail —
+    /// <list type="bullet">
+    /// <item>the <em>current</em> competition period is computed live from approved logs, so
+    /// deleting a chore mid-period would silently reduce whoever logged it;</item>
+    /// <item>either partner may remove any household chore, so that reduction is something one
+    /// partner could inflict on the other.</item>
+    /// </list>
+    /// Archiving keeps the row, so history, points and settlement are all untouched, while the
+    /// chore stops appearing in the catalog and in one-tap logging.
+    /// </remarks>
+    public DateTime? ArchivedAt { get; set; }
 }

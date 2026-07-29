@@ -24,9 +24,35 @@ public sealed record ActivityListResult(
     public static ActivityListResult Failed(ActivityQueryStatus status) => new(status, null);
 }
 
+public enum ActivityMutationStatus
+{
+    Ok,
+    UserNotFound,
+    NoHousehold,
+
+    /// <summary>No such chore, or it belongs to another household — the caller cannot tell which.</summary>
+    NotFound,
+
+    InvalidPoints
+}
+
+public sealed record ActivityMutationResult(ActivityMutationStatus Status, ActivityResponse? Activity)
+{
+    public static ActivityMutationResult Ok(ActivityResponse activity) =>
+        new(ActivityMutationStatus.Ok, activity);
+
+    public static ActivityMutationResult Failed(ActivityMutationStatus status) => new(status, null);
+}
+
 public interface IActivityService
 {
     Task<ActivityListResult> ListAsync(int userId, ActivityQuery query, CancellationToken ct = default);
+
+    Task<ActivityMutationResult> CreateAsync(int userId, CreateActivityRequest request, CancellationToken ct = default);
+
+    Task<ActivityMutationResult> UpdateAsync(int userId, int activityId, PatchActivityRequest request, CancellationToken ct = default);
+
+    Task<ActivityMutationResult> DeleteAsync(int userId, int activityId, CancellationToken ct = default);
 }
 
 public class ActivityService(AppDbContext db) : IActivityService
@@ -58,8 +84,10 @@ public class ActivityService(AppDbContext db) : IActivityService
             return ActivityListResult.Failed(ActivityQueryStatus.NoHousehold);
         }
 
-        // The isolation guarantee the copy-on-creation model exists to provide.
-        var activities = db.Activities.Where(a => a.HouseholdId == user.HouseholdId);
+        // The isolation guarantee the copy-on-creation model exists to provide. Archived chores are
+        // excluded: they still exist so their logs keep resolving, but they are no longer offered.
+        var activities = db.Activities
+            .Where(a => a.HouseholdId == user.HouseholdId && a.ArchivedAt == null);
 
         if (query.Category is not null)
         {
@@ -95,6 +123,151 @@ public class ActivityService(AppDbContext db) : IActivityService
             .ToListAsync(ct);
 
         return ActivityListResult.Ok(new PagedResponse<ActivityResponse>(items, total));
+    }
+
+    public async Task<ActivityMutationResult> CreateAsync(
+        int userId,
+        CreateActivityRequest request,
+        CancellationToken ct = default)
+    {
+        var householdId = await ResolveHouseholdAsync(userId, ct);
+        if (householdId.Status != ActivityMutationStatus.Ok)
+        {
+            return ActivityMutationResult.Failed(householdId.Status);
+        }
+
+        if (request.Points <= 0)
+        {
+            return ActivityMutationResult.Failed(ActivityMutationStatus.InvalidPoints);
+        }
+
+        var activity = new Activity
+        {
+            HouseholdId = householdId.HouseholdId,
+            Title = request.Title.Trim(),
+            Points = request.Points,
+            Category = request.Category ?? ActivityCategory.Chore
+        };
+
+        db.Activities.Add(activity);
+        await db.SaveChangesAsync(ct);
+
+        return ActivityMutationResult.Ok(new ActivityResponse(activity.Id, activity.Title, activity.Points));
+    }
+
+    public async Task<ActivityMutationResult> UpdateAsync(
+        int userId,
+        int activityId,
+        PatchActivityRequest request,
+        CancellationToken ct = default)
+    {
+        var found = await FindOwnedAsync(userId, activityId, ct);
+        if (found.Status != ActivityMutationStatus.Ok)
+        {
+            return ActivityMutationResult.Failed(found.Status);
+        }
+
+        if (request.Points is <= 0)
+        {
+            return ActivityMutationResult.Failed(ActivityMutationStatus.InvalidPoints);
+        }
+
+        var activity = found.Activity!;
+
+        // Null means "leave alone" - the whole point of PATCH. Writing every field unconditionally
+        // would blank out anything the client did not send.
+        if (request.Title is not null)
+        {
+            activity.Title = request.Title.Trim();
+        }
+
+        if (request.Points is not null)
+        {
+            activity.Points = request.Points.Value;
+        }
+
+        if (request.Category is not null)
+        {
+            activity.Category = request.Category.Value;
+        }
+
+        await db.SaveChangesAsync(ct);
+
+        return ActivityMutationResult.Ok(new ActivityResponse(activity.Id, activity.Title, activity.Points));
+    }
+
+    /// <summary>
+    /// Removes a chore from the catalog by archiving it. The row survives, so its logged history
+    /// and the points earned from it are untouched.
+    /// </summary>
+    /// <remarks>
+    /// A hard delete would cascade to every <see cref="ActivityLog"/> of this chore. Beyond losing
+    /// the audit trail, the current competition period is computed live from approved logs, so
+    /// that would retroactively reduce whoever logged it — and since either partner may remove any
+    /// household chore, one partner could use it against the other.
+    /// </remarks>
+    public async Task<ActivityMutationResult> DeleteAsync(
+        int userId,
+        int activityId,
+        CancellationToken ct = default)
+    {
+        var found = await FindOwnedAsync(userId, activityId, ct);
+        if (found.Status != ActivityMutationStatus.Ok)
+        {
+            return ActivityMutationResult.Failed(found.Status);
+        }
+
+        var activity = found.Activity!;
+        activity.ArchivedAt = DateTime.UtcNow;
+
+        await db.SaveChangesAsync(ct);
+
+        return ActivityMutationResult.Ok(new ActivityResponse(activity.Id, activity.Title, activity.Points));
+    }
+
+    private async Task<(ActivityMutationStatus Status, int HouseholdId)> ResolveHouseholdAsync(
+        int userId,
+        CancellationToken ct)
+    {
+        var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId, ct);
+
+        if (user is null)
+        {
+            return (ActivityMutationStatus.UserNotFound, 0);
+        }
+
+        return user.HouseholdId is null
+            ? (ActivityMutationStatus.NoHousehold, 0)
+            : (ActivityMutationStatus.Ok, user.HouseholdId.Value);
+    }
+
+    /// <summary>
+    /// Loads a chore only if it belongs to the caller's household.
+    /// </summary>
+    /// <remarks>
+    /// Returns <see cref="ActivityMutationStatus.NotFound"/> for both "no such chore" and
+    /// "someone else's chore", so the endpoint cannot be used to discover which ids exist.
+    /// Archived chores are also not found: they are no longer part of the catalog, so they cannot
+    /// be edited or archived again.
+    /// </remarks>
+    private async Task<(ActivityMutationStatus Status, Activity? Activity)> FindOwnedAsync(
+        int userId,
+        int activityId,
+        CancellationToken ct)
+    {
+        var household = await ResolveHouseholdAsync(userId, ct);
+        if (household.Status != ActivityMutationStatus.Ok)
+        {
+            return (household.Status, null);
+        }
+
+        var activity = await db.Activities.SingleOrDefaultAsync(
+            a => a.Id == activityId && a.HouseholdId == household.HouseholdId && a.ArchivedAt == null,
+            ct);
+
+        return activity is null
+            ? (ActivityMutationStatus.NotFound, null)
+            : (ActivityMutationStatus.Ok, activity);
     }
 
     /// <summary>
