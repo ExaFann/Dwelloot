@@ -20,3 +20,35 @@ public record ActivityLogResponse(
     int ActivityId,
     ActivityLogStatus Status,
     DateTime CompletedAt);
+
+/// <summary>
+/// Item shape for the approval queue, <c>GET /api/activity-logs</c>.
+/// </summary>
+/// <remarks>
+/// Two fields go beyond <c>api-design.md</c>'s worked example, both deliberately:
+/// <c>Status</c>, because making the status filter optional leaves an item ambiguous without it,
+/// and <c>PointsAwarded</c>, so the approval UI can show what it is approving — that value is a
+/// snapshot taken at log time (task [19]) and is therefore not derivable from the chore's current
+/// points.
+/// </remarks>
+public record PendingLogResponse(
+    int Id,
+    string ActivityTitle,
+    int PointsAwarded,
+    int LoggedByUserId,
+    ActivityLogStatus Status,
+    DateTime CompletedAt);
+
+/// <summary>Query options for the approval queue.</summary>
+public record ActivityLogQuery
+{
+    /// <summary>
+    /// Optional. <c>Pending</c> is the documented approval queue; omitting it returns the
+    /// partner's logs at every status, which is what the dashboard feed wants.
+    /// </summary>
+    public ActivityLogStatus? Status { get; init; }
+
+    public int? Page { get; init; }
+
+    public int? PageSize { get; init; }
+}

@@ -1,3 +1,4 @@
+using API.Dtos;
 using API.Dtos.ActivityLogs;
 using API.Extensions;
 using API.Services;
@@ -11,6 +12,34 @@ namespace API.Controllers;
 [Route("api/activity-logs")]
 public class ActivityLogsController(IActivityLogService logs) : ControllerBase
 {
+    /// <summary>
+    /// The approval queue: the <em>partner's</em> logs in this household. Never the caller's own —
+    /// see <see cref="IActivityLogService.ListForApprovalAsync"/>.
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<PagedResponse<PendingLogResponse>>> List(
+        [FromQuery] ActivityLogQuery query,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await logs.ListForApprovalAsync(userId.Value, query, ct);
+
+        return result.Status switch
+        {
+            ActivityLogStatusCode.Ok => Ok(result.Page),
+
+            ActivityLogStatusCode.NoHousehold =>
+                Conflict(new { error = "You are not in a household yet." }),
+
+            _ => Unauthorized()
+        };
+    }
+
     [HttpPost]
     public async Task<ActionResult<ActivityLogResponse>> Create(
         CreateActivityLogRequest request,
