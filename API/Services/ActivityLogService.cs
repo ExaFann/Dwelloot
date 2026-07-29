@@ -69,6 +69,18 @@ public interface IActivityLogService
     Task<ActivityLogDecisionResult> RejectAsync(int userId, int logId, string reason, CancellationToken ct = default);
 
     Task<BulkApproveResult> BulkApproveAsync(int userId, IReadOnlyList<int> ids, CancellationToken ct = default);
+
+    Task<MyActivityLogResult> ListMineAsync(int userId, MyActivityLogQuery query, CancellationToken ct = default);
+}
+
+public sealed record MyActivityLogResult(
+    ActivityLogStatusCode Status,
+    PagedResponse<MyActivityLogResponse>? Page)
+{
+    public static MyActivityLogResult Ok(PagedResponse<MyActivityLogResponse> page) =>
+        new(ActivityLogStatusCode.Ok, page);
+
+    public static MyActivityLogResult Failed(ActivityLogStatusCode status) => new(status, null);
 }
 
 public sealed record BulkApproveResult(ActivityLogStatusCode Status, BulkApproveResponse? Response)
@@ -239,6 +251,69 @@ public class ActivityLogService(AppDbContext db) : IActivityLogService
         // always the partner who did not log it, so recording it separately would be redundant
         // (see log 005).
         return await SaveDecisionAsync(log, ct);
+    }
+
+    /// <summary>
+    /// The caller's own logs — the exact complement of <see cref="ListForApprovalAsync"/>.
+    /// </summary>
+    /// <remarks>
+    /// Scoped to the caller's <em>current</em> household as well as to their user id. The user
+    /// filter alone would be correct in the narrow sense, but someone who left a household and
+    /// joined another would see their old history mixed into the new one. Nothing leaks — it is all
+    /// their own data — but "my history" should mean "my history here".
+    /// <para>
+    /// Logs whose chore has been archived are included: archiving removes a chore from the catalog,
+    /// not from what already happened.
+    /// </para>
+    /// </remarks>
+    public async Task<MyActivityLogResult> ListMineAsync(
+        int userId,
+        MyActivityLogQuery query,
+        CancellationToken ct = default)
+    {
+        var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId, ct);
+        if (user is null)
+        {
+            return MyActivityLogResult.Failed(ActivityLogStatusCode.UserNotFound);
+        }
+
+        if (user.HouseholdId is null)
+        {
+            return MyActivityLogResult.Failed(ActivityLogStatusCode.NoHousehold);
+        }
+
+        var logs = db.ActivityLogs
+            .Where(l => l.LoggedByUserId == userId && l.Activity.HouseholdId == user.HouseholdId);
+
+        if (query.Status is not null)
+        {
+            logs = logs.Where(l => l.Status == query.Status);
+        }
+
+        var total = await logs.CountAsync(ct);
+
+        var pageSize = Math.Clamp(
+            query.EffectivePageSize ?? ActivityService.DefaultPageSize,
+            1,
+            ActivityService.MaxPageSize);
+        var page = Math.Max(query.Page ?? 1, 1);
+
+        var items = await logs
+            .OrderByDescending(l => l.CompletedAt)
+            .ThenByDescending(l => l.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(l => new MyActivityLogResponse(
+                l.Id,
+                l.Activity.Title,
+                l.PointsAwarded,
+                l.Status,
+                l.CompletedAt,
+                l.ApprovedAt,
+                l.RejectReason))
+            .ToListAsync(ct);
+
+        return MyActivityLogResult.Ok(new PagedResponse<MyActivityLogResponse>(items, total));
     }
 
     /// <summary>

@@ -40,6 +40,33 @@ public class ActivityLogsController(IActivityLogService logs) : ControllerBase
         };
     }
 
+    /// <summary>
+    /// The caller's own logged history — the complement of <see cref="List"/>.
+    /// </summary>
+    [HttpGet("mine")]
+    public async Task<ActionResult<PagedResponse<MyActivityLogResponse>>> Mine(
+        [FromQuery] MyActivityLogQuery query,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await logs.ListMineAsync(userId.Value, query, ct);
+
+        return result.Status switch
+        {
+            ActivityLogStatusCode.Ok => Ok(result.Page),
+
+            ActivityLogStatusCode.NoHousehold =>
+                Conflict(new { error = "You are not in a household yet." }),
+
+            _ => Unauthorized()
+        };
+    }
+
     [HttpPost]
     public async Task<ActionResult<ActivityLogResponse>> Create(
         CreateActivityLogRequest request,

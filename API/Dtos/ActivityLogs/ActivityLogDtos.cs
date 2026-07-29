@@ -92,3 +92,44 @@ public record ActivityLogQuery
 
     public int? PageSize { get; init; }
 }
+
+/// <summary>Query options for own history.</summary>
+public record MyActivityLogQuery
+{
+    public ActivityLogStatus? Status { get; init; }
+
+    /// <summary>
+    /// Documented in <c>api-design.md</c> as <c>?take=5</c>. Treated as a page size — "the first 5"
+    /// is exactly <c>page=1&amp;pageSize=5</c> — so the dashboard's documented call works while the
+    /// Notices list can still page. <see cref="PageSize"/> wins if both are supplied, being the
+    /// more specific of the two.
+    /// </summary>
+    public int? Take { get; init; }
+
+    public int? Page { get; init; }
+
+    public int? PageSize { get; init; }
+
+    public int? EffectivePageSize => PageSize ?? Take;
+}
+
+/// <summary>
+/// Item shape for <c>GET /api/activity-logs/mine</c>, covering both documented call sites: the
+/// dashboard's recent feed wants <c>status</c> and <c>completedAt</c>, the Notices tab's
+/// approved-list wants <c>approvedAt</c>.
+/// </summary>
+/// <remarks>
+/// <c>RejectReason</c> goes beyond the worked examples deliberately. Task [21] made it mandatory
+/// on input and nothing could ever read it back, which makes a required field pure ceremony — a
+/// rejected log in your own history is exactly where the user needs to know why.
+/// <c>PointsAwarded</c> matches the approval queue's shape so the feed can show what each entry
+/// earned.
+/// </remarks>
+public record MyActivityLogResponse(
+    int Id,
+    string ActivityTitle,
+    int PointsAwarded,
+    ActivityLogStatus Status,
+    DateTime CompletedAt,
+    DateTime? ApprovedAt,
+    string? RejectReason);
