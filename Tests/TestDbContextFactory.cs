@@ -33,6 +33,14 @@ internal static class TestDbContextFactory
             .UseInMemoryDatabase(databaseName ?? NewDatabaseName())
             .Options;
 
-        return new AppDbContext(options);
+        var db = new AppDbContext(options);
+
+        // Applies the HasData seed — without this the badges table is empty, because the in-memory
+        // provider only materialises seed data on EnsureCreated. Every test before task [26] ran
+        // against a database with no badge rows and did not notice, since the provider does not
+        // enforce the foreign key from user_badges either. PostgreSQL has both.
+        db.Database.EnsureCreated();
+
+        return db;
     }
 }

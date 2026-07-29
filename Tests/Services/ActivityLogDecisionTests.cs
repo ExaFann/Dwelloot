@@ -3,6 +3,7 @@ using API.Dtos.Activities;
 using API.Dtos.ActivityLogs;
 using API.Entities;
 using API.Services;
+using API.Services.Progression;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dwelloot.Tests.Services;
@@ -37,7 +38,7 @@ public class ActivityLogDecisionTests
         db.Activities.SingleAsync(a => a.HouseholdId == householdId && a.Title == title);
 
     private static async Task<int> LogAsync(AppDbContext db, int userId, int activityId) =>
-        (await new ActivityLogService(db).CreateAsync(userId, activityId)).Log!.Id;
+        (await new ActivityLogService(db, new ProgressionService(db)).CreateAsync(userId, activityId)).Log!.Id;
 
     private static Task<int> PointsOfAsync(AppDbContext db, int userId) =>
         db.Users.Where(u => u.Id == userId).Select(u => u.LifetimePoints).SingleAsync();
@@ -52,7 +53,7 @@ public class ActivityLogDecisionTests
         var logId = await LogAsync(db, sam.Id, (await ChoreAsync(db, household.Id)).Id);
 
         var before = DateTime.UtcNow.AddSeconds(-5);
-        var result = await new ActivityLogService(db).ApproveAsync(alex.Id, logId);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ApproveAsync(alex.Id, logId);
 
         Assert.Equal(ActivityLogStatusCode.Ok, result.Status);
         Assert.Equal(ActivityLogStatus.Approved, result.Log!.Status);
@@ -73,7 +74,7 @@ public class ActivityLogDecisionTests
         var chore = await ChoreAsync(db, household.Id);
         var logId = await LogAsync(db, sam.Id, chore.Id);
 
-        await new ActivityLogService(db).ApproveAsync(alex.Id, logId);
+        await new ActivityLogService(db, new ProgressionService(db)).ApproveAsync(alex.Id, logId);
 
         Assert.Equal(chore.Points, await PointsOfAsync(db, sam.Id));
         Assert.Equal(0, await PointsOfAsync(db, alex.Id));
@@ -89,7 +90,7 @@ public class ActivityLogDecisionTests
         var logId = await LogAsync(db, sam.Id, chore.Id);
 
         await new ActivityService(db).UpdateAsync(alex.Id, chore.Id, new PatchActivityRequest(null, 999, null));
-        await new ActivityLogService(db).ApproveAsync(alex.Id, logId);
+        await new ActivityLogService(db, new ProgressionService(db)).ApproveAsync(alex.Id, logId);
 
         Assert.Equal(originalPoints, await PointsOfAsync(db, sam.Id));
     }
@@ -102,7 +103,7 @@ public class ActivityLogDecisionTests
         var (_, sam, household) = await PairedHouseholdAsync(db);
         var logId = await LogAsync(db, sam.Id, (await ChoreAsync(db, household.Id)).Id);
 
-        var result = await new ActivityLogService(db).ApproveAsync(sam.Id, logId);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ApproveAsync(sam.Id, logId);
 
         Assert.Equal(ActivityLogStatusCode.SelfApproval, result.Status);
 
@@ -120,7 +121,7 @@ public class ActivityLogDecisionTests
         var (_, otherSam, otherHousehold) = await PairedHouseholdAsync(db, "other-");
         var theirLog = await LogAsync(db, otherSam.Id, (await ChoreAsync(db, otherHousehold.Id)).Id);
 
-        var result = await new ActivityLogService(db).ApproveAsync(alex.Id, theirLog);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ApproveAsync(alex.Id, theirLog);
 
         Assert.Equal(ActivityLogStatusCode.LogNotFound, result.Status);
         Assert.Equal(ActivityLogStatus.Pending, (await db.ActivityLogs.SingleAsync(l => l.Id == theirLog)).Status);
@@ -133,7 +134,7 @@ public class ActivityLogDecisionTests
         var (alex, sam, household) = await PairedHouseholdAsync(db);
         var chore = await ChoreAsync(db, household.Id);
         var logId = await LogAsync(db, sam.Id, chore.Id);
-        var service = new ActivityLogService(db);
+        var service = new ActivityLogService(db, new ProgressionService(db));
 
         var first = await service.ApproveAsync(alex.Id, logId);
         var second = await service.ApproveAsync(alex.Id, logId);
@@ -149,7 +150,7 @@ public class ActivityLogDecisionTests
         using var db = TestDbContextFactory.Create();
         var (alex, sam, household) = await PairedHouseholdAsync(db);
         var logId = await LogAsync(db, sam.Id, (await ChoreAsync(db, household.Id)).Id);
-        var service = new ActivityLogService(db);
+        var service = new ActivityLogService(db, new ProgressionService(db));
 
         await service.RejectAsync(alex.Id, logId, "Not done yet");
         var result = await service.ApproveAsync(alex.Id, logId);
@@ -168,7 +169,7 @@ public class ActivityLogDecisionTests
 
         await new ActivityService(db).DeleteAsync(alex.Id, chore.Id);
 
-        var result = await new ActivityLogService(db).ApproveAsync(alex.Id, logId);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ApproveAsync(alex.Id, logId);
 
         Assert.Equal(ActivityLogStatusCode.Ok, result.Status);
         Assert.Equal(chore.Points, await PointsOfAsync(db, sam.Id));
@@ -183,7 +184,7 @@ public class ActivityLogDecisionTests
         var (alex, sam, household) = await PairedHouseholdAsync(db);
         var logId = await LogAsync(db, sam.Id, (await ChoreAsync(db, household.Id)).Id);
 
-        var result = await new ActivityLogService(db).RejectAsync(alex.Id, logId, "Not actually done yet");
+        var result = await new ActivityLogService(db, new ProgressionService(db)).RejectAsync(alex.Id, logId, "Not actually done yet");
 
         Assert.Equal(ActivityLogStatusCode.Ok, result.Status);
         Assert.Equal(ActivityLogStatus.Rejected, result.Log!.Status);
@@ -201,7 +202,7 @@ public class ActivityLogDecisionTests
         var (alex, sam, household) = await PairedHouseholdAsync(db);
         var logId = await LogAsync(db, sam.Id, (await ChoreAsync(db, household.Id)).Id);
 
-        await new ActivityLogService(db).RejectAsync(alex.Id, logId, "Nope");
+        await new ActivityLogService(db, new ProgressionService(db)).RejectAsync(alex.Id, logId, "Nope");
 
         var saved = await db.ActivityLogs.SingleAsync(l => l.Id == logId);
         Assert.Null(saved.ApprovedByUserId);
@@ -215,7 +216,7 @@ public class ActivityLogDecisionTests
         var (_, sam, household) = await PairedHouseholdAsync(db);
         var logId = await LogAsync(db, sam.Id, (await ChoreAsync(db, household.Id)).Id);
 
-        var result = await new ActivityLogService(db).RejectAsync(sam.Id, logId, "Changed my mind");
+        var result = await new ActivityLogService(db, new ProgressionService(db)).RejectAsync(sam.Id, logId, "Changed my mind");
 
         Assert.Equal(ActivityLogStatusCode.SelfApproval, result.Status);
         Assert.Equal(ActivityLogStatus.Pending, (await db.ActivityLogs.SingleAsync(l => l.Id == logId)).Status);
@@ -228,7 +229,7 @@ public class ActivityLogDecisionTests
         var (alex, sam, household) = await PairedHouseholdAsync(db);
         var chore = await ChoreAsync(db, household.Id);
         var logId = await LogAsync(db, sam.Id, chore.Id);
-        var service = new ActivityLogService(db);
+        var service = new ActivityLogService(db, new ProgressionService(db));
 
         await service.ApproveAsync(alex.Id, logId);
         var result = await service.RejectAsync(alex.Id, logId, "Actually no");
@@ -247,7 +248,7 @@ public class ActivityLogDecisionTests
         using var db = TestDbContextFactory.Create();
         var (alex, sam, household) = await PairedHouseholdAsync(db);
         var logId = await LogAsync(db, sam.Id, (await ChoreAsync(db, household.Id)).Id);
-        var service = new ActivityLogService(db);
+        var service = new ActivityLogService(db, new ProgressionService(db));
 
         await service.ApproveAsync(alex.Id, logId);
 

@@ -2,6 +2,7 @@ using API.Data;
 using API.Entities;
 using API.Services;
 using API.Services.Competitions;
+using API.Services.Progression;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dwelloot.Tests.Services.Competitions;
@@ -24,7 +25,7 @@ public class CompetitionsCurrentTests
         Calculator.PeriodContaining(CompetitionPeriodType.Daily, Midday);
 
     private static CompetitionQueryService ServiceFor(AppDbContext db) =>
-        new(db, Calculator, new CompetitionSettlementService(db, Calculator));
+        new(db, Calculator, new CompetitionSettlementService(db, Calculator, new ProgressionService(db)));
 
     private static async Task<User> AddUserAsync(AppDbContext db, string email)
     {
@@ -157,7 +158,7 @@ public class CompetitionsCurrentTests
         var live = await ServiceFor(db).GetCurrentAsync(
             alex.Id, household.Id, CompetitionPeriodType.Daily, Midday);
 
-        var settled = await new CompetitionSettlementService(db, Calculator)
+        var settled = await new CompetitionSettlementService(db, Calculator, new ProgressionService(db))
             .SettlePeriodAsync(household.Id, Today, Today.EndUtc.AddDays(3));
 
         Assert.Equal(settled.Competition!.WinnerPoints, live.Standing!.PartnerPoints);

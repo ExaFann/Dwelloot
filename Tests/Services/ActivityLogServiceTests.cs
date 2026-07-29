@@ -2,6 +2,7 @@ using API.Data;
 using API.Dtos.Activities;
 using API.Entities;
 using API.Services;
+using API.Services.Progression;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dwelloot.Tests.Services;
@@ -45,7 +46,7 @@ public class ActivityLogServiceTests
 
         var chore = await ChoreAsync(db, household.Id);
 
-        var result = await new ActivityLogService(db).CreateAsync(user.Id, chore.Id);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).CreateAsync(user.Id, chore.Id);
 
         Assert.Equal(ActivityLogStatusCode.Ok, result.Status);
         Assert.Equal(ActivityLogStatus.Pending, result.Log!.Status);
@@ -65,7 +66,7 @@ public class ActivityLogServiceTests
         var chore = await ChoreAsync(db, household.Id);
 
         var before = DateTime.UtcNow.AddSeconds(-5);
-        var result = await new ActivityLogService(db).CreateAsync(user.Id, chore.Id);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).CreateAsync(user.Id, chore.Id);
         var after = DateTime.UtcNow.AddSeconds(5);
 
         Assert.InRange(result.Log!.CompletedAt, before, after);
@@ -79,7 +80,7 @@ public class ActivityLogServiceTests
         var (user, household) = await StockedHouseholdAsync(db);
         var chore = await ChoreAsync(db, household.Id);
 
-        var result = await new ActivityLogService(db).CreateAsync(user.Id, chore.Id);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).CreateAsync(user.Id, chore.Id);
 
         var saved = await db.ActivityLogs.SingleAsync(l => l.Id == result.Log!.Id);
         Assert.Equal(chore.Points, saved.PointsAwarded);
@@ -96,7 +97,7 @@ public class ActivityLogServiceTests
         var chore = await ChoreAsync(db, household.Id);
         var originalPoints = chore.Points;
 
-        var result = await new ActivityLogService(db).CreateAsync(user.Id, chore.Id);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).CreateAsync(user.Id, chore.Id);
 
         var edited = await new ActivityService(db).UpdateAsync(
             user.Id, chore.Id, new PatchActivityRequest(null, 999, null));
@@ -115,7 +116,7 @@ public class ActivityLogServiceTests
         var (_, theirHousehold) = await StockedHouseholdAsync(db, "stranger@example.com");
         var theirChore = await ChoreAsync(db, theirHousehold.Id);
 
-        var result = await new ActivityLogService(db).CreateAsync(mine.Id, theirChore.Id);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).CreateAsync(mine.Id, theirChore.Id);
 
         Assert.Equal(ActivityLogStatusCode.ActivityNotFound, result.Status);
         Assert.Empty(await db.ActivityLogs.ToListAsync());
@@ -130,7 +131,7 @@ public class ActivityLogServiceTests
 
         await new ActivityService(db).DeleteAsync(user.Id, chore.Id);
 
-        var result = await new ActivityLogService(db).CreateAsync(user.Id, chore.Id);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).CreateAsync(user.Id, chore.Id);
 
         Assert.Equal(ActivityLogStatusCode.ActivityNotFound, result.Status);
         Assert.Empty(await db.ActivityLogs.ToListAsync());
@@ -146,8 +147,8 @@ public class ActivityLogServiceTests
         var chore = await ChoreAsync(db, household.Id);
         var originalPoints = chore.Points;
 
-        var first = await new ActivityLogService(db).CreateAsync(user.Id, chore.Id);
-        var second = await new ActivityLogService(db).CreateAsync(user.Id, chore.Id);
+        var first = await new ActivityLogService(db, new ProgressionService(db)).CreateAsync(user.Id, chore.Id);
+        var second = await new ActivityLogService(db, new ProgressionService(db)).CreateAsync(user.Id, chore.Id);
 
         await new ActivityService(db).DeleteAsync(user.Id, chore.Id);
 
@@ -173,7 +174,7 @@ public class ActivityLogServiceTests
         var chore = await ChoreAsync(db, household.Id);
         var loner = await AddUserAsync(db, "loner@example.com");
 
-        var result = await new ActivityLogService(db).CreateAsync(loner.Id, chore.Id);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).CreateAsync(loner.Id, chore.Id);
 
         Assert.Equal(ActivityLogStatusCode.NoHousehold, result.Status);
         Assert.Empty(await db.ActivityLogs.ToListAsync());
@@ -187,7 +188,7 @@ public class ActivityLogServiceTests
         using var db = TestDbContextFactory.Create();
         var (user, household) = await StockedHouseholdAsync(db);
         var chore = await ChoreAsync(db, household.Id);
-        var service = new ActivityLogService(db);
+        var service = new ActivityLogService(db, new ProgressionService(db));
 
         for (var i = 0; i < 3; i++)
         {

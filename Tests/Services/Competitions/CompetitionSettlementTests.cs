@@ -2,6 +2,7 @@ using API.Data;
 using API.Entities;
 using API.Services;
 using API.Services.Competitions;
+using API.Services.Progression;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dwelloot.Tests.Services.Competitions;
@@ -23,7 +24,7 @@ public class CompetitionSettlementTests
 
     private static readonly DateTime WellAfterTheDay = TheDay.EndUtc.AddDays(3);
 
-    private static CompetitionSettlementService ServiceFor(AppDbContext db) => new(db, Calculator);
+    private static CompetitionSettlementService ServiceFor(AppDbContext db) => new(db, Calculator, new ProgressionService(db));
 
     private static async Task<User> AddUserAsync(AppDbContext db, string email)
     {
@@ -382,7 +383,7 @@ public class CompetitionSettlementTests
             SettlementOutcome.AwaitingApprovals,
             (await service.SettlePeriodAsync(household.Id, TheDay, TheDay.EndUtc.AddHours(9))).Outcome);
 
-        await new ActivityLogService(db).ApproveAsync(alex.Id, log.Id);
+        await new ActivityLogService(db, new ProgressionService(db)).ApproveAsync(alex.Id, log.Id);
 
         var result = await service.SettlePeriodAsync(household.Id, TheDay, TheDay.EndUtc.AddHours(10));
 

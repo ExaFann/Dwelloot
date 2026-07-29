@@ -3,6 +3,7 @@ using API.Dtos.Activities;
 using API.Dtos.ActivityLogs;
 using API.Entities;
 using API.Services;
+using API.Services.Progression;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dwelloot.Tests.Services;
@@ -39,7 +40,7 @@ public class ActivityLogQueryTests
 
     private static async Task<int> LogAsync(AppDbContext db, int userId, int activityId)
     {
-        var result = await new ActivityLogService(db).CreateAsync(userId, activityId);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).CreateAsync(userId, activityId);
         return result.Log!.Id;
     }
 
@@ -58,7 +59,7 @@ public class ActivityLogQueryTests
         var chore = await ChoreAsync(db, household.Id);
         var samsLog = await LogAsync(db, sam.Id, chore.Id);
 
-        var result = await new ActivityLogService(db).ListForApprovalAsync(
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListForApprovalAsync(
             alex.Id, new ActivityLogQuery { Status = ActivityLogStatus.Pending });
 
         Assert.Equal(ActivityLogStatusCode.Ok, result.Status);
@@ -80,7 +81,7 @@ public class ActivityLogQueryTests
         var alexsLog = await LogAsync(db, alex.Id, chore.Id);
         var samsLog = await LogAsync(db, sam.Id, chore.Id);
 
-        var service = new ActivityLogService(db);
+        var service = new ActivityLogService(db, new ProgressionService(db));
         var forAlex = await service.ListForApprovalAsync(alex.Id, new ActivityLogQuery());
         var forSam = await service.ListForApprovalAsync(sam.Id, new ActivityLogQuery());
 
@@ -98,7 +99,7 @@ public class ActivityLogQueryTests
 
         await LogAsync(db, otherSam.Id, (await ChoreAsync(db, otherHousehold.Id)).Id);
 
-        var result = await new ActivityLogService(db).ListForApprovalAsync(alex.Id, new ActivityLogQuery());
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListForApprovalAsync(alex.Id, new ActivityLogQuery());
 
         Assert.Empty(result.Page!.Items);
         Assert.Equal(0, result.Page.Total);
@@ -116,7 +117,7 @@ public class ActivityLogQueryTests
         var approved = await LogAsync(db, sam.Id, chore.Id);
         await SetStatusAsync(db, approved, ActivityLogStatus.Approved);
 
-        var result = await new ActivityLogService(db).ListForApprovalAsync(
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListForApprovalAsync(
             alex.Id, new ActivityLogQuery { Status = ActivityLogStatus.Pending });
 
         Assert.Equal([pending], result.Page!.Items.Select(i => i.Id));
@@ -133,7 +134,7 @@ public class ActivityLogQueryTests
         await SetStatusAsync(db, await LogAsync(db, sam.Id, chore.Id), ActivityLogStatus.Approved);
         await SetStatusAsync(db, await LogAsync(db, sam.Id, chore.Id), ActivityLogStatus.Rejected);
 
-        var result = await new ActivityLogService(db).ListForApprovalAsync(alex.Id, new ActivityLogQuery());
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListForApprovalAsync(alex.Id, new ActivityLogQuery());
 
         Assert.Equal(3, result.Page!.Total);
         Assert.Equal(3, result.Page.Items.Select(i => i.Status).Distinct().Count());
@@ -153,7 +154,7 @@ public class ActivityLogQueryTests
 
         await new ActivityService(db).DeleteAsync(alex.Id, chore.Id);
 
-        var result = await new ActivityLogService(db).ListForApprovalAsync(
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListForApprovalAsync(
             alex.Id, new ActivityLogQuery { Status = ActivityLogStatus.Pending });
 
         var item = Assert.Single(result.Page!.Items);
@@ -172,7 +173,7 @@ public class ActivityLogQueryTests
         await LogAsync(db, sam.Id, chore.Id);
         await new ActivityService(db).UpdateAsync(alex.Id, chore.Id, new PatchActivityRequest(null, 999, null));
 
-        var result = await new ActivityLogService(db).ListForApprovalAsync(alex.Id, new ActivityLogQuery());
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListForApprovalAsync(alex.Id, new ActivityLogQuery());
 
         // Would fail if the projection read l.Activity.Points instead of l.PointsAwarded.
         Assert.Equal(originalPoints, Assert.Single(result.Page!.Items).PointsAwarded);
@@ -191,7 +192,7 @@ public class ActivityLogQueryTests
             ids.Add(await LogAsync(db, sam.Id, chore.Id));
         }
 
-        var result = await new ActivityLogService(db).ListForApprovalAsync(
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListForApprovalAsync(
             alex.Id, new ActivityLogQuery { PageSize = 100 });
 
         var returned = result.Page!.Items.Select(i => i.Id).ToList();
@@ -211,7 +212,7 @@ public class ActivityLogQueryTests
             await LogAsync(db, sam.Id, chore.Id);
         }
 
-        var service = new ActivityLogService(db);
+        var service = new ActivityLogService(db, new ProgressionService(db));
         var seen = new List<int>();
 
         for (var page = 1; ; page++)
@@ -241,7 +242,7 @@ public class ActivityLogQueryTests
             await LogAsync(db, sam.Id, chore.Id);
         }
 
-        var result = await new ActivityLogService(db).ListForApprovalAsync(
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListForApprovalAsync(
             alex.Id, new ActivityLogQuery { PageSize = 100_000 });
 
         Assert.Equal(ActivityService.MaxPageSize, result.Page!.Items.Count);
@@ -254,7 +255,7 @@ public class ActivityLogQueryTests
         using var db = TestDbContextFactory.Create();
         var loner = await AddUserAsync(db, "loner@example.com");
 
-        var result = await new ActivityLogService(db).ListForApprovalAsync(loner.Id, new ActivityLogQuery());
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListForApprovalAsync(loner.Id, new ActivityLogQuery());
 
         Assert.Equal(ActivityLogStatusCode.NoHousehold, result.Status);
         Assert.Null(result.Page);

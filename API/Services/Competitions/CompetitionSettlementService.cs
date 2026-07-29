@@ -1,5 +1,6 @@
 using API.Data;
 using API.Entities;
+using API.Services.Progression;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.Competitions;
@@ -76,8 +77,10 @@ public interface ICompetitionSettlementService
 /// <see cref="Competition.BonusRewardId"/> null until then.
 /// </para>
 /// </remarks>
-public class CompetitionSettlementService(AppDbContext db, IPeriodCalculator periods)
-    : ICompetitionSettlementService
+public class CompetitionSettlementService(
+    AppDbContext db,
+    IPeriodCalculator periods,
+    IProgressionService progression) : ICompetitionSettlementService
 {
     /// <summary>
     /// How long a closed period waits for outstanding approvals before settling without them.
@@ -169,6 +172,11 @@ public class CompetitionSettlementService(AppDbContext db, IPeriodCalculator per
                 ? throw new InvalidOperationException("Settlement failed and no competing row was found.")
                 : SettlementResult.Of(SettlementOutcome.AlreadySettled, winner);
         }
+
+        // Streaks and badges, after the competition row exists. Recomputed rather than incremented
+        // (see ProgressionService), so calling this more than once for the same period cannot
+        // corrupt a streak.
+        await progression.ApplySettlementAsync(competition, ct);
 
         return SettlementResult.Of(SettlementOutcome.Settled, competition);
     }

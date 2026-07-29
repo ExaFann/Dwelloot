@@ -2,6 +2,7 @@ using API.Data;
 using API.Dtos.ActivityLogs;
 using API.Entities;
 using API.Services;
+using API.Services.Progression;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dwelloot.Tests.Services;
@@ -36,7 +37,7 @@ public class ActivityLogBulkApproveTests
         db.Activities.SingleAsync(a => a.HouseholdId == householdId && a.Title == title);
 
     private static async Task<int> LogAsync(AppDbContext db, int userId, int activityId) =>
-        (await new ActivityLogService(db).CreateAsync(userId, activityId)).Log!.Id;
+        (await new ActivityLogService(db, new ProgressionService(db)).CreateAsync(userId, activityId)).Log!.Id;
 
     private static Task<int> PointsOfAsync(AppDbContext db, int userId) =>
         db.Users.Where(u => u.Id == userId).Select(u => u.LifetimePoints).SingleAsync();
@@ -52,7 +53,7 @@ public class ActivityLogBulkApproveTests
         var a = await LogAsync(db, sam.Id, vacuum.Id);
         var b = await LogAsync(db, sam.Id, dishes.Id);
 
-        var result = await new ActivityLogService(db).BulkApproveAsync(alex.Id, [a, b]);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).BulkApproveAsync(alex.Id, [a, b]);
 
         Assert.Equal(ActivityLogStatusCode.Ok, result.Status);
         Assert.Equal([a, b], result.Response!.Approved);
@@ -77,7 +78,7 @@ public class ActivityLogBulkApproveTests
         var a = await LogAsync(db, sam.Id, vacuum.Id);
         var b = await LogAsync(db, sam.Id, dishes.Id);
 
-        await new ActivityLogService(db).BulkApproveAsync(alex.Id, [a, b]);
+        await new ActivityLogService(db, new ProgressionService(db)).BulkApproveAsync(alex.Id, [a, b]);
 
         Assert.Equal(vacuum.Points + dishes.Points, await PointsOfAsync(db, sam.Id));
         Assert.Equal(0, await PointsOfAsync(db, alex.Id));
@@ -94,7 +95,7 @@ public class ActivityLogBulkApproveTests
         var samsLog = await LogAsync(db, sam.Id, vacuum.Id);
         var alexsOwn = await LogAsync(db, alex.Id, vacuum.Id);
 
-        var result = await new ActivityLogService(db).BulkApproveAsync(alex.Id, [samsLog, alexsOwn]);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).BulkApproveAsync(alex.Id, [samsLog, alexsOwn]);
 
         Assert.Equal([samsLog], result.Response!.Approved);
         var skipped = Assert.Single(result.Response.Skipped);
@@ -111,7 +112,7 @@ public class ActivityLogBulkApproveTests
         using var db = TestDbContextFactory.Create();
         var (alex, sam, household) = await PairedHouseholdAsync(db);
         var vacuum = await ChoreAsync(db, household.Id, "Vacuum");
-        var service = new ActivityLogService(db);
+        var service = new ActivityLogService(db, new ProgressionService(db));
 
         var already = await LogAsync(db, sam.Id, vacuum.Id);
         var fresh = await LogAsync(db, sam.Id, vacuum.Id);
@@ -134,7 +135,7 @@ public class ActivityLogBulkApproveTests
         var mine = await LogAsync(db, sam.Id, (await ChoreAsync(db, household.Id, "Vacuum")).Id);
         var theirs = await LogAsync(db, otherSam.Id, (await ChoreAsync(db, otherHousehold.Id, "Vacuum")).Id);
 
-        var result = await new ActivityLogService(db).BulkApproveAsync(alex.Id, [mine, theirs]);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).BulkApproveAsync(alex.Id, [mine, theirs]);
 
         Assert.Equal([mine], result.Response!.Approved);
         var skipped = Assert.Single(result.Response.Skipped);
@@ -153,7 +154,7 @@ public class ActivityLogBulkApproveTests
         var vacuum = await ChoreAsync(db, household.Id, "Vacuum");
         var logId = await LogAsync(db, sam.Id, vacuum.Id);
 
-        var result = await new ActivityLogService(db).BulkApproveAsync(alex.Id, [logId, logId, logId]);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).BulkApproveAsync(alex.Id, [logId, logId, logId]);
 
         Assert.Equal([logId], result.Response!.Approved);
         Assert.Empty(result.Response.Skipped);
@@ -167,7 +168,7 @@ public class ActivityLogBulkApproveTests
         var (alex, _, household) = await PairedHouseholdAsync(db);
         var alexsOwn = await LogAsync(db, alex.Id, (await ChoreAsync(db, household.Id, "Vacuum")).Id);
 
-        var result = await new ActivityLogService(db).BulkApproveAsync(alex.Id, [alexsOwn, 999_999]);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).BulkApproveAsync(alex.Id, [alexsOwn, 999_999]);
 
         Assert.Equal(ActivityLogStatusCode.Ok, result.Status);
         Assert.Empty(result.Response!.Approved);
@@ -186,7 +187,7 @@ public class ActivityLogBulkApproveTests
         var a = await LogAsync(db, sam.Id, vacuum.Id);
         var b = await LogAsync(db, sam.Id, vacuum.Id);
 
-        var service = new ActivityLogService(db);
+        var service = new ActivityLogService(db, new ProgressionService(db));
         await service.BulkApproveAsync(alex.Id, [a, b]);
 
         var queue = await service.ListForApprovalAsync(
@@ -201,7 +202,7 @@ public class ActivityLogBulkApproveTests
         using var db = TestDbContextFactory.Create();
         var loner = await AddUserAsync(db, "loner@example.com");
 
-        var result = await new ActivityLogService(db).BulkApproveAsync(loner.Id, [1, 2]);
+        var result = await new ActivityLogService(db, new ProgressionService(db)).BulkApproveAsync(loner.Id, [1, 2]);
 
         Assert.Equal(ActivityLogStatusCode.NoHousehold, result.Status);
         Assert.Null(result.Response);

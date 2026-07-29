@@ -4,6 +4,7 @@ using API.Data;
 using API.Entities;
 using API.Services;
 using API.Services.Competitions;
+using API.Services.Progression;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,7 @@ builder.Services.AddScoped<IDefaultCatalogCopier, DefaultCatalogCopier>();
 builder.Services.AddScoped<IInviteCodeGenerator, InviteCodeGenerator>();
 builder.Services.AddScoped<IHouseholdService, HouseholdService>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
+builder.Services.AddScoped<IProgressionService, ProgressionService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 
 // Days are local, not UTC: this app's users are UTC+12/+13, so a UTC boundary would fall at noon

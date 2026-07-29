@@ -2,6 +2,7 @@ using API.Data;
 using API.Dtos;
 using API.Dtos.ActivityLogs;
 using API.Entities;
+using API.Services.Progression;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services;
@@ -91,7 +92,7 @@ public sealed record BulkApproveResult(ActivityLogStatusCode Status, BulkApprove
     public static BulkApproveResult Failed(ActivityLogStatusCode status) => new(status, null);
 }
 
-public class ActivityLogService(AppDbContext db) : IActivityLogService
+public class ActivityLogService(AppDbContext db, IProgressionService progression) : IActivityLogService
 {
     public async Task<ActivityLogResult> CreateAsync(int userId, int activityId, CancellationToken ct = default)
     {
@@ -227,7 +228,17 @@ public class ActivityLogService(AppDbContext db) : IActivityLogService
         var logger = await db.Users.SingleAsync(u => u.Id == log.LoggedByUserId, ct);
         logger.LifetimePoints += log.PointsAwarded;
 
-        return await SaveDecisionAsync(log, ct);
+        var saved = await SaveDecisionAsync(log, ct);
+
+        if (saved.Status == ActivityLogStatusCode.Ok)
+        {
+            // Badge criteria that approval can satisfy - first approved chore, and the lifetime
+            // points threshold. Waiting for settlement would make "First chore", the badge whose
+            // whole point is to fire on your first action, the slowest to arrive.
+            await progression.EvaluateBadgesAsync(log.LoggedByUserId, ct);
+        }
+
+        return saved;
     }
 
     public async Task<ActivityLogDecisionResult> RejectAsync(
@@ -414,6 +425,13 @@ public class ActivityLogService(AppDbContext db) : IActivityLogService
                 // batch would be harder to reason about than asking for a fresh one.
                 return BulkApproveResult.Failed(ActivityLogStatusCode.Conflict);
             }
+        }
+
+        // Same reasoning as ApproveAsync: a bulk approval can push someone past the first-chore or
+        // lifetime-points thresholds, and waiting for settlement would delay the badge by a day.
+        foreach (var loggerId in pointsPerLogger.Keys)
+        {
+            await progression.EvaluateBadgesAsync(loggerId, ct);
         }
 
         return BulkApproveResult.Ok(new BulkApproveResponse(approved, skipped));

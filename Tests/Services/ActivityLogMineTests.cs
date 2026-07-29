@@ -2,6 +2,7 @@ using API.Data;
 using API.Dtos.ActivityLogs;
 using API.Entities;
 using API.Services;
+using API.Services.Progression;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dwelloot.Tests.Services;
@@ -36,7 +37,7 @@ public class ActivityLogMineTests
         db.Activities.SingleAsync(a => a.HouseholdId == householdId && a.Title == title);
 
     private static async Task<int> LogAsync(AppDbContext db, int userId, int activityId) =>
-        (await new ActivityLogService(db).CreateAsync(userId, activityId)).Log!.Id;
+        (await new ActivityLogService(db, new ProgressionService(db)).CreateAsync(userId, activityId)).Log!.Id;
 
     [Fact]
     public async Task Mine_returns_the_callers_own_logs_and_never_the_partners()
@@ -50,7 +51,7 @@ public class ActivityLogMineTests
         var alexsLog = await LogAsync(db, alex.Id, chore.Id);
         var samsLog = await LogAsync(db, sam.Id, chore.Id);
 
-        var service = new ActivityLogService(db);
+        var service = new ActivityLogService(db, new ProgressionService(db));
         var alexsHistory = await service.ListMineAsync(alex.Id, new MyActivityLogQuery());
         var samsHistory = await service.ListMineAsync(sam.Id, new MyActivityLogQuery());
 
@@ -68,7 +69,7 @@ public class ActivityLogMineTests
         var alexsLog = await LogAsync(db, alex.Id, chore.Id);
         var samsLog = await LogAsync(db, sam.Id, chore.Id);
 
-        var service = new ActivityLogService(db);
+        var service = new ActivityLogService(db, new ProgressionService(db));
         var mine = await service.ListMineAsync(alex.Id, new MyActivityLogQuery());
         var queue = await service.ListForApprovalAsync(alex.Id, new ActivityLogQuery());
 
@@ -83,7 +84,7 @@ public class ActivityLogMineTests
         using var db = TestDbContextFactory.Create();
         var (alex, sam, household) = await PairedHouseholdAsync(db);
         var chore = await ChoreAsync(db, household.Id);
-        var service = new ActivityLogService(db);
+        var service = new ActivityLogService(db, new ProgressionService(db));
 
         await LogAsync(db, sam.Id, chore.Id);
         await service.ApproveAsync(alex.Id, await LogAsync(db, sam.Id, chore.Id));
@@ -101,7 +102,7 @@ public class ActivityLogMineTests
         using var db = TestDbContextFactory.Create();
         var (alex, sam, household) = await PairedHouseholdAsync(db);
         var chore = await ChoreAsync(db, household.Id);
-        var service = new ActivityLogService(db);
+        var service = new ActivityLogService(db, new ProgressionService(db));
 
         await LogAsync(db, sam.Id, chore.Id);
         var approved = await LogAsync(db, sam.Id, chore.Id);
@@ -125,7 +126,7 @@ public class ActivityLogMineTests
             await LogAsync(db, sam.Id, chore.Id);
         }
 
-        var result = await new ActivityLogService(db).ListMineAsync(sam.Id, new MyActivityLogQuery { Take = 5 });
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListMineAsync(sam.Id, new MyActivityLogQuery { Take = 5 });
 
         Assert.Equal(5, result.Page!.Items.Count);
         Assert.Equal(8, result.Page.Total);
@@ -143,7 +144,7 @@ public class ActivityLogMineTests
             await LogAsync(db, sam.Id, chore.Id);
         }
 
-        var result = await new ActivityLogService(db).ListMineAsync(
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListMineAsync(
             sam.Id, new MyActivityLogQuery { Take = 5, PageSize = 2 });
 
         Assert.Equal(2, result.Page!.Items.Count);
@@ -162,7 +163,7 @@ public class ActivityLogMineTests
             ids.Add(await LogAsync(db, sam.Id, chore.Id));
         }
 
-        var result = await new ActivityLogService(db).ListMineAsync(sam.Id, new MyActivityLogQuery());
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListMineAsync(sam.Id, new MyActivityLogQuery());
 
         var returned = result.Page!.Items.Select(i => i.Id).ToList();
         Assert.Equal(returned.OrderByDescending(i => i), returned);
@@ -178,9 +179,9 @@ public class ActivityLogMineTests
         var (alex, sam, household) = await PairedHouseholdAsync(db);
         var logId = await LogAsync(db, sam.Id, (await ChoreAsync(db, household.Id)).Id);
 
-        await new ActivityLogService(db).RejectAsync(alex.Id, logId, "Not actually done yet");
+        await new ActivityLogService(db, new ProgressionService(db)).RejectAsync(alex.Id, logId, "Not actually done yet");
 
-        var result = await new ActivityLogService(db).ListMineAsync(sam.Id, new MyActivityLogQuery());
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListMineAsync(sam.Id, new MyActivityLogQuery());
 
         var item = Assert.Single(result.Page!.Items);
         Assert.Equal(ActivityLogStatus.Rejected, item.Status);
@@ -194,7 +195,7 @@ public class ActivityLogMineTests
         using var db = TestDbContextFactory.Create();
         var (alex, sam, household) = await PairedHouseholdAsync(db);
         var chore = await ChoreAsync(db, household.Id);
-        var service = new ActivityLogService(db);
+        var service = new ActivityLogService(db, new ProgressionService(db));
 
         var pending = await LogAsync(db, sam.Id, chore.Id);
         var approved = await LogAsync(db, sam.Id, chore.Id);
@@ -217,7 +218,7 @@ public class ActivityLogMineTests
 
         await new ActivityService(db).DeleteAsync(alex.Id, chore.Id);
 
-        var result = await new ActivityLogService(db).ListMineAsync(sam.Id, new MyActivityLogQuery());
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListMineAsync(sam.Id, new MyActivityLogQuery());
 
         var item = Assert.Single(result.Page!.Items);
         Assert.Equal(logId, item.Id);
@@ -241,7 +242,7 @@ public class ActivityLogMineTests
 
         var newLog = await LogAsync(db, sam.Id, (await ChoreAsync(db, created.Household.Id)).Id);
 
-        var result = await new ActivityLogService(db).ListMineAsync(sam.Id, new MyActivityLogQuery());
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListMineAsync(sam.Id, new MyActivityLogQuery());
 
         Assert.Equal([newLog], result.Page!.Items.Select(i => i.Id));
         Assert.DoesNotContain(result.Page.Items, i => i.Id == oldLog);
@@ -254,7 +255,7 @@ public class ActivityLogMineTests
         using var db = TestDbContextFactory.Create();
         var loner = await AddUserAsync(db, "loner@example.com");
 
-        var result = await new ActivityLogService(db).ListMineAsync(loner.Id, new MyActivityLogQuery());
+        var result = await new ActivityLogService(db, new ProgressionService(db)).ListMineAsync(loner.Id, new MyActivityLogQuery());
 
         Assert.Equal(ActivityLogStatusCode.NoHousehold, result.Status);
         Assert.Null(result.Page);
