@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using API.Data;
 using API.Entities;
 using API.Services;
+using API.Services.Competitions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,15 @@ builder.Services.AddScoped<IInviteCodeGenerator, InviteCodeGenerator>();
 builder.Services.AddScoped<IHouseholdService, HouseholdService>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+
+// Days are local, not UTC: this app's users are UTC+12/+13, so a UTC boundary would fall at noon
+// local and the evening dishes would count toward tomorrow's duel. One config value rather than a
+// hard-coded assumption; per-household zones are the long-term answer (see log 023).
+var competitionTimeZoneId = builder.Configuration["Competition:TimeZone"] ?? PeriodCalculator.DefaultTimeZoneId;
+builder.Services.AddSingleton<IPeriodCalculator>(
+    new PeriodCalculator(TimeZoneInfo.FindSystemTimeZoneById(competitionTimeZoneId)));
+
+builder.Services.AddScoped<ICompetitionSettlementService, CompetitionSettlementService>();
 
 // The signing key is a secret and, like the connection string, never appears in a committed
 // file - user secrets locally, Jwt__Key in production. Fail fast at boot rather than at first
