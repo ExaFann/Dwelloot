@@ -32,6 +32,22 @@ public class ActivityLog
 
     public Activity Activity { get; set; } = null!;
 
+    /// <summary>
+    /// What the chore was worth when it was logged, copied from <see cref="Entities.Activity.Points"/>
+    /// at creation. <b>Never read the activity's current points instead</b> — approval (task [21])
+    /// and settlement (task [23]) both use this column.
+    /// </summary>
+    /// <remarks>
+    /// A log records something that happened, and what the chore was worth then is part of what
+    /// happened. Without the snapshot, editing a chore re-values every unsettled log of it: log
+    /// twenty at 10 points, edit the chore to 999, and the current competition period inflates.
+    /// That is the mirror of the hole archiving closed in task [18] — there one partner could
+    /// shrink the other's standing by removing a chore, here either could inflate their own by
+    /// editing one upward after the fact. Both are catalog edits rewriting a competition already
+    /// under way.
+    /// </remarks>
+    public int PointsAwarded { get; set; }
+
     /// <summary>The partner who did the chore.</summary>
     public int LoggedByUserId { get; set; }
 

@@ -19,6 +19,16 @@ public class ActivityLogConfiguration : IEntityTypeConfiguration<ActivityLog>
         builder.Property(l => l.CompletedAt)
             .IsRequired();
 
+        // Snapshotted from the activity at log time - see the remarks on the entity. The same
+        // positivity rule as activities.points, enforced here too because this column, not that
+        // one, is what approval and settlement actually read.
+        builder.Property(l => l.PointsAwarded)
+            .IsRequired();
+
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_activity_logs_points_awarded_positive",
+            "points_awarded > 0"));
+
         builder.Property(l => l.RejectReason)
             .HasMaxLength(ActivityLog.RejectReasonMaxLength);
 

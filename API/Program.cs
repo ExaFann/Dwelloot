@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using API.Data;
 using API.Entities;
 using API.Services;
@@ -33,6 +34,7 @@ builder.Services.AddScoped<IDefaultCatalogCopier, DefaultCatalogCopier>();
 builder.Services.AddScoped<IInviteCodeGenerator, InviteCodeGenerator>();
 builder.Services.AddScoped<IHouseholdService, HouseholdService>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 
 // The signing key is a secret and, like the connection string, never appears in a committed
 // file - user secrets locally, Jwt__Key in production. Fail fast at boot rather than at first
@@ -98,7 +100,14 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
-builder.Services.AddControllers();
+// Enums as strings both ways. api-design.md specifies "status": "Pending", and System.Text.Json
+// emits 0 by default. Registered globally rather than per-DTO because every status and category
+// the API exposes has the same requirement.
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 

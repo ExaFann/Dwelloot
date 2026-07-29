@@ -30,10 +30,16 @@ public class ActivityServiceMutationTests
 
     private static async Task<ActivityLog> AddLogAsync(AppDbContext db, int activityId, int userId)
     {
+        // PointsAwarded is snapshotted from the activity, mirroring what ActivityLogService does.
+        // The in-memory provider would happily accept 0 here, but ck_activity_logs_points_awarded_positive
+        // rejects it in PostgreSQL - a fixture that could not exist in production is a bad fixture.
+        var points = await db.Activities.Where(a => a.Id == activityId).Select(a => a.Points).SingleAsync();
+
         var log = new ActivityLog
         {
             ActivityId = activityId,
             LoggedByUserId = userId,
+            PointsAwarded = points,
             Status = ActivityLogStatus.Pending,
             CompletedAt = DateTime.UtcNow
         };
