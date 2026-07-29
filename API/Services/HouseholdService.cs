@@ -19,9 +19,27 @@ public sealed record CreateHouseholdResult(CreateHouseholdStatus Status, Househo
     public static CreateHouseholdResult Failed(CreateHouseholdStatus status) => new(status, null);
 }
 
+public enum JoinHouseholdStatus
+{
+    Joined,
+    UserNotFound,
+    AlreadyInHousehold,
+    InviteCodeNotFound,
+    HouseholdFull
+}
+
+public sealed record JoinHouseholdResult(JoinHouseholdStatus Status, Household? Household)
+{
+    public static JoinHouseholdResult Ok(Household household) => new(JoinHouseholdStatus.Joined, household);
+
+    public static JoinHouseholdResult Failed(JoinHouseholdStatus status) => new(status, null);
+}
+
 public interface IHouseholdService
 {
     Task<CreateHouseholdResult> CreateAsync(int userId, string name, CancellationToken ct = default);
+
+    Task<JoinHouseholdResult> JoinAsync(int userId, string inviteCode, CancellationToken ct = default);
 }
 
 public class HouseholdService(
@@ -78,6 +96,59 @@ public class HouseholdService(
         await db.SaveChangesAsync(ct);
 
         return CreateHouseholdResult.Ok(household);
+    }
+
+    public async Task<JoinHouseholdResult> JoinAsync(int userId, string inviteCode, CancellationToken ct = default)
+    {
+        var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId, ct);
+        if (user is null)
+        {
+            return JoinHouseholdResult.Failed(JoinHouseholdStatus.UserNotFound);
+        }
+
+        // Also what makes "join your own household" impossible: creating one assigns you to it.
+        if (user.HouseholdId is not null)
+        {
+            return JoinHouseholdResult.Failed(JoinHouseholdStatus.AlreadyInHousehold);
+        }
+
+        // The code is read off one screen and typed into another. The alphabet is uppercase, so
+        // accepting "7f3k9q" costs one call and removes a failure that would look like a broken
+        // code rather than a typo.
+        var normalised = inviteCode.Trim().ToUpperInvariant();
+
+        var household = await db.Households.SingleOrDefaultAsync(h => h.InviteCode == normalised, ct);
+        if (household is null)
+        {
+            return JoinHouseholdResult.Failed(JoinHouseholdStatus.InviteCodeNotFound);
+        }
+
+        // Counting actual members rather than trusting household.IsFull. IsFull is denormalised -
+        // it caches a fact that really lives in users.household_id - so gating on it would let a
+        // drifted flag admit a third member. Task [16]'s leave endpoint has to remember to clear
+        // it, and a bug there should stay cosmetic rather than breaking this invariant.
+        var memberCount = await db.Users.CountAsync(u => u.HouseholdId == household.Id, ct);
+        if (memberCount >= Household.MaxMembers)
+        {
+            return JoinHouseholdResult.Failed(JoinHouseholdStatus.HouseholdFull);
+        }
+
+        user.HouseholdId = household.Id;
+        household.IsFull = memberCount + 1 >= Household.MaxMembers;
+
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // IsFull is a concurrency token, so this means someone else joined between the count
+            // check above and this save. Without it the loser of that race would have become a
+            // third member; with it they get the same clean 409 as anyone else arriving late.
+            return JoinHouseholdResult.Failed(JoinHouseholdStatus.HouseholdFull);
+        }
+
+        return JoinHouseholdResult.Ok(household);
     }
 
     /// <summary>

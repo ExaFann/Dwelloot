@@ -25,7 +25,14 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
         builder.HasIndex(h => h.InviteCode)
             .IsUnique();
 
+        // A concurrency token, which costs no schema change - it only adds is_full to the WHERE
+        // clause of UPDATEs. That closes the last gap in the two-member rule: two people redeeming
+        // the same invite code simultaneously would both pass the service's member-count check,
+        // but only one UPDATE can match is_full = false, so the loser gets a clean 409 instead of
+        // becoming a third member. The database cannot express "max 2 rows" portably (see
+        // relational-model.md), so this is the closest storage-level guard available.
         builder.Property(h => h.IsFull)
-            .HasDefaultValue(false);
+            .HasDefaultValue(false)
+            .IsConcurrencyToken();
     }
 }

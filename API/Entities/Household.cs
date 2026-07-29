@@ -16,6 +16,13 @@ public class Household
     /// <summary>Length of <see cref="InviteCode"/>, e.g. "7F3K9Q".</summary>
     public const int InviteCodeLength = 6;
 
+    /// <summary>
+    /// The app's central invariant. Everything downstream — the head-to-head widget, peer
+    /// approval, win/lose settlement — assumes exactly two people, and the join endpoint
+    /// (task [15]) is the one place that assumption is defended.
+    /// </summary>
+    public const int MaxMembers = 2;
+
     public int Id { get; set; }
 
     public required string Name { get; set; }

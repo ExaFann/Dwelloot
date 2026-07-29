@@ -52,4 +52,36 @@ public class HouseholdsController(IHouseholdService households) : ControllerBase
                     new { error = "Could not allocate an invite code. Please try again." });
         }
     }
+
+    [HttpPost("join")]
+    public async Task<ActionResult<JoinHouseholdResponse>> Join(
+        JoinHouseholdRequest request,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await households.JoinAsync(userId.Value, request.InviteCode, ct);
+
+        return result.Status switch
+        {
+            JoinHouseholdStatus.Joined =>
+                Ok(new JoinHouseholdResponse(result.Household!.Id, result.Household.IsFull)),
+
+            // api-design.md's exact wording.
+            JoinHouseholdStatus.HouseholdFull =>
+                Conflict(new { error = "This household already has 2 members" }),
+
+            JoinHouseholdStatus.AlreadyInHousehold =>
+                Conflict(new { error = "You are already in a household." }),
+
+            JoinHouseholdStatus.InviteCodeNotFound =>
+                NotFound(new { error = "No household found with that invite code." }),
+
+            _ => Unauthorized()
+        };
+    }
 }
