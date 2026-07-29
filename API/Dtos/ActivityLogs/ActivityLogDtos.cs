@@ -53,6 +53,32 @@ public record RejectActivityLogRequest(
 /// </remarks>
 public record ActivityLogDecisionResponse(int Id, ActivityLogStatus Status, DateTime? ApprovedAt);
 
+public record BulkApproveRequest(
+    [Required, MinLength(1), MaxLength(BulkApproveRequest.MaxIds)]
+    IReadOnlyList<int> Ids)
+{
+    /// <summary>
+    /// An unbounded array is a cheap way to make the server do arbitrary work — same reasoning as
+    /// the page-size cap.
+    /// </summary>
+    public const int MaxIds = 100;
+}
+
+/// <summary>Why one id in a bulk request was not approved.</summary>
+public record SkippedLogResponse(int Id, string Reason);
+
+/// <summary>
+/// Shape of <c>POST /api/activity-logs/bulk-approve</c>.
+/// </summary>
+/// <remarks>
+/// <c>api-design.md</c> documents <c>approved</c> only. <c>Skipped</c> is additive: silently
+/// dropping ids from a select-all is worse than useless, since the user sees "approved" and cannot
+/// tell that two of their five did not go through.
+/// </remarks>
+public record BulkApproveResponse(
+    IReadOnlyList<int> Approved,
+    IReadOnlyList<SkippedLogResponse> Skipped);
+
 /// <summary>Query options for the approval queue.</summary>
 public record ActivityLogQuery
 {

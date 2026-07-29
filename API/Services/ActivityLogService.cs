@@ -67,6 +67,16 @@ public interface IActivityLogService
     Task<ActivityLogDecisionResult> ApproveAsync(int userId, int logId, CancellationToken ct = default);
 
     Task<ActivityLogDecisionResult> RejectAsync(int userId, int logId, string reason, CancellationToken ct = default);
+
+    Task<BulkApproveResult> BulkApproveAsync(int userId, IReadOnlyList<int> ids, CancellationToken ct = default);
+}
+
+public sealed record BulkApproveResult(ActivityLogStatusCode Status, BulkApproveResponse? Response)
+{
+    public static BulkApproveResult Ok(BulkApproveResponse response) =>
+        new(ActivityLogStatusCode.Ok, response);
+
+    public static BulkApproveResult Failed(ActivityLogStatusCode status) => new(status, null);
 }
 
 public class ActivityLogService(AppDbContext db) : IActivityLogService
@@ -229,6 +239,109 @@ public class ActivityLogService(AppDbContext db) : IActivityLogService
         // always the partner who did not log it, so recording it separately would be redundant
         // (see log 005).
         return await SaveDecisionAsync(log, ct);
+    }
+
+    /// <summary>
+    /// Approves as many of <paramref name="ids"/> as the caller is allowed to, reporting the rest.
+    /// </summary>
+    /// <remarks>
+    /// Best-effort rather than all-or-nothing, because <c>api-design.md</c>'s response echoes back
+    /// <em>which</em> ids were approved — a field that would be redundant if a subset could not
+    /// succeed. It also suits select-all: failing twenty because the partner decided one of them a
+    /// second earlier would be obstructive.
+    /// <para>
+    /// The per-id rules are deliberately identical to <see cref="ApproveAsync"/>. A bulk path with
+    /// looser checks would be a way around the no-self-approval rule, which is the one rule this
+    /// app cannot afford two versions of.
+    /// </para>
+    /// </remarks>
+    public async Task<BulkApproveResult> BulkApproveAsync(
+        int userId,
+        IReadOnlyList<int> ids,
+        CancellationToken ct = default)
+    {
+        var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId, ct);
+        if (user is null)
+        {
+            return BulkApproveResult.Failed(ActivityLogStatusCode.UserNotFound);
+        }
+
+        if (user.HouseholdId is null)
+        {
+            return BulkApproveResult.Failed(ActivityLogStatusCode.NoHousehold);
+        }
+
+        // Collapsed before anything else: [90, 90] must approve once and award once.
+        var requested = ids.Distinct().ToList();
+
+        // One query for the whole batch, rather than two round trips per id.
+        var found = await db.ActivityLogs
+            .Where(l => requested.Contains(l.Id) && l.Activity.HouseholdId == user.HouseholdId)
+            .ToListAsync(ct);
+
+        var byId = found.ToDictionary(l => l.Id);
+        var approved = new List<int>();
+        var skipped = new List<SkippedLogResponse>();
+        var approvedAt = DateTime.UtcNow;
+
+        // Summed per logger and applied once, rather than incrementing the same row N times.
+        var pointsPerLogger = new Dictionary<int, int>();
+
+        foreach (var id in requested)
+        {
+            if (!byId.TryGetValue(id, out var log))
+            {
+                skipped.Add(new SkippedLogResponse(id, nameof(ActivityLogStatusCode.LogNotFound)));
+                continue;
+            }
+
+            if (log.LoggedByUserId == userId)
+            {
+                skipped.Add(new SkippedLogResponse(id, nameof(ActivityLogStatusCode.SelfApproval)));
+                continue;
+            }
+
+            if (log.Status != ActivityLogStatus.Pending)
+            {
+                skipped.Add(new SkippedLogResponse(id, nameof(ActivityLogStatusCode.NotPending)));
+                continue;
+            }
+
+            log.Status = ActivityLogStatus.Approved;
+            log.ApprovedByUserId = userId;
+            log.ApprovedAt = approvedAt;
+
+            pointsPerLogger[log.LoggedByUserId] =
+                pointsPerLogger.GetValueOrDefault(log.LoggedByUserId) + log.PointsAwarded;
+
+            approved.Add(id);
+        }
+
+        if (approved.Count > 0)
+        {
+            var loggerIds = pointsPerLogger.Keys.ToList();
+            var loggers = await db.Users.Where(u => loggerIds.Contains(u.Id)).ToListAsync(ct);
+
+            foreach (var logger in loggers)
+            {
+                logger.LifetimePoints += pointsPerLogger[logger.Id];
+            }
+
+            try
+            {
+                await db.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Status is a concurrency token, so one log decided elsewhere fails the whole save.
+                // Left as all-or-nothing rather than retried: the caller refreshes, and a refreshed
+                // queue will not offer the decided log again. Silently retrying a partially stale
+                // batch would be harder to reason about than asking for a fresh one.
+                return BulkApproveResult.Failed(ActivityLogStatusCode.Conflict);
+            }
+        }
+
+        return BulkApproveResult.Ok(new BulkApproveResponse(approved, skipped));
     }
 
     private async Task<ActivityLogDecisionResult> SaveDecisionAsync(ActivityLog log, CancellationToken ct)

@@ -105,6 +105,31 @@ public class ActivityLogsController(IActivityLogService logs) : ControllerBase
             : MapDecisionFailure(result.Status);
     }
 
+    /// <summary>
+    /// Approves several logs at once, skipping any the caller may not decide.
+    /// </summary>
+    /// <remarks>
+    /// Best-effort: the response reports which ids were approved and which were skipped, and why.
+    /// See <see cref="IActivityLogService.BulkApproveAsync"/>.
+    /// </remarks>
+    [HttpPost("bulk-approve")]
+    public async Task<ActionResult<BulkApproveResponse>> BulkApprove(
+        BulkApproveRequest request,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await logs.BulkApproveAsync(userId.Value, request.Ids, ct);
+
+        return result.Status == ActivityLogStatusCode.Ok
+            ? Ok(result.Response)
+            : MapDecisionFailure(result.Status);
+    }
+
     /// <remarks>
     /// The asymmetry is deliberate. Another household's log is a 404 so ids cannot be enumerated;
     /// the caller's own log is a <b>403</b>, because they created it and know perfectly well that
