@@ -1,4 +1,5 @@
 using API.Data;
+using API.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +23,8 @@ if (string.IsNullOrWhiteSpace(connectionString))
 builder.Services.AddDbContext<AppDbContext>(options => options
     .UseNpgsql(connectionString)
     .UseSnakeCaseNamingConvention());
+
+builder.Services.AddScoped<IDefaultCatalogCopier, DefaultCatalogCopier>();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
