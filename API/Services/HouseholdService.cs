@@ -35,11 +35,49 @@ public sealed record JoinHouseholdResult(JoinHouseholdStatus Status, Household? 
     public static JoinHouseholdResult Failed(JoinHouseholdStatus status) => new(status, null);
 }
 
+/// <summary>
+/// Outcome of an operation that names a household by id.
+/// </summary>
+/// <remarks>
+/// <see cref="HouseholdNotFound"/> and <see cref="NotAMember"/> are kept distinct here because
+/// they are genuinely different facts. The controller collapses both to 404 so the endpoint
+/// cannot be used to probe which household ids exist — that is a decision about the HTTP surface,
+/// not about the domain.
+/// </remarks>
+public enum HouseholdAccessStatus
+{
+    Ok,
+    UserNotFound,
+    HouseholdNotFound,
+    NotAMember,
+    Conflict
+}
+
+public sealed record HouseholdDetailsResult(HouseholdAccessStatus Status, Household? Household)
+{
+    public static HouseholdDetailsResult Ok(Household household) => new(HouseholdAccessStatus.Ok, household);
+
+    public static HouseholdDetailsResult Failed(HouseholdAccessStatus status) => new(status, null);
+}
+
+public sealed record LeaveHouseholdResult(HouseholdAccessStatus Status, bool HouseholdDeleted)
+{
+    public static LeaveHouseholdResult Ok(bool householdDeleted) => new(HouseholdAccessStatus.Ok, householdDeleted);
+
+    public static LeaveHouseholdResult Failed(HouseholdAccessStatus status) => new(status, false);
+}
+
 public interface IHouseholdService
 {
     Task<CreateHouseholdResult> CreateAsync(int userId, string name, CancellationToken ct = default);
 
     Task<JoinHouseholdResult> JoinAsync(int userId, string inviteCode, CancellationToken ct = default);
+
+    Task<HouseholdDetailsResult> GetAsync(int userId, int householdId, CancellationToken ct = default);
+
+    Task<HouseholdDetailsResult> RenameAsync(int userId, int householdId, string name, CancellationToken ct = default);
+
+    Task<LeaveHouseholdResult> LeaveAsync(int userId, int householdId, CancellationToken ct = default);
 }
 
 public class HouseholdService(
@@ -149,6 +187,105 @@ public class HouseholdService(
         }
 
         return JoinHouseholdResult.Ok(household);
+    }
+
+    public async Task<HouseholdDetailsResult> GetAsync(int userId, int householdId, CancellationToken ct = default)
+    {
+        var household = await db.Households
+            .Include(h => h.Members)
+            .SingleOrDefaultAsync(h => h.Id == householdId, ct);
+
+        if (household is null)
+        {
+            return HouseholdDetailsResult.Failed(HouseholdAccessStatus.HouseholdNotFound);
+        }
+
+        // The access check that stops this id from being an insecure direct object reference:
+        // without it, GET /api/households/11 hands a stranger another household's invite code,
+        // which is the credential for joining it.
+        if (household.Members.All(m => m.Id != userId))
+        {
+            return HouseholdDetailsResult.Failed(HouseholdAccessStatus.NotAMember);
+        }
+
+        return HouseholdDetailsResult.Ok(household);
+    }
+
+    public async Task<HouseholdDetailsResult> RenameAsync(
+        int userId,
+        int householdId,
+        string name,
+        CancellationToken ct = default)
+    {
+        var found = await GetAsync(userId, householdId, ct);
+        if (found.Status != HouseholdAccessStatus.Ok)
+        {
+            return found;
+        }
+
+        found.Household!.Name = name;
+        await db.SaveChangesAsync(ct);
+
+        return found;
+    }
+
+    public async Task<LeaveHouseholdResult> LeaveAsync(int userId, int householdId, CancellationToken ct = default)
+    {
+        // Bounded at two attempts. is_full is a concurrency token (task [15]), so two partners
+        // leaving at the same instant means one UPDATE loses; re-reading lets the loser discover
+        // it is now the last member and delete the household, instead of erroring out and leaving
+        // an orphaned household with zero members still holding an invite code.
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            var found = await GetAsync(userId, householdId, ct);
+            if (found.Status != HouseholdAccessStatus.Ok)
+            {
+                return LeaveHouseholdResult.Failed(found.Status);
+            }
+
+            var household = found.Household!;
+            var user = household.Members.Single(m => m.Id == userId);
+
+            // Decided before mutating the collection, so the branch does not depend on the order
+            // of the two lines below.
+            var lastMember = household.Members.Count == 1;
+
+            // Severing the navigation is what actually matters - EF's relationship fixup nulls
+            // the foreign key as a result, so the explicit assignment is belt-and-braces rather
+            // than load-bearing. Kept because it states the intent at the point of the change.
+            user.HouseholdId = null;
+            household.Members.Remove(user);
+
+            if (lastMember)
+            {
+                // Activities, rewards, competitions and claims cascade with it. Users do not -
+                // users.household_id is ON DELETE SET NULL, so people outlive the household.
+                db.Households.Remove(household);
+            }
+            else
+            {
+                // Frees the slot so the remaining partner can pair with someone else. Task [15]'s
+                // join guard counts real members rather than trusting this flag, precisely so a
+                // mistake here stays cosmetic - but it should still be right.
+                household.IsFull = false;
+            }
+
+            try
+            {
+                await db.SaveChangesAsync(ct);
+                return LeaveHouseholdResult.Ok(lastMember);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // The other partner left first. Drop the stale tracked state and re-evaluate.
+                foreach (var entry in db.ChangeTracker.Entries().ToList())
+                {
+                    await entry.ReloadAsync(ct);
+                }
+            }
+        }
+
+        return LeaveHouseholdResult.Failed(HouseholdAccessStatus.Conflict);
     }
 
     /// <summary>

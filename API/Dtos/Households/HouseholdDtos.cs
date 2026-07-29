@@ -23,3 +23,27 @@ public record JoinHouseholdRequest(
 /// and a 200 rather than a 201 because joining creates no resource.
 /// </summary>
 public record JoinHouseholdResponse(int Id, bool IsFull);
+
+/// <remarks>
+/// Only the name is patchable. Invite code, fullness and membership are not client-editable, so
+/// this record carries one field rather than accepting a partial household and sanitising it — a
+/// body that cannot express an unwanted change beats one that is filtered afterwards.
+/// </remarks>
+public record RenameHouseholdRequest(
+    [Required, StringLength(Household.NameMaxLength, MinimumLength = 1)]
+    string Name);
+
+public record HouseholdMemberResponse(int Id, string Name);
+
+/// <summary>Shape of <c>GET /api/households/{id}</c>.</summary>
+public record HouseholdDetailsResponse(
+    int Id,
+    string Name,
+    string InviteCode,
+    IReadOnlyList<HouseholdMemberResponse> Members);
+
+/// <summary>Shape of <c>PATCH /api/households/{id}</c> — id and name only, per api-design.md.</summary>
+public record RenamedHouseholdResponse(int Id, string Name);
+
+/// <summary>Shape of <c>POST /api/households/{id}/leave</c>.</summary>
+public record LeaveHouseholdResponse(bool Left);

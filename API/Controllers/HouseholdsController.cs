@@ -84,4 +84,86 @@ public class HouseholdsController(IHouseholdService households) : ControllerBase
             _ => Unauthorized()
         };
     }
+
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<HouseholdDetailsResponse>> Details(int id, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await households.GetAsync(userId.Value, id, ct);
+        if (result.Status != HouseholdAccessStatus.Ok)
+        {
+            return MapAccessFailure(result.Status);
+        }
+
+        var household = result.Household!;
+
+        return Ok(new HouseholdDetailsResponse(
+            household.Id,
+            household.Name,
+            household.InviteCode,
+            [.. household.Members
+                .OrderBy(m => m.Id)
+                .Select(m => new HouseholdMemberResponse(m.Id, m.Name))]));
+    }
+
+    [HttpPatch("{id:int}")]
+    public async Task<ActionResult<RenamedHouseholdResponse>> Rename(
+        int id,
+        RenameHouseholdRequest request,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await households.RenameAsync(userId.Value, id, request.Name, ct);
+        if (result.Status != HouseholdAccessStatus.Ok)
+        {
+            return MapAccessFailure(result.Status);
+        }
+
+        return Ok(new RenamedHouseholdResponse(result.Household!.Id, result.Household.Name));
+    }
+
+    [HttpPost("{id:int}/leave")]
+    public async Task<ActionResult<LeaveHouseholdResponse>> Leave(int id, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await households.LeaveAsync(userId.Value, id, ct);
+
+        return result.Status == HouseholdAccessStatus.Ok
+            ? Ok(new LeaveHouseholdResponse(true))
+            : MapAccessFailure(result.Status);
+    }
+
+    /// <summary>
+    /// Collapses "no such household" and "not your household" into the same 404.
+    /// </summary>
+    /// <remarks>
+    /// Deliberate: a 403 for a household that exists and a 404 for one that does not would let
+    /// anyone enumerate household ids by watching which status comes back. Same reasoning as the
+    /// single generic login failure in <see cref="AuthController"/>.
+    /// </remarks>
+    private ActionResult MapAccessFailure(HouseholdAccessStatus status) => status switch
+    {
+        HouseholdAccessStatus.HouseholdNotFound or HouseholdAccessStatus.NotAMember =>
+            NotFound(new { error = "Household not found." }),
+
+        HouseholdAccessStatus.Conflict =>
+            Conflict(new { error = "The household changed while processing. Please try again." }),
+
+        _ => Unauthorized()
+    };
 }

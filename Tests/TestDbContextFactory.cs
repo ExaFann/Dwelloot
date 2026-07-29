@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Dwelloot.Tests;
 
 /// <summary>
-/// Builds a throwaway <see cref="AppDbContext"/> backed by the EF in-memory provider.
+/// Builds throwaway <see cref="AppDbContext"/> instances backed by the EF in-memory provider.
 /// </summary>
 /// <remarks>
 /// <b>In-memory does not enforce this schema's database constraints</b> — no <c>points &gt; 0</c>,
@@ -14,11 +14,23 @@ namespace Dwelloot.Tests;
 /// </remarks>
 internal static class TestDbContextFactory
 {
-    public static AppDbContext Create()
+    /// <summary>A database name no other test will share.</summary>
+    public static string NewDatabaseName() => $"dwelloot-tests-{Guid.NewGuid()}";
+
+    /// <summary>
+    /// Opens a context. Pass a name from <see cref="NewDatabaseName"/> to open a
+    /// <b>second, independent</b> context over the same store.
+    /// </summary>
+    /// <remarks>
+    /// Reopening matters for any assertion about persistence. Querying through the context that
+    /// made a change returns the tracked entity, which reflects the change whether or not
+    /// <c>SaveChanges</c> was ever called — so a test written that way passes even when nothing
+    /// was saved. Mutation testing in task [16] found exactly that hole.
+    /// </remarks>
+    public static AppDbContext Create(string? databaseName = null)
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            // A fresh database name per context keeps tests isolated from each other.
-            .UseInMemoryDatabase($"dwelloot-tests-{Guid.NewGuid()}")
+            .UseInMemoryDatabase(databaseName ?? NewDatabaseName())
             .Options;
 
         return new AppDbContext(options);
