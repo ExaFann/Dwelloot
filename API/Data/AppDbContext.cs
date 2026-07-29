@@ -27,6 +27,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Badge> Badges => Set<Badge>();
     public DbSet<UserBadge> UserBadges => Set<UserBadge>();
     public DbSet<Competition> Competitions => Set<Competition>();
+    public DbSet<CompetitionClaim> CompetitionClaims => Set<CompetitionClaim>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
