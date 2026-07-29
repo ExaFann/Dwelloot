@@ -32,6 +32,7 @@ builder.Services.AddDbContext<AppDbContext>(options => options
 builder.Services.AddScoped<IDefaultCatalogCopier, DefaultCatalogCopier>();
 builder.Services.AddScoped<IInviteCodeGenerator, InviteCodeGenerator>();
 builder.Services.AddScoped<IHouseholdService, HouseholdService>();
+builder.Services.AddScoped<IActivityService, ActivityService>();
 
 // The signing key is a secret and, like the connection string, never appears in a committed
 // file - user secrets locally, Jwt__Key in production. Fail fast at boot rather than at first
