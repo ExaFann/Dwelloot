@@ -69,4 +69,66 @@ public class ActivityLogsController(IActivityLogService logs) : ControllerBase
             _ => Unauthorized()
         };
     }
+
+    [HttpPatch("{id:int}/approve")]
+    public async Task<ActionResult<ActivityLogDecisionResponse>> Approve(int id, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await logs.ApproveAsync(userId.Value, id, ct);
+
+        return result.Status == ActivityLogStatusCode.Ok
+            ? Ok(result.Log)
+            : MapDecisionFailure(result.Status);
+    }
+
+    [HttpPatch("{id:int}/reject")]
+    public async Task<ActionResult<ActivityLogDecisionResponse>> Reject(
+        int id,
+        RejectActivityLogRequest request,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await logs.RejectAsync(userId.Value, id, request.Reason, ct);
+
+        return result.Status == ActivityLogStatusCode.Ok
+            ? Ok(result.Log)
+            : MapDecisionFailure(result.Status);
+    }
+
+    /// <remarks>
+    /// The asymmetry is deliberate. Another household's log is a 404 so ids cannot be enumerated;
+    /// the caller's own log is a <b>403</b>, because they created it and know perfectly well that
+    /// it exists — a 404 there would confuse rather than protect.
+    /// </remarks>
+    private ActionResult MapDecisionFailure(ActivityLogStatusCode status) => status switch
+    {
+        ActivityLogStatusCode.NoHousehold =>
+            Conflict(new { error = "You are not in a household yet." }),
+
+        ActivityLogStatusCode.LogNotFound =>
+            NotFound(new { error = "Log not found." }),
+
+        ActivityLogStatusCode.SelfApproval =>
+            StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { error = "You cannot approve or reject a chore you logged yourself." }),
+
+        ActivityLogStatusCode.NotPending =>
+            Conflict(new { error = "This log has already been decided." }),
+
+        ActivityLogStatusCode.Conflict =>
+            Conflict(new { error = "This log was decided just now. Refresh and try again." }),
+
+        _ => Unauthorized()
+    };
 }

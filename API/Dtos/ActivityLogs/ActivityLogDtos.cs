@@ -39,6 +39,20 @@ public record PendingLogResponse(
     ActivityLogStatus Status,
     DateTime CompletedAt);
 
+public record RejectActivityLogRequest(
+    [Required, StringLength(ActivityLog.RejectReasonMaxLength, MinimumLength = 1)]
+    string Reason);
+
+/// <summary>
+/// Shape of both <c>PATCH .../approve</c> and <c>PATCH .../reject</c>.
+/// </summary>
+/// <remarks>
+/// <c>api-design.md</c> shows reject returning only <c>{ id, status }</c>. One record with a
+/// nullable <c>ApprovedAt</c> is used instead of two types differing by a single field, so reject
+/// returns <c>"approvedAt": null</c> and a client parses one shape for both outcomes.
+/// </remarks>
+public record ActivityLogDecisionResponse(int Id, ActivityLogStatus Status, DateTime? ApprovedAt);
+
 /// <summary>Query options for the approval queue.</summary>
 public record ActivityLogQuery
 {

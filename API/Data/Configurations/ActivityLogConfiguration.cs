@@ -10,11 +10,17 @@ public class ActivityLogConfiguration : IEntityTypeConfiguration<ActivityLog>
     {
         builder.HasKey(l => l.Id);
 
+        // A concurrency token, which costs no schema change - it only adds status to the WHERE
+        // clause of UPDATEs. That closes the double-click window on approval: checking
+        // Status == Pending and then writing leaves room for two concurrent requests to both see
+        // Pending and both award points. With the token, the second UPDATE matches no row and
+        // task [21] returns a conflict instead of awarding twice.
         builder.Property(l => l.Status)
             .IsRequired()
             .HasConversion<string>()
             .HasMaxLength(20)
-            .HasDefaultValue(ActivityLogStatus.Pending);
+            .HasDefaultValue(ActivityLogStatus.Pending)
+            .IsConcurrencyToken();
 
         builder.Property(l => l.CompletedAt)
             .IsRequired();
