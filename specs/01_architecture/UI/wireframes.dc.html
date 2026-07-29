@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f0eee9;font-family:Archivo,system-ui,sans-serif}
+a{color:#2a6fb8}a:hover{color:#1a4d82}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 Archivo,system-ui,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 Archivo,system-ui,sans-serif;color:rgba(0,0,0,.55)}
+.dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:22px 0 0;font:12px/1.5 Archivo,system-ui,sans-serif;color:rgba(0,0,0,.5)}
+.pad{padding:22px 24px 26px;display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+.scr{display:flex;flex-direction:column;gap:7px}
+.cap{font:700 13px Caveat,cursive;color:#1a1a1a;letter-spacing:.2px}
+.capn{font:500 12px Caveat,cursive;color:rgba(0,0,0,.5)}
+.wf{width:288px;height:566px;background:#fff;border:1.5px solid #1a1a1a;border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.wf.tall{height:650px}
+.wf.tab{width:420px;height:560px;border-radius:12px}
+.wf.desk{width:700px;height:470px;border-radius:8px;flex-direction:row}
+.wf.wide{width:660px;height:430px;border-radius:10px;flex-direction:row}
+.wf-top{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 10px;border-bottom:1.5px solid #1a1a1a}
+.wf-t{font:600 12px Archivo;letter-spacing:.02em}
+.wf-body{flex:1;min-height:0;padding:12px 14px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.wf-nav{display:flex;border-top:1.5px solid #1a1a1a}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 9px;font:500 8px Archivo;color:rgba(0,0,0,.45);position:relative}
+.ni i{width:15px;height:15px;border:1.4px solid rgba(0,0,0,.4);border-radius:4px;display:block}
+.ni.on{color:#1a1a1a}.ni.on i{border-color:#1a1a1a;background:#e8e6e1}
+.dot{position:absolute;top:5px;right:50%;margin-right:-14px;width:12px;height:12px;border-radius:50%;background:#2a78d6;color:#fff;font:600 7px Archivo;display:flex;align-items:center;justify-content:center}
+.bx{background:repeating-linear-gradient(135deg,#f2f1ee 0 5px,#e7e5e0 5px 10px);border:1px dashed #a8a5a0;border-radius:5px;display:flex;align-items:center;justify-content:center;font:500 8.5px ui-monospace,Menlo,monospace;color:rgba(0,0,0,.45);text-align:center}
+.pn{border:1.4px solid #1a1a1a;border-radius:7px;padding:10px 11px;display:flex;flex-direction:column;gap:8px}
+.pn.soft{border-color:rgba(0,0,0,.28)}
+.h{font:600 9.5px Archivo;letter-spacing:.06em;text-transform:uppercase;color:rgba(0,0,0,.55)}
+.ln{height:7px;border-radius:4px;background:#e2e0dc}
+.row{display:flex;align-items:center;gap:8px}
+.sb{flex:1;height:9px;border-radius:5px;background:#e6e4e0;overflow:hidden}
+.sb>span{display:block;height:100%;background:#2a78d6}
+.btn{border:1.5px solid #1a1a1a;border-radius:7px;padding:9px 12px;text-align:center;font:600 10.5px Archivo;background:#1a1a1a;color:#fff}
+.btn.g{background:#fff;color:#1a1a1a}
+.btn.sm{padding:5px 9px;font-size:9px;border-radius:5px;border-width:1.2px}
+.btn.dis{border-color:rgba(0,0,0,.2);background:#f4f3f1;color:rgba(0,0,0,.3)}
+.chip{border:1.2px solid rgba(0,0,0,.35);border-radius:20px;padding:4px 9px;font:500 9px Archivo;color:rgba(0,0,0,.6)}
+.chip.on{border-color:#1a1a1a;color:#1a1a1a;background:#e8e6e1}
+.av{width:20px;height:20px;border-radius:50%;background:#e2e0dc;border:1.2px solid rgba(0,0,0,.3);flex:none}
+.bdg{width:30px;height:30px;border-radius:50%;border:1.3px solid rgba(0,0,0,.35);background:#f2f1ee}
+.bdg.lk{border-style:dashed;opacity:.5}
+.side{width:150px;border-right:1.5px solid #1a1a1a;padding:14px 12px;display:flex;flex-direction:column;gap:9px}
+.si{font:500 10px Archivo;color:rgba(0,0,0,.5);display:flex;align-items:center;gap:7px}
+.si i{width:13px;height:13px;border:1.3px solid rgba(0,0,0,.35);border-radius:3px}
+.si.on{color:#1a1a1a;font-weight:600}.si.on i{border-color:#1a1a1a;background:#e8e6e1}
+.main{flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:11px;overflow:hidden}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.stat{border:1.3px solid rgba(0,0,0,.28);border-radius:6px;padding:8px 9px;display:flex;flex-direction:column;gap:6px}
+.big{font:700 15px Archivo}
+.tiny{font:500 8px ui-monospace,Menlo,monospace;color:rgba(0,0,0,.45);letter-spacing:.04em;text-transform:uppercase}
+</style></helmet>
+
+<section class="dv-turn" id="t3">
+<div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">v3 — Dwelloot: 6 screens × 3 breakpoints, Chores / Coins / loot box / Notices</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="3a">
+<div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Mobile ~375px — all six screens, bottom nav Home / Log / Notices / Store / Me</div>
+<div class="dv-card">
+<div class="pad">
+
+<div class="scr">
+<div class="cap">0. Onboarding</div>
+<div class="wf tall">
+<div class="wf-top"><span class="wf-t">Dwelloot</span><span class="tiny">375 × 812</span></div>
+<div class="wf-body">
+<div class="bx" style="height:50px">logo / one-line pitch</div>
+<div class="pn"><span class="h">Register or log in</span><div class="bx" style="height:22px">email</div><div class="bx" style="height:22px">password</div><div class="btn">Continue</div><span class="tiny">switch: log in ↔ register</span></div>
+<div class="pn"><span class="h">Create a household</span><div class="bx" style="height:22px">household name</div><div class="btn g">Create</div><span class="tiny">generates a one-time invite code</span></div>
+<div class="row"><div class="ln" style="flex:1;height:1px"></div><span class="tiny">or</span><div class="ln" style="flex:1;height:1px"></div></div>
+<div class="pn"><span class="h">Join a household</span><div class="bx" style="height:22px">partner's invite code</div><div class="btn g">Join</div></div>
+<div class="pn soft"><span class="h">Waiting for your partner</span><div class="row"><div class="av"></div><div class="bx" style="width:20px;height:20px;border-radius:50%">?</div><div class="bx" style="flex:1;height:20px">7K4-Q2P · copy</div></div><span class="tiny">→ Dashboard once they join</span></div>
+<div class="pn soft" style="border-style:dashed"><span class="tiny">A household is capped at exactly 2 people — “already full (2 of 2)”</span></div>
+</div>
+</div>
+<div class="capn">register/login → create or join → waiting → Dashboard</div>
+</div>
+
+<div class="scr">
+<div class="cap">1. Dashboard (Home)</div>
+<div class="wf tall">
+<div class="wf-top"><span class="wf-t">Dwelloot</span><div class="row"><div class="bx" style="width:40px;height:16px">theme</div><div class="av"></div></div></div>
+<div class="wf-body">
+<div class="pn" style="border-color:#b4791c">
+<div class="row" style="justify-content:space-between"><span class="h" style="color:#8a5a0f">Loot box ready</span><span class="tiny">yesterday closed</span></div>
+<div class="row"><div class="bx" style="width:40px;height:34px">box</div><div class="tiny" style="flex:1">You won the day 34–28</div><div class="btn sm">Reveal</div></div>
+</div>
+<div class="pn">
+<div class="row" style="justify-content:space-between"><span class="h">Today's duel</span><div class="row"><span class="chip on">Day</span><span class="chip">Week</span><span class="chip">Month</span></div></div>
+<div class="row" style="align-items:flex-end"><div style="flex:1;text-align:center"><div class="av" style="margin:0 auto"></div><div class="tiny">you</div><div class="big">34</div></div><div class="tiny" style="padding-bottom:14px">vs</div><div style="flex:1;text-align:center"><div class="av" style="margin:0 auto"></div><div class="tiny">partner</div><div class="big">28</div></div></div>
+<div style="height:14px;border:1.4px solid #1a1a1a;border-radius:8px;overflow:hidden;display:flex"><span style="width:55%;background:#b4791c"></span><span style="flex:1;background:#e2e0dc"></span></div>
+<span class="tiny">tug widget — a duel, not a leaderboard · settles at midnight</span>
+</div>
+<div class="row"><div class="pn soft" style="flex:1;padding:8px 9px"><span class="tiny">Win streak</span><span class="big">3 🔥</span></div><div class="pn soft" style="flex:1;padding:8px 9px"><span class="tiny">Coins</span><span class="big">120</span></div></div>
+<div class="btn">Log a chore</div>
+<div class="pn soft"><span class="h">Common chores · one tap</span><div class="row" style="flex-wrap:wrap"><span class="chip">Dishes +5</span><span class="chip">Bins +3</span><span class="chip">Vacuum +8</span><span class="chip">Laundry +6</span><span class="chip">Cook +8</span></div></div>
+<div class="pn soft" style="flex:1"><span class="h">Recent activity</span>
+<div class="row"><div class="av"></div><div style="flex:1"><div class="ln" style="width:76%"></div><div class="ln" style="width:42%;margin-top:5px;height:5px"></div></div><span class="tiny">+5</span></div>
+<div class="row"><div class="av"></div><div style="flex:1"><div class="ln" style="width:60%"></div><div class="ln" style="width:36%;margin-top:5px;height:5px"></div></div><span class="tiny">pend</span></div>
+<div class="row"><div class="av"></div><div style="flex:1"><div class="ln" style="width:68%"></div><div class="ln" style="width:44%;margin-top:5px;height:5px"></div></div><span class="tiny">+8</span></div>
+</div>
+</div>
+<div class="wf-nav"><div class="ni on"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni"><i></i><span class="dot">4</span>Notices</div><div class="ni"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">loot box prompt only when a period just closed</div>
+</div>
+
+<div class="scr">
+<div class="cap">2. Log activity</div>
+<div class="wf tall">
+<div class="wf-top"><span class="wf-t">← Log a chore</span><span class="tiny">chores only</span></div>
+<div class="wf-body">
+<div class="bx" style="height:26px">search chores</div>
+<div class="row"><span class="chip on">All</span><span class="chip">Defaults</span><span class="chip">Custom</span><span class="chip">sort ▾</span></div>
+<span class="h">Pick a chore</span>
+<div class="pn soft" style="gap:7px">
+<div class="row" style="justify-content:space-between"><div class="ln" style="width:50%"></div><span class="tiny">+5</span></div>
+<div class="row" style="justify-content:space-between"><div class="ln" style="width:62%"></div><span class="tiny">+3</span></div>
+<div class="row" style="justify-content:space-between"><div class="ln" style="width:44%"></div><span class="tiny">+8</span></div>
+<div class="row" style="justify-content:space-between"><div class="ln" style="width:58%"></div><span class="tiny">+6</span></div>
+<div class="row" style="justify-content:space-between"><div class="ln" style="width:52%"></div><span class="tiny">+4</span></div>
+</div>
+<div class="row" style="justify-content:center"><span class="chip">‹</span><span class="chip on">1</span><span class="chip">2</span><span class="chip">›</span></div>
+<div class="btn g">+ New custom chore</div>
+<div style="flex:1"></div>
+<div class="pn soft" style="border-style:dashed"><span class="tiny">Submits as Pending — points count only after your partner approves</span></div>
+<div class="btn">Log it</div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Home</div><div class="ni on"><i></i>Log</div><div class="ni"><i></i><span class="dot">4</span>Notices</div><div class="ni"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">no note field, no voice input</div>
+</div>
+
+<div class="scr">
+<div class="cap">3. Notices</div>
+<div class="wf tall">
+<div class="wf-top"><span class="wf-t">Notices</span><span class="tiny">4 need you</span></div>
+<div class="wf-body">
+<div class="pn">
+<div class="row" style="justify-content:space-between"><span class="h">a · Awaiting your approval</span><div class="row"><div class="bx" style="width:14px;height:14px;border-radius:3px"></div><span class="tiny">all</span></div></div>
+<div class="row"><div class="bx" style="width:14px;height:14px;border-radius:3px">✓</div><div style="flex:1"><div class="ln" style="width:70%"></div><div class="ln" style="width:38%;margin-top:5px;height:5px"></div></div><span class="tiny">+5</span><div class="btn sm g">✕</div></div>
+<div class="row"><div class="bx" style="width:14px;height:14px;border-radius:3px">✓</div><div style="flex:1"><div class="ln" style="width:56%"></div><div class="ln" style="width:44%;margin-top:5px;height:5px"></div></div><span class="tiny">+8</span><div class="btn sm g">✕</div></div>
+<div class="row"><div class="bx" style="width:14px;height:14px;border-radius:3px"></div><div style="flex:1"><div class="ln" style="width:64%"></div><div class="ln" style="width:34%;margin-top:5px;height:5px"></div></div><span class="tiny">+3</span><div class="btn sm g">✕</div></div>
+<div class="btn">Approve selected (2)</div>
+<span class="tiny">✕ reject → required reason sheet</span>
+</div>
+<div class="pn" style="border-color:#b4791c">
+<span class="h" style="color:#8a5a0f">b · Your partner just…</span>
+<div class="row"><div class="bx" style="width:22px;height:22px;border-radius:50%">🎁</div><div style="flex:1"><div class="ln" style="width:78%"></div><div class="tiny" style="margin-top:4px">redeemed “Takeaway night” · 80 coins</div></div></div>
+<div class="row"><div class="bx" style="width:22px;height:22px;border-radius:50%">🏅</div><div style="flex:1"><div class="ln" style="width:62%"></div><div class="tiny" style="margin-top:4px">unlocked “3-day win streak”</div></div></div>
+</div>
+<div class="pn soft" style="flex:1">
+<span class="h" style="font-size:8.5px">c · Approved by your partner</span>
+<div class="row"><div class="ln" style="flex:1;height:5px"></div><span class="tiny" style="font-size:7px">+6</span></div>
+<div class="row"><div class="ln" style="flex:1;height:5px;width:70%"></div><span class="tiny" style="font-size:7px">+5</span></div>
+<div class="row"><div class="ln" style="flex:1;height:5px;width:55%"></div><span class="tiny" style="font-size:7px">+3</span></div>
+<span class="tiny" style="font-size:7px">lighter, smaller — informational only</span>
+</div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni on"><i></i><span class="dot">4</span>Notices</div><div class="ni"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">three stacked sections, most → least urgent</div>
+</div>
+
+<div class="scr">
+<div class="cap">4. Store</div>
+<div class="wf tall">
+<div class="wf-top"><span class="wf-t">Store</span><span class="tiny">120 coins</span></div>
+<div class="wf-body">
+<div class="bx" style="height:26px">search rewards</div>
+<div class="row"><span class="chip on">All</span><span class="chip">Defaults</span><span class="chip">Custom</span><span class="chip">sort: cost ▾</span></div>
+<div class="g2">
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:42px">reward img</div><div class="ln" style="width:72%"></div><div class="row" style="justify-content:space-between"><span class="tiny">80 coins</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:42px">reward img</div><div class="ln" style="width:56%"></div><div class="row" style="justify-content:space-between"><span class="tiny">200 coins</span><div class="btn sm dis">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:42px">reward img</div><div class="ln" style="width:66%"></div><div class="row" style="justify-content:space-between"><span class="tiny">40 coins</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:42px">reward img</div><div class="ln" style="width:50%"></div><div class="row" style="justify-content:space-between"><span class="tiny">150 coins</span><div class="btn sm dis">Redeem</div></div></div>
+</div>
+<div class="row" style="justify-content:center"><span class="chip">‹</span><span class="chip on">1</span><span class="chip">2</span><span class="chip">3</span><span class="chip">›</span></div>
+<div class="pn soft" style="border-style:dashed"><span class="tiny">Redeem disabled when the Coins balance is insufficient</span></div>
+<div class="btn g">+ New custom reward</div>
+<div style="flex:1"></div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni"><i></i><span class="dot">4</span>Notices</div><div class="ni on"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">Coins come from winning periods / loot boxes, not from logging</div>
+</div>
+
+<div class="scr">
+<div class="cap">5. Me</div>
+<div class="wf tall">
+<div class="wf-top"><span class="wf-t">Me</span><div class="bx" style="width:46px;height:16px">theme ☾</div></div>
+<div class="wf-body">
+<div class="pn">
+<div class="row"><div class="av" style="width:34px;height:34px"></div><div style="flex:1"><div class="ln" style="width:52%"></div><div class="tiny" style="margin-top:5px">paired with partner</div></div></div>
+<div class="g3"><div class="stat"><span class="tiny">Coins</span><span class="big">120</span></div><div class="stat"><span class="tiny">Lifetime</span><span class="big">1 240</span></div><div class="stat"><span class="tiny">Streak</span><span class="big">3</span></div></div>
+</div>
+<div class="pn soft"><span class="h">Badges</span>
+<div class="g3" style="grid-template-columns:repeat(5,1fr)"><div class="bdg"></div><div class="bdg"></div><div class="bdg"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div></div>
+<span class="tiny">3 of 10 · tap for criteria</span>
+</div>
+<div class="pn soft"><span class="h">Household</span>
+<div class="row" style="justify-content:space-between"><span class="tiny">Invite code</span><div class="bx" style="width:74px;height:18px">7K4-Q2P</div></div>
+<div class="row" style="justify-content:space-between"><span class="tiny">Rename household</span><div class="btn sm g">Rename</div></div>
+<div class="row" style="justify-content:space-between"><span class="tiny">Leave household</span><div class="btn sm g">Leave</div></div>
+</div>
+<div style="flex:1"></div>
+<div class="pn soft" style="border-style:dashed"><span class="tiny">Both partners are equal — no owner role</span></div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni"><i></i><span class="dot">4</span>Notices</div><div class="ni"><i></i>Store</div><div class="ni on"><i></i>Me</div></div>
+</div>
+<div class="capn">profile stats + household settings</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="3b">
+<div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a>Tablet ~768px — two columns, bottom nav retained</div>
+<div class="dv-card">
+<div class="pad">
+
+<div class="scr">
+<div class="cap">Dashboard — tablet</div>
+<div class="wf tab">
+<div class="wf-top"><span class="wf-t">Dwelloot</span><div class="row"><div class="bx" style="width:40px;height:16px">theme</div><div class="av"></div></div></div>
+<div class="wf-body">
+<div class="pn" style="border-color:#b4791c"><div class="row"><div class="bx" style="width:38px;height:30px">box</div><div style="flex:1"><span class="h" style="color:#8a5a0f">Loot box ready</span><div class="tiny">you won the day 34–28</div></div><div class="btn sm">Reveal</div></div></div>
+<div class="g2">
+<div class="pn">
+<div class="row" style="justify-content:space-between"><span class="h">Today's duel</span><div class="row"><span class="chip on">Day</span><span class="chip">Week</span><span class="chip">Month</span></div></div>
+<div class="row" style="align-items:flex-end"><div style="flex:1;text-align:center"><div class="av" style="margin:0 auto"></div><div class="tiny">you</div><div class="big">34</div></div><div class="tiny" style="padding-bottom:14px">vs</div><div style="flex:1;text-align:center"><div class="av" style="margin:0 auto"></div><div class="tiny">partner</div><div class="big">28</div></div></div>
+<div style="height:14px;border:1.4px solid #1a1a1a;border-radius:8px;overflow:hidden;display:flex"><span style="width:55%;background:#b4791c"></span><span style="flex:1;background:#e2e0dc"></span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div class="row"><div class="pn soft" style="flex:1;padding:8px 9px"><span class="tiny">Streak</span><span class="big">3 🔥</span></div><div class="pn soft" style="flex:1;padding:8px 9px"><span class="tiny">Coins</span><span class="big">120</span></div></div>
+<div class="btn">Log a chore</div>
+<div class="pn soft"><span class="h">Common chores</span><div class="row" style="flex-wrap:wrap"><span class="chip">Dishes +5</span><span class="chip">Bins +3</span><span class="chip">Vacuum +8</span><span class="chip">Cook +8</span></div></div>
+</div>
+</div>
+<div class="pn soft" style="flex:1"><span class="h">Recent activity</span>
+<div class="g2">
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">+5</span></div>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">pend</span></div>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">+8</span></div>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">+6</span></div>
+</div>
+</div>
+</div>
+<div class="wf-nav"><div class="ni on"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni"><i></i><span class="dot">4</span>Notices</div><div class="ni"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">duel + stats side by side; feed goes 2-up</div>
+</div>
+
+<div class="scr">
+<div class="cap">Notices — tablet</div>
+<div class="wf tab">
+<div class="wf-top"><span class="wf-t">Notices</span><span class="tiny">4 need you</span></div>
+<div class="wf-body">
+<div class="pn">
+<div class="row" style="justify-content:space-between"><span class="h">a · Awaiting your approval</span><div class="row"><div class="btn sm g">Select all</div><div class="btn sm">Approve (2)</div></div></div>
+<div class="row"><div class="bx" style="width:14px;height:14px;border-radius:3px">✓</div><div style="flex:2"><div class="ln" style="width:60%"></div></div><span class="tiny" style="flex:1">2h ago</span><span class="tiny">+5</span><div class="btn sm g">✕</div></div>
+<div class="row"><div class="bx" style="width:14px;height:14px;border-radius:3px">✓</div><div style="flex:2"><div class="ln" style="width:52%"></div></div><span class="tiny" style="flex:1">4h ago</span><span class="tiny">+8</span><div class="btn sm g">✕</div></div>
+<div class="row"><div class="bx" style="width:14px;height:14px;border-radius:3px"></div><div style="flex:2"><div class="ln" style="width:66%"></div></div><span class="tiny" style="flex:1">yest.</span><span class="tiny">+3</span><div class="btn sm g">✕</div></div>
+</div>
+<div class="g2">
+<div class="pn" style="border-color:#b4791c"><span class="h" style="color:#8a5a0f">b · Your partner just…</span><div class="row"><div class="bx" style="width:20px;height:20px;border-radius:50%">🎁</div><div class="ln" style="flex:1"></div></div><div class="row"><div class="bx" style="width:20px;height:20px;border-radius:50%">🏅</div><div class="ln" style="flex:1"></div></div></div>
+<div class="pn soft"><span class="h" style="font-size:8.5px">c · Approved by your partner</span><div class="row"><div class="ln" style="flex:1;height:5px"></div><span class="tiny" style="font-size:7px">+6</span></div><div class="row"><div class="ln" style="flex:1;height:5px;width:66%"></div><span class="tiny" style="font-size:7px">+5</span></div></div>
+</div>
+<div style="flex:1"></div>
+<div class="pn soft" style="border-style:dashed"><span class="tiny">Reject sheet: required reason, then Send</span></div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni on"><i></i><span class="dot">4</span>Notices</div><div class="ni"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">rows widen; sections b and c pair up</div>
+</div>
+
+<div class="scr">
+<div class="cap">Store — tablet</div>
+<div class="wf tab">
+<div class="wf-top"><span class="wf-t">Store</span><span class="tiny">120 coins</span></div>
+<div class="wf-body">
+<div class="row"><div class="bx" style="flex:1;height:24px">search rewards</div><span class="chip on">All</span><span class="chip">Defaults</span><span class="chip">Custom</span><span class="chip">sort ▾</span></div>
+<div class="g3">
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:42px">img</div><div class="ln" style="width:70%"></div><div class="row" style="justify-content:space-between"><span class="tiny">80</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:42px">img</div><div class="ln" style="width:58%"></div><div class="row" style="justify-content:space-between"><span class="tiny">200</span><div class="btn sm dis">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:42px">img</div><div class="ln" style="width:64%"></div><div class="row" style="justify-content:space-between"><span class="tiny">40</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:42px">img</div><div class="ln" style="width:52%"></div><div class="row" style="justify-content:space-between"><span class="tiny">150</span><div class="btn sm dis">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:42px">img</div><div class="ln" style="width:66%"></div><div class="row" style="justify-content:space-between"><span class="tiny">30</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:42px">img</div><div class="ln" style="width:60%"></div><div class="row" style="justify-content:space-between"><span class="tiny">60</span><div class="btn sm">Redeem</div></div></div>
+</div>
+<div class="row" style="justify-content:flex-end"><span class="chip">‹</span><span class="chip on">1</span><span class="chip">2</span><span class="chip">›</span></div>
+<div style="flex:1"></div>
+<div class="btn g">+ New custom reward</div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni"><i></i><span class="dot">4</span>Notices</div><div class="ni on"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">catalog 3-up, filters move onto one row</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="3c">
+<div class="dv-olabel"><a class="dv-oid" href="#3c">3c</a>Desktop ~1280px — side nav replaces the bottom bar</div>
+<div class="dv-card">
+<div class="pad">
+
+<div class="scr">
+<div class="cap">Dashboard — desktop</div>
+<div class="wf desk">
+<div class="side">
+<div class="row" style="gap:7px"><div class="av"></div><div class="ln" style="width:66px"></div></div>
+<div style="height:6px"></div>
+<div class="si on"><i></i>Home</div><div class="si"><i></i>Log</div><div class="si"><i></i>Notices · 4</div><div class="si"><i></i>Store</div><div class="si"><i></i>Me</div>
+<div style="flex:1"></div>
+<div class="si"><i></i>Theme ☾</div>
+</div>
+<div class="main">
+<div class="row" style="justify-content:space-between"><div class="row"><span class="chip on">Day</span><span class="chip">Week</span><span class="chip">Month</span></div><div class="row"><span class="tiny">120 coins · streak 3</span><div class="btn sm">Log a chore</div></div></div>
+<div class="row" style="align-items:stretch;gap:11px">
+<div class="pn" style="flex:2">
+<span class="h">Today's duel</span>
+<div class="row" style="align-items:flex-end"><div style="flex:1;text-align:center"><div class="av" style="width:28px;height:28px;margin:0 auto"></div><div class="tiny">you</div><div class="big" style="font-size:20px">34</div></div><div class="tiny" style="padding-bottom:16px">vs</div><div style="flex:1;text-align:center"><div class="av" style="width:28px;height:28px;margin:0 auto"></div><div class="tiny">partner</div><div class="big" style="font-size:20px">28</div></div></div>
+<div style="height:18px;border:1.4px solid #1a1a1a;border-radius:10px;overflow:hidden;display:flex"><span style="width:55%;background:#b4791c"></span><span style="flex:1;background:#e2e0dc"></span></div>
+<span class="tiny">leading by 6 · settles at midnight</span>
+</div>
+<div class="pn" style="flex:1;border-color:#b4791c"><span class="h" style="color:#8a5a0f">Loot box ready</span><div class="bx" style="flex:1;min-height:54px">closed box</div><div class="btn sm">Reveal</div></div>
+</div>
+<div class="pn soft"><span class="h">Common chores · one tap</span><div class="row" style="flex-wrap:wrap"><span class="chip">Dishes +5</span><span class="chip">Bins +3</span><span class="chip">Vacuum +8</span><span class="chip">Laundry +6</span><span class="chip">Cook +8</span><span class="chip">Tidy +4</span><span class="chip">Groceries +7</span></div></div>
+<div class="g2" style="flex:1">
+<div class="pn soft"><span class="h">Recent activity</span>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">+5</span></div>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">pend</span></div>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">+8</span></div>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">+6</span></div>
+</div>
+<div class="pn soft"><span class="h">Badges</span><div class="row"><div class="bdg"></div><div class="bdg"></div><div class="bdg"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div></div><span class="tiny">next: 5-day win streak</span></div>
+</div>
+</div>
+</div>
+<div class="capn">duel stays the hero; loot box sits beside it</div>
+</div>
+
+<div class="scr">
+<div class="cap">Notices — desktop</div>
+<div class="wf desk">
+<div class="side">
+<div class="row" style="gap:7px"><div class="av"></div><div class="ln" style="width:66px"></div></div>
+<div style="height:6px"></div>
+<div class="si"><i></i>Home</div><div class="si"><i></i>Log</div><div class="si on"><i></i>Notices · 4</div><div class="si"><i></i>Store</div><div class="si"><i></i>Me</div>
+</div>
+<div class="main">
+<div class="row" style="justify-content:space-between"><span class="h">a · Awaiting your approval · 4</span><div class="row"><div class="btn sm g">Select all</div><div class="btn sm">Approve selected (2)</div></div></div>
+<div class="pn soft" style="gap:0;padding:0">
+<div class="row" style="padding:7px 10px;border-bottom:1.2px solid rgba(0,0,0,.15)"><span class="tiny" style="width:20px"></span><span class="tiny" style="flex:2">Chore</span><span class="tiny" style="flex:1">Logged</span><span class="tiny" style="width:56px">Points</span><span class="tiny" style="width:56px">Reject</span></div>
+<div class="row" style="padding:8px 10px;border-bottom:1px solid rgba(0,0,0,.08)"><div class="bx" style="width:14px;height:14px;border-radius:3px">✓</div><div style="flex:2"><div class="ln" style="width:62%"></div></div><span class="tiny" style="flex:1">2h ago</span><span class="tiny" style="width:56px">+5</span><div class="btn sm g" style="width:42px">✕</div></div>
+<div class="row" style="padding:8px 10px;border-bottom:1px solid rgba(0,0,0,.08)"><div class="bx" style="width:14px;height:14px;border-radius:3px">✓</div><div style="flex:2"><div class="ln" style="width:50%"></div></div><span class="tiny" style="flex:1">4h ago</span><span class="tiny" style="width:56px">+8</span><div class="btn sm g" style="width:42px">✕</div></div>
+<div class="row" style="padding:8px 10px;border-bottom:1px solid rgba(0,0,0,.08)"><div class="bx" style="width:14px;height:14px;border-radius:3px"></div><div style="flex:2"><div class="ln" style="width:58%"></div></div><span class="tiny" style="flex:1">yesterday</span><span class="tiny" style="width:56px">+3</span><div class="btn sm g" style="width:42px">✕</div></div>
+<div class="row" style="padding:8px 10px"><div class="bx" style="width:14px;height:14px;border-radius:3px"></div><div style="flex:2"><div class="ln" style="width:44%"></div></div><span class="tiny" style="flex:1">yesterday</span><span class="tiny" style="width:56px">+6</span><div class="btn sm g" style="width:42px">✕</div></div>
+</div>
+<div class="g2">
+<div class="pn" style="border-color:#b4791c"><span class="h" style="color:#8a5a0f">b · Your partner just…</span><div class="row"><div class="bx" style="width:20px;height:20px;border-radius:50%">🎁</div><div style="flex:1"><div class="ln" style="width:70%"></div><div class="tiny" style="margin-top:4px">redeemed “Takeaway night” · 80 coins</div></div></div><div class="row"><div class="bx" style="width:20px;height:20px;border-radius:50%">🏅</div><div style="flex:1"><div class="ln" style="width:56%"></div><div class="tiny" style="margin-top:4px">unlocked “3-day win streak”</div></div></div></div>
+<div class="pn soft"><span class="h" style="font-size:8.5px">c · Approved by your partner</span><div class="row"><div class="ln" style="flex:1;height:5px"></div><span class="tiny" style="font-size:7px">+6</span></div><div class="row"><div class="ln" style="flex:1;height:5px;width:70%"></div><span class="tiny" style="font-size:7px">+5</span></div><div class="row"><div class="ln" style="flex:1;height:5px;width:56%"></div><span class="tiny" style="font-size:7px">+3</span></div></div>
+</div>
+<div style="flex:1"></div>
+</div>
+</div>
+<div class="capn">bulk approve as a table; b and c stay secondary</div>
+</div>
+
+<div class="scr">
+<div class="cap">Store — desktop</div>
+<div class="wf desk">
+<div class="side">
+<div class="row" style="gap:7px"><div class="av"></div><div class="ln" style="width:66px"></div></div>
+<div style="height:6px"></div>
+<div class="si"><i></i>Home</div><div class="si"><i></i>Log</div><div class="si"><i></i>Notices · 4</div><div class="si on"><i></i>Store</div><div class="si"><i></i>Me</div>
+<div style="height:8px"></div>
+<span class="h">Filters</span>
+<div class="bx" style="height:22px">search</div><div class="chip">Defaults / Custom</div><div class="chip">sort: cost ▾</div><div class="chip">affordable only</div>
+</div>
+<div class="main">
+<div class="row" style="justify-content:space-between"><span class="h">Reward store</span><span class="tiny">balance 120 coins</span></div>
+<div class="g3">
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:48px">img</div><div class="ln" style="width:70%"></div><div class="row" style="justify-content:space-between"><span class="tiny">80 coins</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:48px">img</div><div class="ln" style="width:56%"></div><div class="row" style="justify-content:space-between"><span class="tiny">200 coins</span><div class="btn sm dis">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:48px">img</div><div class="ln" style="width:64%"></div><div class="row" style="justify-content:space-between"><span class="tiny">40 coins</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:48px">img</div><div class="ln" style="width:52%"></div><div class="row" style="justify-content:space-between"><span class="tiny">150 coins</span><div class="btn sm dis">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:48px">img</div><div class="ln" style="width:66%"></div><div class="row" style="justify-content:space-between"><span class="tiny">30 coins</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:48px">img</div><div class="ln" style="width:60%"></div><div class="row" style="justify-content:space-between"><span class="tiny">60 coins</span><div class="btn sm">Redeem</div></div></div>
+</div>
+<div class="row" style="justify-content:flex-end"><span class="chip">‹</span><span class="chip on">1</span><span class="chip">2</span><span class="chip">3</span><span class="chip">›</span></div>
+<div style="flex:1"></div>
+<div class="capn">confirm sheet: “Spend 80 of 120 coins?”</div>
+</div>
+</div>
+<div class="capn">filters move into the side rail</div>
+</div>
+
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">The clickable hi-fi version lives in <strong>Dwelloot Prototype.dc.html</strong> · try next: "add the tablet/desktop Onboarding + Me frames" · "wireframe the loot-box reveal states"</p>
+</section>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">v2 (superseded by <a class="dv-oid" href="#t3">3</a>) — 2-person head-to-head, Points vs Coins</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>The five v2 screens — bottom nav Home / Log / Approve / Store / Me</div>
+<div class="dv-card">
+<div class="pad">
+
+<div class="scr">
+<div class="cap">1. Dashboard — head-to-head</div>
+<div class="wf tall">
+<div class="wf-top"><span class="wf-t">Dwellpact</span><div class="row"><div class="bx" style="width:44px;height:16px">theme</div><div class="av"></div></div></div>
+<div class="wf-body">
+<div class="pn">
+<div class="row" style="justify-content:space-between"><span class="h">Today</span><div class="row"><span class="chip on">Day</span><span class="chip">Week</span><span class="chip">Month</span></div></div>
+<div class="row" style="align-items:flex-end"><div style="flex:1;text-align:center"><div class="av" style="margin:0 auto"></div><div class="tiny" style="margin-top:4px">you</div><div class="big">34</div></div><div class="tiny" style="padding-bottom:14px">vs</div><div style="flex:1;text-align:center"><div class="av" style="margin:0 auto"></div><div class="tiny" style="margin-top:4px">partner</div><div class="big">28</div></div></div>
+<div style="height:14px;border:1.4px solid #1a1a1a;border-radius:8px;overflow:hidden;display:flex"><span style="width:55%;background:#2a78d6"></span><span style="flex:1;background:#e2e0dc"></span></div>
+<span class="tiny">tug bar — share of period Points · leading by 6 · settles at midnight</span>
+</div>
+<div class="row"><div class="pn soft" style="flex:1;padding:8px 9px"><span class="tiny">Win streak</span><span class="big">3 🔥</span></div><div class="pn soft" style="flex:1;padding:8px 9px"><span class="tiny">Coins</span><span class="big">120</span></div></div>
+<div class="btn">+ Log activity</div>
+<div class="pn soft"><span class="h">One-tap chores</span><div class="row" style="flex-wrap:wrap"><span class="chip">Dishes +5</span><span class="chip">Bins +3</span><span class="chip">Vacuum +8</span><span class="chip">Laundry +6</span><span class="chip">Cook +8</span></div></div>
+<div class="pn soft" style="flex:1">
+<span class="h">Recent activity</span>
+<div class="row"><div class="av"></div><div style="flex:1"><div class="ln" style="width:78%"></div><div class="ln" style="width:42%;margin-top:5px;height:5px"></div></div><span class="tiny">+5 pts</span></div>
+<div class="row"><div class="av"></div><div style="flex:1"><div class="ln" style="width:60%"></div><div class="ln" style="width:38%;margin-top:5px;height:5px"></div></div><span class="tiny">pending</span></div>
+<div class="row"><div class="av"></div><div style="flex:1"><div class="ln" style="width:70%"></div><div class="ln" style="width:46%;margin-top:5px;height:5px"></div></div><span class="tiny">+8 pts</span></div>
+</div>
+</div>
+<div class="wf-nav"><div class="ni on"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni"><i></i><span class="dot">4</span>Approve</div><div class="ni"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">GET /auth/me · /competitions/current · /activities · /activity-logs/mine</div>
+</div>
+
+<div class="scr">
+<div class="cap">2. Log activity</div>
+<div class="wf tall">
+<div class="wf-top"><span class="wf-t">← Log activity</span><span class="tiny">chores only (v1)</span></div>
+<div class="wf-body">
+<div class="bx" style="height:26px">search activities</div>
+<div class="row"><span class="chip on">All</span><span class="chip">Defaults</span><span class="chip">Ours</span><span class="chip">sort: points ▾</span></div>
+<span class="h">Pick one</span>
+<div class="pn soft" style="gap:7px">
+<div class="row" style="justify-content:space-between"><div class="ln" style="width:50%"></div><span class="tiny">+5 pts</span></div>
+<div class="row" style="justify-content:space-between"><div class="ln" style="width:62%"></div><span class="tiny">+3 pts</span></div>
+<div class="row" style="justify-content:space-between"><div class="ln" style="width:44%"></div><span class="tiny">+8 pts</span></div>
+<div class="row" style="justify-content:space-between"><div class="ln" style="width:58%"></div><span class="tiny">+6 pts</span></div>
+<div class="row" style="justify-content:space-between"><div class="ln" style="width:52%"></div><span class="tiny">+4 pts</span></div>
+</div>
+<div class="row" style="justify-content:center"><span class="chip">‹</span><span class="chip on">1</span><span class="chip">2</span><span class="chip">›</span></div>
+<div class="pn soft" style="border-style:dashed"><span class="tiny">No note field, no voice input — cut deliberately in v2</span></div>
+<div class="btn g">+ New custom chore</div>
+<div style="flex:1"></div>
+<div class="pn soft" style="border-style:dashed"><span class="tiny">Submits as PENDING — Points count only after your partner approves</span></div>
+<div class="btn">Log it</div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Home</div><div class="ni on"><i></i>Log</div><div class="ni"><i></i><span class="dot">4</span>Approve</div><div class="ni"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">GET /activities · POST /activity-logs · POST /activities</div>
+</div>
+
+<div class="scr">
+<div class="cap">3. Approve — notifications tab</div>
+<div class="wf tall">
+<div class="wf-top"><span class="wf-t">Notifications</span><span class="tiny">4 need you</span></div>
+<div class="wf-body">
+<div class="pn">
+<div class="row" style="justify-content:space-between"><span class="h">Waiting on you</span><div class="row"><div class="bx" style="width:14px;height:14px;border-radius:3px"></div><span class="tiny">select all</span></div></div>
+<div class="row"><div class="bx" style="width:14px;height:14px;border-radius:3px">✓</div><div style="flex:1"><div class="ln" style="width:72%"></div><div class="ln" style="width:40%;margin-top:5px;height:5px"></div></div><span class="tiny">+5</span><div class="btn sm g">✕</div></div>
+<div class="row"><div class="bx" style="width:14px;height:14px;border-radius:3px">✓</div><div style="flex:1"><div class="ln" style="width:58%"></div><div class="ln" style="width:44%;margin-top:5px;height:5px"></div></div><span class="tiny">+8</span><div class="btn sm g">✕</div></div>
+<div class="row"><div class="bx" style="width:14px;height:14px;border-radius:3px"></div><div style="flex:1"><div class="ln" style="width:64%"></div><div class="ln" style="width:36%;margin-top:5px;height:5px"></div></div><span class="tiny">+3</span><div class="btn sm g">✕</div></div>
+<div class="btn">Approve selected (2)</div>
+<span class="tiny">✕ = reject → asks for a required reason</span>
+</div>
+<div class="pn" style="border-color:#2a78d6">
+<span class="h" style="color:#2a78d6">Your partner just…</span>
+<div class="row"><div class="bx" style="width:22px;height:22px;border-radius:50%">🎁</div><div style="flex:1"><div class="ln" style="width:80%"></div><div class="tiny" style="margin-top:4px">redeemed “Takeaway night” · 80 coins</div></div></div>
+<div class="row"><div class="bx" style="width:22px;height:22px;border-radius:50%">🏅</div><div style="flex:1"><div class="ln" style="width:66%"></div><div class="tiny" style="margin-top:4px">unlocked “3-day win streak”</div></div></div>
+</div>
+<div class="pn soft" style="flex:1">
+<span class="h" style="font-size:8.5px">Approved by your partner</span>
+<div class="row"><div class="ln" style="flex:1;height:5px"></div><span class="tiny" style="font-size:7px">+6</span></div>
+<div class="row"><div class="ln" style="flex:1;height:5px;width:70%"></div><span class="tiny" style="font-size:7px">+5</span></div>
+<div class="row"><div class="ln" style="flex:1;height:5px;width:55%"></div><span class="tiny" style="font-size:7px">+3</span></div>
+</div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni on"><i></i><span class="dot">4</span>Approve</div><div class="ni"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">3 sections, urgent → informational · bulk-approve · never your own logs</div>
+</div>
+
+<div class="scr">
+<div class="cap">4. Store</div>
+<div class="wf tall">
+<div class="wf-top"><span class="wf-t">Store</span><span class="tiny">120 coins</span></div>
+<div class="wf-body">
+<div class="bx" style="height:26px">search rewards</div>
+<div class="row"><span class="chip on">All</span><span class="chip">Defaults</span><span class="chip">Ours</span><span class="chip">sort: cost ▾</span></div>
+<div class="g2">
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:44px">reward img</div><div class="ln" style="width:72%"></div><div class="row" style="justify-content:space-between"><span class="tiny">80 coins</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:44px">reward img</div><div class="ln" style="width:58%"></div><div class="row" style="justify-content:space-between"><span class="tiny">200 coins</span><div class="btn sm dis">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:44px">reward img</div><div class="ln" style="width:66%"></div><div class="row" style="justify-content:space-between"><span class="tiny">40 coins</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:44px">reward img</div><div class="ln" style="width:50%"></div><div class="row" style="justify-content:space-between"><span class="tiny">150 coins</span><div class="btn sm dis">Redeem</div></div></div>
+</div>
+<div class="row" style="justify-content:center"><span class="chip">‹</span><span class="chip on">1</span><span class="chip">2</span><span class="chip">3</span><span class="chip">›</span></div>
+<div class="pn soft" style="border-style:dashed"><span class="tiny">Costs are in Coins — earned only by winning a period, never by logging chores</span></div>
+<div class="btn g">+ New custom reward</div>
+<div style="flex:1"></div>
+<div class="pn soft"><span class="h">Confirm sheet</span><div class="row" style="justify-content:space-between"><span class="tiny">Spend 80 of 120 coins?</span><div class="row"><div class="btn sm g">No</div><div class="btn sm">Yes</div></div></div></div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni"><i></i><span class="dot">4</span>Approve</div><div class="ni on"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">GET /rewards · POST /redemptions (server re-checks balance)</div>
+</div>
+
+<div class="scr">
+<div class="cap">5. Me</div>
+<div class="wf tall">
+<div class="wf-top"><span class="wf-t">Me</span><div class="bx" style="width:46px;height:16px">theme ☾</div></div>
+<div class="wf-body">
+<div class="pn">
+<div class="row"><div class="av" style="width:34px;height:34px"></div><div style="flex:1"><div class="ln" style="width:52%"></div><div class="tiny" style="margin-top:5px">paired with partner · since Jun</div></div></div>
+<div class="g3">
+<div class="stat"><span class="tiny">Coins</span><span class="big">120</span></div>
+<div class="stat"><span class="tiny">Lifetime pts</span><span class="big">1 240</span></div>
+<div class="stat"><span class="tiny">Win streak</span><span class="big">3</span></div>
+</div>
+<span class="tiny">longest win streak 7 · 12 wins / 3 ties / 9 losses</span>
+</div>
+<div class="pn soft">
+<span class="h">Badges</span>
+<div class="g3" style="grid-template-columns:repeat(5,1fr)"><div class="bdg"></div><div class="bdg"></div><div class="bdg"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div></div>
+<span class="tiny">3 of 10 unlocked · tap for criteria</span>
+</div>
+<div class="pn soft">
+<span class="h">Household</span>
+<div class="row" style="justify-content:space-between"><span class="tiny">Invite code</span><div class="bx" style="width:74px;height:18px">7K4-Q2P</div></div>
+<div class="row" style="justify-content:space-between"><span class="tiny">Household name</span><div class="btn sm g">Rename</div></div>
+<div class="row" style="justify-content:space-between"><span class="tiny">Leave household</span><div class="btn sm g">Leave</div></div>
+<span class="tiny">both partners are equal — no owner, no admin</span>
+</div>
+<div style="flex:1"></div>
+<div class="pn soft" style="border-style:dashed"><span class="tiny">No leaderboard section — the Dashboard duel already covers it with 2 people</span></div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni"><i></i><span class="dot">4</span>Approve</div><div class="ni"><i></i>Store</div><div class="ni on"><i></i>Me</div></div>
+</div>
+<div class="capn">GET /auth/me · /badges · household settings</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="2b">
+<div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>The moments <span class="capn">v2 adds</span> — onboarding, period settlement, the box, win-win &amp; loss</div>
+<div class="dv-card">
+<div class="pad">
+
+<div class="scr">
+<div class="cap">Create or join (household caps at 2)</div>
+<div class="wf">
+<div class="wf-top"><span class="wf-t">Dwellpact</span></div>
+<div class="wf-body">
+<div class="bx" style="height:56px">logo / one-line pitch</div>
+<div class="pn"><span class="h">Start a household</span><div class="bx" style="height:24px">household name</div><div class="btn">Create &amp; get invite code</div></div>
+<div class="row"><div class="ln" style="flex:1;height:1px"></div><span class="tiny">or</span><div class="ln" style="flex:1;height:1px"></div></div>
+<div class="pn"><span class="h">Join your partner</span><div class="bx" style="height:24px">invite code</div><div class="btn g">Join</div></div>
+<div class="pn soft" style="border-style:dashed"><span class="tiny">Error state: “This household is already full (2 of 2).”</span></div>
+<div style="flex:1"></div>
+<div class="pn soft"><span class="h">Waiting room</span><div class="row"><div class="av"></div><div class="bx" style="width:20px;height:20px;border-radius:50%">?</div><div class="ln" style="flex:1"></div></div><span class="tiny">code 7K4-Q2P · competition starts when they join</span></div>
+</div>
+</div>
+<div class="capn">POST /households · POST /households/join</div>
+</div>
+
+<div class="scr">
+<div class="cap">Period closed → you won</div>
+<div class="wf">
+<div class="wf-top"><span class="wf-t">Yesterday settled</span><span class="tiny">daily</span></div>
+<div class="wf-body">
+<div class="pn" style="border-color:#2a78d6">
+<span class="h" style="color:#2a78d6">You won the day</span>
+<div class="row" style="align-items:flex-end"><div style="flex:1;text-align:center"><div class="av" style="margin:0 auto"></div><div class="big">34</div></div><div class="tiny" style="padding-bottom:12px">vs</div><div style="flex:1;text-align:center"><div class="av" style="margin:0 auto"></div><div class="big">28</div></div></div>
+<div class="bx" style="height:88px;border-radius:8px">closed box — tap to open<br>(randomised coins, small chance of bonus reward)</div>
+<div class="btn">Open the box</div>
+</div>
+<div class="pn soft"><span class="h">Opened</span><div class="row" style="justify-content:space-between"><span class="tiny">+35 coins</span><span class="tiny">bonus: none this time</span></div><span class="tiny">result is stored once — same on reload, idempotent</span></div>
+<div class="pn soft"><span class="h">Win streak</span><div class="row"><span class="big">4 🔥</span><span class="tiny">unlocked “3-day win streak” badge</span></div></div>
+<div style="flex:1"></div>
+<div class="pn soft" style="border-style:dashed"><span class="tiny">Weekly &amp; monthly periods settle separately, each with their own box</span></div>
+</div>
+</div>
+<div class="capn">GET /competitions/current (lazy settle) · POST /open-box</div>
+</div>
+
+<div class="scr">
+<div class="cap">Win-win (tie) &amp; loss</div>
+<div class="wf">
+<div class="wf-top"><span class="wf-t">Yesterday settled</span><span class="tiny">two variants</span></div>
+<div class="wf-body">
+<div class="pn" style="border-color:#2a78d6">
+<span class="h" style="color:#2a78d6">Win-win — you both tied</span>
+<div class="row"><div class="av"></div><span class="big">28</span><span class="tiny">=</span><span class="big">28</span><div class="av"></div></div>
+<div class="row"><div class="bx" style="flex:1;height:54px">box</div><div class="bx" style="flex:1;height:54px">box</div></div>
+<span class="tiny">both get a box · needs ≥1 approved log each, else it's not a win-win</span>
+<span class="tiny">a tie neither extends nor breaks a win streak</span>
+</div>
+<div class="pn">
+<span class="h">You lost the day</span>
+<div class="row" style="align-items:flex-end"><div style="flex:1;text-align:center"><div class="av" style="margin:0 auto"></div><div class="big">18</div></div><div class="tiny" style="padding-bottom:12px">vs</div><div style="flex:1;text-align:center"><div class="av" style="margin:0 auto"></div><div class="big">31</div></div></div>
+<span class="tiny">no coins, win streak reset to 0 — today's board is already open</span>
+<div class="btn g">Log something now</div>
+</div>
+<div style="flex:1"></div>
+<div class="pn soft" style="border-style:dashed"><span class="tiny">No “I was busy at work” exemption — by design</span></div>
+</div>
+</div>
+<div class="capn">tone stays friendly on a loss; the next period is the call to action</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="2c">
+<div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>Responsive wide shell — dashboard + notifications side by side</div>
+<div class="dv-card">
+<div class="pad">
+
+<div class="scr">
+<div class="cap">Dashboard — wide</div>
+<div class="wf wide">
+<div class="side">
+<div class="row" style="gap:7px"><div class="av"></div><div class="ln" style="width:60px"></div></div>
+<div style="height:6px"></div>
+<div class="si on"><i></i>Home</div><div class="si"><i></i>Log</div><div class="si"><i></i>Approve · 4</div><div class="si"><i></i>Store</div><div class="si"><i></i>Me</div>
+<div style="flex:1"></div>
+<div class="si"><i></i>Theme ☾</div>
+</div>
+<div class="main">
+<div class="row" style="justify-content:space-between"><div class="row"><span class="chip on">Day</span><span class="chip">Week</span><span class="chip">Month</span></div><div class="btn sm">+ Log activity</div></div>
+<div class="pn">
+<div class="row" style="align-items:flex-end"><div style="flex:1;text-align:center"><div class="av" style="margin:0 auto"></div><div class="tiny">you</div><div class="big">34</div></div><div class="tiny" style="padding-bottom:14px">vs</div><div style="flex:1;text-align:center"><div class="av" style="margin:0 auto"></div><div class="tiny">partner</div><div class="big">28</div></div></div>
+<div style="height:16px;border:1.4px solid #1a1a1a;border-radius:9px;overflow:hidden;display:flex"><span style="width:55%;background:#2a78d6"></span><span style="flex:1;background:#e2e0dc"></span></div>
+<span class="tiny">leading by 6 · settles at midnight · win streak 3 · 120 coins</span>
+</div>
+<div class="pn soft"><span class="h">One-tap chores</span><div class="row" style="flex-wrap:wrap"><span class="chip">Dishes +5</span><span class="chip">Bins +3</span><span class="chip">Vacuum +8</span><span class="chip">Laundry +6</span><span class="chip">Cook +8</span><span class="chip">Tidy +4</span></div></div>
+<div class="g2" style="flex:1">
+<div class="pn soft"><span class="h">Recent activity</span>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">+5</span></div>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">pend</span></div>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">+8</span></div>
+</div>
+<div class="pn soft"><span class="h">Badges</span><div class="row"><div class="bdg"></div><div class="bdg"></div><div class="bdg"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div></div><span class="tiny">next: 5-day win streak</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="scr">
+<div class="cap">Notifications — wide</div>
+<div class="wf wide">
+<div class="side">
+<div class="row" style="gap:7px"><div class="av"></div><div class="ln" style="width:60px"></div></div>
+<div style="height:6px"></div>
+<div class="si"><i></i>Home</div><div class="si"><i></i>Log</div><div class="si on"><i></i>Approve · 4</div><div class="si"><i></i>Store</div><div class="si"><i></i>Me</div>
+</div>
+<div class="main">
+<div class="row" style="justify-content:space-between"><span class="h">Waiting on you · 4</span><div class="row"><div class="btn sm g">Select all</div><div class="btn sm">Approve selected</div></div></div>
+<div class="pn soft" style="gap:0;padding:0">
+<div class="row" style="padding:7px 10px;border-bottom:1.2px solid rgba(0,0,0,.15)"><span class="tiny" style="width:20px"></span><span class="tiny" style="flex:2">Chore</span><span class="tiny" style="flex:1">Logged</span><span class="tiny" style="width:60px">Points</span><span class="tiny" style="width:60px">Reject</span></div>
+<div class="row" style="padding:8px 10px;border-bottom:1px solid rgba(0,0,0,.08)"><div class="bx" style="width:14px;height:14px;border-radius:3px">✓</div><div style="flex:2"><div class="ln" style="width:65%"></div></div><span class="tiny" style="flex:1">2h ago</span><span class="tiny" style="width:60px">+5</span><div class="btn sm g" style="width:44px">✕</div></div>
+<div class="row" style="padding:8px 10px;border-bottom:1px solid rgba(0,0,0,.08)"><div class="bx" style="width:14px;height:14px;border-radius:3px">✓</div><div style="flex:2"><div class="ln" style="width:52%"></div></div><span class="tiny" style="flex:1">4h ago</span><span class="tiny" style="width:60px">+8</span><div class="btn sm g" style="width:44px">✕</div></div>
+<div class="row" style="padding:8px 10px"><div class="bx" style="width:14px;height:14px;border-radius:3px"></div><div style="flex:2"><div class="ln" style="width:58%"></div></div><span class="tiny" style="flex:1">yesterday</span><span class="tiny" style="width:60px">+3</span><div class="btn sm g" style="width:44px">✕</div></div>
+</div>
+<div class="g2">
+<div class="pn" style="border-color:#2a78d6"><span class="h" style="color:#2a78d6">Your partner just…</span><div class="row"><div class="bx" style="width:20px;height:20px;border-radius:50%">🎁</div><div class="ln" style="flex:1"></div></div><div class="row"><div class="bx" style="width:20px;height:20px;border-radius:50%">🏅</div><div class="ln" style="flex:1"></div></div></div>
+<div class="pn soft"><span class="h" style="font-size:8.5px">Approved by your partner</span><div class="row"><div class="ln" style="flex:1;height:5px"></div><span class="tiny" style="font-size:7px">+6</span></div><div class="row"><div class="ln" style="flex:1;height:5px;width:70%"></div><span class="tiny" style="font-size:7px">+5</span></div></div>
+</div>
+<div style="flex:1"></div>
+<div class="capn">one approval cascades Points → competition standing → win streak → badges → coins (RTK Query tags)</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "expand <a class="dv-oid" href="#2b">2b</a> into the full box-opening animation states" · "add weekly/monthly competition history to <a class="dv-oid" href="#2a">2a</a>" · "take <a class="dv-oid" href="#2a">2a</a> to hi-fi with a theme"</p>
+</section>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">v1 (superseded by <a class="dv-oid" href="#t2">2</a>) — household-wide, XP/Credits, leaderboard</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Mobile-first, bottom nav — the five screens from <span class="capn">wireframes.md</span></div>
+<div class="dv-card">
+<div class="pad">
+
+<div class="scr">
+<div class="cap">1. Dashboard</div>
+<div class="wf">
+<div class="wf-top"><span class="wf-t">Dwellpact</span><div class="row"><div class="bx" style="width:44px;height:16px">theme</div><div class="av"></div></div></div>
+<div class="wf-body">
+<div class="pn">
+<div class="row"><div class="bx" style="width:22px;height:22px;border-radius:50%">🔥</div><div style="flex:1"><div class="tiny">Level 6 · 1 240 XP</div><div class="sb" style="margin-top:5px"><span style="width:62%"></span></div></div></div>
+<div class="row" style="justify-content:space-between"><span class="tiny">12-day streak</span><span class="tiny">340 credits</span></div>
+</div>
+<div class="btn">+ Log activity</div>
+<div class="pn soft">
+<div class="row" style="justify-content:space-between"><span class="h">Leaderboard</span><span class="tiny">by XP</span></div>
+<div class="row"><span class="tiny">1</span><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">1 240</span></div>
+<div class="row"><span class="tiny">2</span><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">980</span></div>
+<div class="row"><span class="tiny">3</span><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">610</span></div>
+</div>
+<div class="pn soft">
+<span class="h">Badge shelf</span>
+<div class="row"><div class="bdg"></div><div class="bdg"></div><div class="bdg"></div><div class="bdg lk"></div><div class="bdg lk"></div></div>
+</div>
+<div class="pn soft" style="flex:1">
+<span class="h">Recent activity</span>
+<div class="row"><div class="av"></div><div style="flex:1"><div class="ln" style="width:80%"></div><div class="ln" style="width:45%;margin-top:5px;height:5px"></div></div><span class="tiny">+15</span></div>
+<div class="row"><div class="av"></div><div style="flex:1"><div class="ln" style="width:65%"></div><div class="ln" style="width:38%;margin-top:5px;height:5px"></div></div><span class="tiny">pend</span></div>
+<div class="row"><div class="av"></div><div style="flex:1"><div class="ln" style="width:72%"></div><div class="ln" style="width:50%;margin-top:5px;height:5px"></div></div><span class="tiny">+10</span></div>
+</div>
+</div>
+<div class="wf-nav"><div class="ni on"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni"><i></i><span class="dot">3</span>Approve</div><div class="ni"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">GET /auth/me · /activity-logs/mine · /leaderboard · /badges</div>
+</div>
+
+<div class="scr">
+<div class="cap">2. Log activity</div>
+<div class="wf">
+<div class="wf-top"><span class="wf-t">← Log activity</span><span class="tiny">step 1 of 1</span></div>
+<div class="wf-body">
+<span class="h">Category</span>
+<div class="row"><span class="chip on">Chore</span><span class="chip">Together</span><span class="chip">Wellbeing</span></div>
+<span class="h">Pick an activity</span>
+<div class="pn soft" style="gap:7px">
+<div class="row" style="justify-content:space-between"><div class="ln" style="width:55%"></div><span class="tiny">10c · 15xp</span></div>
+<div class="row" style="justify-content:space-between"><div class="ln" style="width:68%"></div><span class="tiny">5c · 8xp</span></div>
+<div class="row" style="justify-content:space-between"><div class="ln" style="width:44%"></div><span class="tiny">20c · 25xp</span></div>
+<div class="row" style="justify-content:space-between"><div class="ln" style="width:60%"></div><span class="tiny">10c · 10xp</span></div>
+</div>
+<span class="h">Note (optional)</span>
+<div class="row" style="align-items:stretch"><div class="bx" style="flex:1;height:64px">free-text note</div><div class="bx" style="width:38px;height:64px;border-radius:5px">mic<br>🎙</div></div>
+<div class="capn">mic = Web Speech dictation (stretch)</div>
+<div style="flex:1"></div>
+<div class="pn soft" style="border-style:dashed"><span class="tiny">Submits as PENDING — credits &amp; XP awarded only after a housemate approves</span></div>
+<div class="btn">Submit for approval</div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Home</div><div class="ni on"><i></i>Log</div><div class="ni"><i></i><span class="dot">3</span>Approve</div><div class="ni"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">GET /activities · POST /activity-logs</div>
+</div>
+
+<div class="scr">
+<div class="cap">3. Approval queue</div>
+<div class="wf">
+<div class="wf-top"><span class="wf-t">Approve · 3 pending</span><div class="bx" style="width:46px;height:16px">filter</div></div>
+<div class="wf-body">
+<div class="pn soft" style="border-style:dashed"><span class="tiny">Your own logs never appear here — any other member may approve, regardless of role</span></div>
+<div class="pn">
+<div class="row"><div class="av"></div><div style="flex:1"><div class="ln" style="width:70%"></div><div class="ln" style="width:40%;margin-top:5px;height:5px"></div></div></div>
+<div class="bx" style="height:30px">note: “took the bins out too”</div>
+<div class="row"><span class="tiny" style="flex:1">+10c · +15xp</span><div class="btn sm g">Reject</div><div class="btn sm">Approve</div></div>
+</div>
+<div class="pn">
+<div class="row"><div class="av"></div><div style="flex:1"><div class="ln" style="width:58%"></div><div class="ln" style="width:44%;margin-top:5px;height:5px"></div></div></div>
+<div class="row"><span class="tiny" style="flex:1">+20c · +25xp</span><div class="btn sm g">Reject</div><div class="btn sm">Approve</div></div>
+</div>
+<div class="pn">
+<div class="row"><div class="av"></div><div style="flex:1"><div class="ln" style="width:64%"></div><div class="ln" style="width:36%;margin-top:5px;height:5px"></div></div></div>
+<div class="row"><span class="tiny" style="flex:1">+5c · +8xp</span><div class="btn sm g">Reject</div><div class="btn sm">Approve</div></div>
+</div>
+<div style="flex:1"></div>
+<div class="pn soft" style="border-style:dashed"><span class="h">Reject → sheet</span><div class="bx" style="height:26px">reason (required)</div><div class="row"><div class="btn sm g" style="flex:1">Cancel</div><div class="btn sm" style="flex:1">Send</div></div></div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni on"><i></i><span class="dot">3</span>Approve</div><div class="ni"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">GET /activity-logs?status=pending · PATCH …/approve · …/reject</div>
+</div>
+
+<div class="scr">
+<div class="cap">4. Reward store</div>
+<div class="wf">
+<div class="wf-top"><span class="wf-t">Store</span><span class="tiny">340 credits</span></div>
+<div class="wf-body">
+<div class="row"><span class="chip on">Rewards</span><span class="chip">House board</span></div>
+<div class="bx" style="height:26px">search rewards</div>
+<div class="row"><span class="chip">sort ▾</span><span class="chip">category ▾</span><span class="chip">affordable</span></div>
+<div class="g2">
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:44px">reward img</div><div class="ln" style="width:75%"></div><div class="row" style="justify-content:space-between"><span class="tiny">120c</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:44px">reward img</div><div class="ln" style="width:60%"></div><div class="row" style="justify-content:space-between"><span class="tiny">400c</span><div class="btn sm dis">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:44px">reward img</div><div class="ln" style="width:68%"></div><div class="row" style="justify-content:space-between"><span class="tiny">80c</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:44px">reward img</div><div class="ln" style="width:52%"></div><div class="row" style="justify-content:space-between"><span class="tiny">200c</span><div class="btn sm dis">Redeem</div></div></div>
+</div>
+<div class="row" style="justify-content:center"><span class="chip">‹</span><span class="chip on">1</span><span class="chip">2</span><span class="chip">3</span><span class="chip">›</span></div>
+<div style="flex:1"></div>
+<div class="pn soft" style="border-style:dashed"><span class="h">House board tab</span><div class="row"><div class="bx" style="flex:1;height:38px">XP-gated decorations — unlocked by household XP, not spent credits</div></div></div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni"><i></i><span class="dot">3</span>Approve</div><div class="ni on"><i></i>Store</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">GET /rewards · POST /redemptions · GET /decorations</div>
+</div>
+
+<div class="scr">
+<div class="cap">5. Leaderboard &amp; profile</div>
+<div class="wf tall">
+<div class="wf-top"><span class="wf-t">Me &amp; household</span><div class="bx" style="width:46px;height:16px">settings</div></div>
+<div class="wf-body">
+<div class="pn">
+<div class="row"><div class="av" style="width:34px;height:34px"></div><div style="flex:1"><div class="ln" style="width:55%"></div><div class="tiny" style="margin-top:5px">Level 6 · Owner</div></div></div>
+<div class="g3">
+<div class="stat"><span class="tiny">XP</span><span class="big">1 240</span></div>
+<div class="stat"><span class="tiny">Streak</span><span class="big">12</span></div>
+<div class="stat"><span class="tiny">Credits</span><span class="big">340</span></div>
+</div>
+</div>
+<div class="pn soft">
+<div class="row" style="justify-content:space-between"><span class="h">Household ranking</span><span class="tiny">by XP</span></div>
+<div class="row"><span class="tiny">1</span><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">1 240</span></div>
+<div class="row"><span class="tiny">2</span><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">980</span></div>
+<div class="row"><span class="tiny">3</span><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">610</span></div>
+<div class="row"><span class="tiny">4</span><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">240</span></div>
+</div>
+<div class="pn soft">
+<span class="h">Badges</span>
+<div class="g3" style="grid-template-columns:repeat(5,1fr)"><div class="bdg"></div><div class="bdg"></div><div class="bdg"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div></div>
+</div>
+<div class="pn soft"><div class="row" style="justify-content:space-between"><span class="tiny">Show me on the leaderboard</span><div class="bx" style="width:34px;height:18px;border-radius:10px">on</div></div></div>
+<div style="flex:1"></div>
+<div class="pn soft" style="border-style:dashed"><span class="tiny">Household settings: invite code, rename — Owner-only actions greyed for Members</span></div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Home</div><div class="ni"><i></i>Log</div><div class="ni"><i></i><span class="dot">3</span>Approve</div><div class="ni"><i></i>Store</div><div class="ni on"><i></i>Me</div></div>
+</div>
+<div class="capn">GET /leaderboard · PATCH /users/me/leaderboard-visibility</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Desktop / responsive shell — same IA with a side nav (three representative screens)</div>
+<div class="dv-card">
+<div class="pad">
+
+<div class="scr">
+<div class="cap">Dashboard — wide</div>
+<div class="wf wide">
+<div class="side">
+<div class="row" style="gap:7px"><div class="av"></div><div class="ln" style="width:60px"></div></div>
+<div style="height:6px"></div>
+<div class="si on"><i></i>Dashboard</div><div class="si"><i></i>Log activity</div><div class="si"><i></i>Approve · 3</div><div class="si"><i></i>Store</div><div class="si"><i></i>Leaderboard</div>
+<div style="flex:1"></div>
+<div class="si"><i></i>Household</div><div class="si"><i></i>Theme ☾</div>
+</div>
+<div class="main">
+<div class="row" style="justify-content:space-between"><span class="h">Good evening</span><div class="btn sm">+ Log activity</div></div>
+<div class="g3">
+<div class="stat"><span class="tiny">Level 6</span><div class="sb"><span style="width:62%"></span></div></div>
+<div class="stat"><span class="tiny">Streak</span><span class="big">12 🔥</span></div>
+<div class="stat"><span class="tiny">Credits</span><span class="big">340</span></div>
+</div>
+<div class="g2" style="flex:1">
+<div class="pn soft"><span class="h">Recent activity</span>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">+15</span></div>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">pend</span></div>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">+10</span></div>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">+5</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:11px">
+<div class="pn soft"><span class="h">Leaderboard</span>
+<div class="row"><span class="tiny">1</span><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">1 240</span></div>
+<div class="row"><span class="tiny">2</span><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">980</span></div>
+<div class="row"><span class="tiny">3</span><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">610</span></div>
+</div>
+<div class="pn soft"><span class="h">Badges</span><div class="row"><div class="bdg"></div><div class="bdg"></div><div class="bdg"></div><div class="bdg lk"></div><div class="bdg lk"></div><div class="bdg lk"></div></div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="scr">
+<div class="cap">Approval queue — wide table</div>
+<div class="wf wide">
+<div class="side">
+<div class="row" style="gap:7px"><div class="av"></div><div class="ln" style="width:60px"></div></div>
+<div style="height:6px"></div>
+<div class="si"><i></i>Dashboard</div><div class="si"><i></i>Log activity</div><div class="si on"><i></i>Approve · 3</div><div class="si"><i></i>Store</div><div class="si"><i></i>Leaderboard</div>
+</div>
+<div class="main">
+<div class="row" style="justify-content:space-between"><span class="h">Pending approvals</span><div class="row"><span class="chip on">Pending</span><span class="chip">Approved</span><span class="chip">Rejected</span></div></div>
+<div class="pn soft" style="gap:0;padding:0">
+<div class="row" style="padding:8px 10px;border-bottom:1.2px solid rgba(0,0,0,.15)"><span class="tiny" style="flex:2">Activity</span><span class="tiny" style="flex:1">Logged by</span><span class="tiny" style="flex:2">Note</span><span class="tiny" style="width:70px">Value</span><span class="tiny" style="width:120px">Actions</span></div>
+<div class="row" style="padding:9px 10px;border-bottom:1px solid rgba(0,0,0,.08)"><div style="flex:2"><div class="ln" style="width:70%"></div></div><div class="row" style="flex:1"><div class="av"></div></div><div style="flex:2"><div class="ln" style="width:85%"></div></div><span class="tiny" style="width:70px">10c/15xp</span><div class="row" style="width:120px"><div class="btn sm g">Reject</div><div class="btn sm">Approve</div></div></div>
+<div class="row" style="padding:9px 10px;border-bottom:1px solid rgba(0,0,0,.08)"><div style="flex:2"><div class="ln" style="width:55%"></div></div><div class="row" style="flex:1"><div class="av"></div></div><div style="flex:2"><div class="ln" style="width:40%"></div></div><span class="tiny" style="width:70px">20c/25xp</span><div class="row" style="width:120px"><div class="btn sm g">Reject</div><div class="btn sm">Approve</div></div></div>
+<div class="row" style="padding:9px 10px"><div style="flex:2"><div class="ln" style="width:62%"></div></div><div class="row" style="flex:1"><div class="av"></div></div><div style="flex:2"><div class="ln" style="width:60%"></div></div><span class="tiny" style="width:70px">5c/8xp</span><div class="row" style="width:120px"><div class="btn sm g">Reject</div><div class="btn sm">Approve</div></div></div>
+</div>
+<div class="row" style="justify-content:space-between"><span class="capn">approving here live-updates credits, XP, streak, badges and the leaderboard (RTK Query tag invalidation)</span><div class="row"><span class="chip">‹</span><span class="chip on">1</span><span class="chip">2</span><span class="chip">›</span></div></div>
+<div style="flex:1"></div>
+</div>
+</div>
+</div>
+
+<div class="scr">
+<div class="cap">Reward store — wide catalog</div>
+<div class="wf wide">
+<div class="side">
+<div class="row" style="gap:7px"><div class="av"></div><div class="ln" style="width:60px"></div></div>
+<div style="height:6px"></div>
+<div class="si"><i></i>Dashboard</div><div class="si"><i></i>Log activity</div><div class="si"><i></i>Approve · 3</div><div class="si on"><i></i>Store</div><div class="si"><i></i>Leaderboard</div>
+<div style="height:8px"></div>
+<span class="h">Filters</span>
+<div class="bx" style="height:22px">search</div><div class="chip">category ▾</div><div class="chip">sort: cost ▾</div><div class="chip">affordable only</div>
+</div>
+<div class="main">
+<div class="row" style="justify-content:space-between"><div class="row"><span class="chip on">Rewards</span><span class="chip">House board</span></div><span class="tiny">balance 340c</span></div>
+<div class="g3">
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:52px">reward img</div><div class="ln" style="width:70%"></div><div class="row" style="justify-content:space-between"><span class="tiny">120c</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:52px">reward img</div><div class="ln" style="width:55%"></div><div class="row" style="justify-content:space-between"><span class="tiny">400c</span><div class="btn sm dis">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:52px">reward img</div><div class="ln" style="width:64%"></div><div class="row" style="justify-content:space-between"><span class="tiny">80c</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:52px">reward img</div><div class="ln" style="width:60%"></div><div class="row" style="justify-content:space-between"><span class="tiny">200c</span><div class="btn sm dis">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:52px">reward img</div><div class="ln" style="width:48%"></div><div class="row" style="justify-content:space-between"><span class="tiny">60c</span><div class="btn sm">Redeem</div></div></div>
+<div class="pn soft" style="gap:6px"><div class="bx" style="height:52px">reward img</div><div class="ln" style="width:72%"></div><div class="row" style="justify-content:space-between"><span class="tiny">150c</span><div class="btn sm">Redeem</div></div></div>
+</div>
+<div class="row" style="justify-content:flex-end"><span class="chip">‹</span><span class="chip on">1</span><span class="chip">2</span><span class="chip">3</span><span class="chip">›</span></div>
+<div class="capn">Owner sees an extra “+ New reward / edit” affordance on each card; Members don't</div>
+<div style="flex:1"></div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Leaner IA — one scrolling hub, approvals inline, log as a sheet (3 screens instead of 5)</div>
+<div class="dv-card">
+<div class="pad">
+
+<div class="scr">
+<div class="cap">Hub (scrolls)</div>
+<div class="wf tall">
+<div class="wf-top"><span class="wf-t">Dwellpact</span><div class="row"><div class="bx" style="width:40px;height:16px">theme</div><div class="av"></div></div></div>
+<div class="wf-body">
+<div class="pn"><div class="row"><div class="bx" style="width:22px;height:22px;border-radius:50%">🔥</div><div style="flex:1"><div class="tiny">Level 6 · 12-day streak · 340c</div><div class="sb" style="margin-top:5px"><span style="width:62%"></span></div></div></div></div>
+<div class="pn" style="border-color:#2a78d6">
+<div class="row" style="justify-content:space-between"><span class="h" style="color:#2a78d6">Waiting on you · 3</span><span class="tiny">approve inline</span></div>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><div class="btn sm g">✕</div><div class="btn sm">✓</div></div>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><div class="btn sm g">✕</div><div class="btn sm">✓</div></div>
+<div class="row"><div class="av"></div><div class="ln" style="flex:1"></div><div class="btn sm g">✕</div><div class="btn sm">✓</div></div>
+</div>
+<div class="pn soft"><span class="h">This week in the household</span>
+<div class="row"><span class="tiny">1</span><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">1 240</span></div>
+<div class="row"><span class="tiny">2</span><div class="av"></div><div class="ln" style="flex:1"></div><span class="tiny">980</span></div>
+</div>
+<div class="pn soft"><span class="h">Badges &amp; house board</span><div class="row"><div class="bdg"></div><div class="bdg"></div><div class="bdg"></div><div class="bdg lk"></div><div class="bdg lk"></div></div><div class="bx" style="height:40px">house board preview</div></div>
+<div class="pn soft" style="flex:1"><span class="h">Feed</span><div class="row"><div class="av"></div><div class="ln" style="flex:1"></div></div><div class="row"><div class="av"></div><div class="ln" style="flex:1"></div></div></div>
+</div>
+<div class="wf-nav"><div class="ni on"><i></i>Hub</div><div class="ni"><i></i>Store</div><div class="ni" style="flex:1.4"><i style="width:26px;height:20px;border-radius:12px;background:#1a1a1a;border-color:#1a1a1a"></i>Log</div><div class="ni"><i></i>Me</div></div>
+</div>
+<div class="capn">3 tabs + one always-present Log button</div>
+</div>
+
+<div class="scr">
+<div class="cap">Log sheet (over hub)</div>
+<div class="wf">
+<div class="wf-top"><span class="wf-t">Dwellpact</span><div class="av"></div></div>
+<div class="wf-body" style="position:relative;opacity:.45">
+<div class="pn"><div class="ln" style="width:70%"></div></div>
+<div class="pn soft"><div class="ln"></div><div class="ln" style="width:60%"></div></div>
+<div class="pn soft"><div class="ln" style="width:80%"></div></div>
+</div>
+<div style="border-top:1.5px solid #1a1a1a;padding:12px 14px 14px;display:flex;flex-direction:column;gap:9px;background:#fff">
+<div class="row" style="justify-content:center"><div style="width:38px;height:4px;border-radius:3px;background:#d5d3cf"></div></div>
+<span class="h">Log something</span>
+<div class="row"><span class="chip on">Chore</span><span class="chip">Together</span><span class="chip">Wellbeing</span></div>
+<div class="row" style="flex-wrap:wrap"><span class="chip">Dishes</span><span class="chip">Bins</span><span class="chip">Vacuum</span><span class="chip">Movie night</span><span class="chip">Walk</span></div>
+<div class="row" style="align-items:stretch"><div class="bx" style="flex:1;height:44px">note</div><div class="bx" style="width:36px;height:44px">🎙</div></div>
+<div class="btn">Submit → pending</div>
+</div>
+</div>
+<div class="capn">no dedicated Log screen — a sheet keeps you in context</div>
+</div>
+
+<div class="scr">
+<div class="cap">Me (profile + full history)</div>
+<div class="wf">
+<div class="wf-top"><span class="wf-t">Me</span><div class="bx" style="width:46px;height:16px">household</div></div>
+<div class="wf-body">
+<div class="pn"><div class="row"><div class="av" style="width:34px;height:34px"></div><div style="flex:1"><div class="ln" style="width:50%"></div><div class="tiny" style="margin-top:5px">Level 6 · Owner</div></div></div>
+<div class="g3"><div class="stat"><span class="tiny">XP</span><span class="big">1 240</span></div><div class="stat"><span class="tiny">Streak</span><span class="big">12</span></div><div class="stat"><span class="tiny">Credits</span><span class="big">340</span></div></div>
+</div>
+<div class="row"><span class="chip on">History</span><span class="chip">Badges</span><span class="chip">Ranking</span><span class="chip">Redemptions</span></div>
+<div class="pn soft" style="flex:1">
+<div class="row"><div class="ln" style="flex:1"></div><span class="tiny">+15</span></div>
+<div class="row"><div class="ln" style="flex:1;width:70%"></div><span class="tiny">pend</span></div>
+<div class="row"><div class="ln" style="flex:1"></div><span class="tiny">rejct</span></div>
+<div class="row"><div class="ln" style="flex:1;width:60%"></div><span class="tiny">+10</span></div>
+<div class="row"><div class="ln" style="flex:1"></div><span class="tiny">+5</span></div>
+</div>
+<div class="pn soft"><div class="row" style="justify-content:space-between"><span class="tiny">Appear on leaderboard</span><div class="bx" style="width:34px;height:18px;border-radius:10px">on</div></div></div>
+</div>
+<div class="wf-nav"><div class="ni"><i></i>Hub</div><div class="ni"><i></i>Store</div><div class="ni" style="flex:1.4"><i style="width:26px;height:20px;border-radius:12px;background:#1a1a1a;border-color:#1a1a1a"></i>Log</div><div class="ni on"><i></i>Me</div></div>
+</div>
+<div class="capn">tabs collapse leaderboard + badges into the profile</div>
+</div>
+
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "flesh out <a class="dv-oid" href="#1a">1a</a>'s approval queue with empty + rejected states" · "make <a class="dv-oid" href="#1b">1b</a>'s dashboard the hub layout from <a class="dv-oid" href="#1c">1c</a>" · "add the auth / household-join screens"</p>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}"></script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<svg width="2220" height="700" viewBox="0 0 2220 700" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Dwelloot ER diagram 1 — household and activity logging</title>
+<desc>Entity relationship diagram showing Household, User, ActivityLog, and Activity entities, key attributes, and the belongs-to, logs, and for relationships between them.</desc>
+
+<rect x="20" y="15" width="50" height="30" rx="4" fill="#FDF3E3" stroke="#C87F0A" stroke-width="1.5"/>
+<text x="80" y="34" font-size="13" fill="#333" font-family="sans-serif">Entity</text>
+<ellipse cx="250" cy="30" rx="35" ry="16" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="300" y="34" font-size="13" fill="#333" font-family="sans-serif">Attribute (underline = primary key, FK = foreign key)</text>
+<polygon points="700,10 735,30 700,50 665,30" fill="#EAF7EE" stroke="#2E8B57" stroke-width="1.5"/>
+<text x="750" y="34" font-size="13" fill="#333" font-family="sans-serif">Relationship (with cardinality labels on its lines)</text>
+
+<rect x="110" y="340" width="180" height="70" rx="6" fill="#FDF3E3" stroke="#C87F0A" stroke-width="1.5"/>
+<text x="200" y="375" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#8A5A06" font-family="sans-serif">Household</text>
+<line x1="100" y1="173" x2="150" y2="340" stroke="#999" stroke-width="1"/>
+<ellipse cx="100" cy="150" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="100" y="150" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif" text-decoration="underline">Id</text>
+<line x1="300" y1="173" x2="250" y2="340" stroke="#999" stroke-width="1"/>
+<ellipse cx="300" cy="150" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="300" y="150" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif">InviteCode</text>
+
+<line x1="290" y1="375" x2="430" y2="375" stroke="#888" stroke-width="1.5"/>
+<line x1="570" y1="375" x2="710" y2="375" stroke="#888" stroke-width="1.5"/>
+<polygon points="500,330 570,375 500,420 430,375" fill="#EAF7EE" stroke="#2E8B57" stroke-width="1.5"/>
+<text x="500" y="375" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F6B45" font-family="sans-serif">belongs to</text>
+<text x="350" y="362" text-anchor="middle" font-size="12" fill="#666" font-family="sans-serif">(1,2)</text>
+<text x="650" y="362" text-anchor="middle" font-size="12" fill="#666" font-family="sans-serif">(1,1)</text>
+
+<rect x="710" y="340" width="180" height="70" rx="6" fill="#FDF3E3" stroke="#C87F0A" stroke-width="1.5"/>
+<text x="800" y="375" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#8A5A06" font-family="sans-serif">User</text>
+<line x1="700" y1="173" x2="760" y2="340" stroke="#999" stroke-width="1"/>
+<ellipse cx="700" cy="150" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="700" y="150" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif" text-decoration="underline">Id</text>
+<line x1="900" y1="173" x2="840" y2="340" stroke="#999" stroke-width="1"/>
+<ellipse cx="900" cy="150" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="900" y="150" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif">Name</text>
+<line x1="700" y1="577" x2="760" y2="410" stroke="#999" stroke-width="1"/>
+<ellipse cx="700" cy="600" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="700" y="600" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif">Coins</text>
+<line x1="900" y1="577" x2="840" y2="410" stroke="#999" stroke-width="1"/>
+<ellipse cx="900" cy="600" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="900" y="600" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1F4E86" font-family="sans-serif">LifetimePoints</text>
+
+<line x1="890" y1="375" x2="1030" y2="375" stroke="#888" stroke-width="1.5"/>
+<line x1="1170" y1="375" x2="1310" y2="375" stroke="#888" stroke-width="1.5"/>
+<polygon points="1100,330 1170,375 1100,420 1030,375" fill="#EAF7EE" stroke="#2E8B57" stroke-width="1.5"/>
+<text x="1100" y="375" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F6B45" font-family="sans-serif">logs</text>
+<text x="950" y="362" text-anchor="middle" font-size="12" fill="#666" font-family="sans-serif">(0,*)</text>
+<text x="1250" y="362" text-anchor="middle" font-size="12" fill="#666" font-family="sans-serif">(1,1)</text>
+
+<rect x="1310" y="340" width="180" height="70" rx="6" fill="#FDF3E3" stroke="#C87F0A" stroke-width="1.5"/>
+<text x="1400" y="375" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#8A5A06" font-family="sans-serif">ActivityLog</text>
+<line x1="1300" y1="173" x2="1360" y2="340" stroke="#999" stroke-width="1"/>
+<ellipse cx="1300" cy="150" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="1300" y="150" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif" text-decoration="underline">Id</text>
+<line x1="1500" y1="173" x2="1440" y2="340" stroke="#999" stroke-width="1"/>
+<ellipse cx="1500" cy="150" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="1500" y="150" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif">Status</text>
+<line x1="1300" y1="577" x2="1360" y2="410" stroke="#999" stroke-width="1"/>
+<ellipse cx="1300" cy="600" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="1300" y="600" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1F4E86" font-family="sans-serif">CompletedAt</text>
+<line x1="1500" y1="577" x2="1440" y2="410" stroke="#999" stroke-width="1"/>
+<ellipse cx="1500" cy="600" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="1500" y="600" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#1F4E86" font-family="sans-serif">ApprovedByUserId (FK)</text>
+<text x="1400" y="655" text-anchor="middle" font-size="11" fill="#666" font-family="sans-serif">ApprovedByUserId references User and must differ from LoggedByUserId (see the logs relationship above)</text>
+
+<line x1="1490" y1="375" x2="1630" y2="375" stroke="#888" stroke-width="1.5"/>
+<line x1="1770" y1="375" x2="1910" y2="375" stroke="#888" stroke-width="1.5"/>
+<polygon points="1700,330 1770,375 1700,420 1630,375" fill="#EAF7EE" stroke="#2E8B57" stroke-width="1.5"/>
+<text x="1700" y="375" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F6B45" font-family="sans-serif">for</text>
+<text x="1550" y="362" text-anchor="middle" font-size="12" fill="#666" font-family="sans-serif">(1,1)</text>
+<text x="1850" y="362" text-anchor="middle" font-size="12" fill="#666" font-family="sans-serif">(0,*)</text>
+
+<rect x="1910" y="340" width="180" height="70" rx="6" fill="#FDF3E3" stroke="#C87F0A" stroke-width="1.5"/>
+<text x="2000" y="375" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#8A5A06" font-family="sans-serif">Activity</text>
+<line x1="1900" y1="173" x2="1960" y2="340" stroke="#999" stroke-width="1"/>
+<ellipse cx="1900" cy="150" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="1900" y="150" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif" text-decoration="underline">Id</text>
+<line x1="2100" y1="173" x2="2040" y2="340" stroke="#999" stroke-width="1"/>
+<ellipse cx="2100" cy="150" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="2100" y="150" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif">Title</text>
+<line x1="1900" y1="577" x2="1960" y2="410" stroke="#999" stroke-width="1"/>
+<ellipse cx="1900" cy="600" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="1900" y="600" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif">Points</text>
+<line x1="2100" y1="577" x2="2040" y2="410" stroke="#999" stroke-width="1"/>
+<ellipse cx="2100" cy="600" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="2100" y="600" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#1F4E86" font-family="sans-serif">HouseholdId (FK)</text>
+</svg>
