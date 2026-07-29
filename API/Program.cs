@@ -45,6 +45,7 @@ builder.Services.AddSingleton<IPeriodCalculator>(
     new PeriodCalculator(TimeZoneInfo.FindSystemTimeZoneById(competitionTimeZoneId)));
 
 builder.Services.AddScoped<ICompetitionSettlementService, CompetitionSettlementService>();
+builder.Services.AddScoped<ICompetitionQueryService, CompetitionQueryService>();
 
 // The signing key is a secret and, like the connection string, never appears in a committed
 // file - user secrets locally, Jwt__Key in production. Fail fast at boot rather than at first

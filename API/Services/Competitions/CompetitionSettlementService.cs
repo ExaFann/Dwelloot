@@ -30,6 +30,9 @@ public sealed record SettlementResult(SettlementOutcome Outcome, Competition? Co
         new(outcome, competition);
 }
 
+/// <summary>Where a period stands right now: each member's points, and whether it is voided.</summary>
+public sealed record CompetitionStanding(IReadOnlyDictionary<int, int> PointsByUserId, bool Voided);
+
 public interface ICompetitionSettlementService
 {
     Task<SettlementResult> SettlePeriodAsync(
@@ -41,6 +44,20 @@ public interface ICompetitionSettlementService
     Task<IReadOnlyList<Competition>> SettleDueAsync(
         int householdId,
         DateTime asOfUtc,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Scores a period without settling it — what the dashboard shows for the day in progress.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately the same code path settlement uses. If the live standing and the settled result
+    /// were computed separately they could disagree — a different timestamp, status filter or
+    /// points column — and the dashboard would show one number all day while the recorded outcome
+    /// showed another.
+    /// </remarks>
+    Task<CompetitionStanding> GetStandingAsync(
+        int householdId,
+        CompetitionPeriod period,
         CancellationToken ct = default);
 }
 
@@ -177,6 +194,24 @@ public class CompetitionSettlementService(AppDbContext db, IPeriodCalculator per
         }
 
         return settled;
+    }
+
+    public async Task<CompetitionStanding> GetStandingAsync(
+        int householdId,
+        CompetitionPeriod period,
+        CancellationToken ct = default)
+    {
+        var members = await db.Users
+            .Where(u => u.HouseholdId == householdId)
+            .Select(u => u.Id)
+            .ToListAsync(ct);
+
+        var scores = await ScoresAsync(householdId, members, period, ct);
+
+        var voided = period.Type == CompetitionPeriodType.Daily
+                     && await HasPausingRedemptionAsync(householdId, period, ct);
+
+        return new CompetitionStanding(scores, voided);
     }
 
     /// <summary>
