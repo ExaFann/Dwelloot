@@ -1,6 +1,6 @@
-using System.Security.Claims;
 using API.Dtos.Auth;
 using API.Entities;
+using API.Extensions;
 using API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -84,13 +84,13 @@ public class AuthController(
     [HttpGet("me")]
     public async Task<ActionResult<CurrentUserResponse>> Me()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userId, out var id))
+        var userId = User.GetUserId();
+        if (userId is null)
         {
             return Unauthorized();
         }
 
-        var user = await userManager.FindByIdAsync(id.ToString());
+        var user = await userManager.FindByIdAsync(userId.Value.ToString());
         if (user is null)
         {
             return Unauthorized();
