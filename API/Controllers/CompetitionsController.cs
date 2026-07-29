@@ -10,7 +10,9 @@ namespace API.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/households/{householdId:int}/competitions")]
-public class CompetitionsController(ICompetitionQueryService competitions) : ControllerBase
+public class CompetitionsController(
+    ICompetitionQueryService competitions,
+    ILootBoxService lootBoxes) : ControllerBase
 {
     /// <summary>
     /// The live head-to-head standing, settling any period that closed since the last visit.
@@ -42,6 +44,45 @@ public class CompetitionsController(ICompetitionQueryService competitions) : Con
             // HouseholdsController.
             CompetitionQueryStatus.NotAMember =>
                 NotFound(new { error = "Household not found." }),
+
+            _ => Unauthorized()
+        };
+    }
+
+    /// <summary>
+    /// Reveals the loot box from a settled competition. Idempotent: repeat calls replay the same
+    /// result without rolling again or crediting twice.
+    /// </summary>
+    [HttpPost("{competitionId:int}/open-box")]
+    public async Task<ActionResult<OpenLootBoxResponse>> OpenBox(
+        int householdId,
+        int competitionId,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await lootBoxes.OpenAsync(userId.Value, householdId, competitionId, ct);
+
+        return result.Status switch
+        {
+            LootBoxStatus.Ok => Ok(result.Box),
+
+            LootBoxStatus.NotAMember or LootBoxStatus.CompetitionNotFound =>
+                NotFound(new { error = "Competition not found." }),
+
+            LootBoxStatus.Voided =>
+                Conflict(new { error = "That period was voided, so no loot box was awarded." }),
+
+            // 403, not 404: the caller can see this competition on their own dashboard, so hiding
+            // it would confuse rather than protect. Same reasoning as self-approval in task [21].
+            LootBoxStatus.NotYours =>
+                StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    new { error = "You did not win that period." }),
 
             _ => Unauthorized()
         };

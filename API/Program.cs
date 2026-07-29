@@ -47,6 +47,11 @@ builder.Services.AddSingleton<IPeriodCalculator>(
 builder.Services.AddScoped<ICompetitionSettlementService, CompetitionSettlementService>();
 builder.Services.AddScoped<ICompetitionQueryService, CompetitionQueryService>();
 
+// Random.Shared is thread-safe; the roller takes a Random so tests can seed it and assert the
+// weighting rather than assume it.
+builder.Services.AddSingleton<ILootBoxRoller>(new LootBoxRoller(Random.Shared));
+builder.Services.AddScoped<ILootBoxService, LootBoxService>();
+
 // The signing key is a secret and, like the connection string, never appears in a committed
 // file - user secrets locally, Jwt__Key in production. Fail fast at boot rather than at first
 // token issue, and check the length here because HMAC-SHA256 silently needs >= 256 bits.
