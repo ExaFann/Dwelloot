@@ -38,6 +38,7 @@ builder.Services.AddScoped<IHouseholdService, HouseholdService>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
 builder.Services.AddScoped<IRewardService, RewardService>();
 builder.Services.AddScoped<IProgressionService, ProgressionService>();
+builder.Services.AddScoped<IRedemptionService, RedemptionService>();
 builder.Services.AddScoped<IBadgeQueryService, BadgeQueryService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 

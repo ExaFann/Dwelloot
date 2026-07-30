@@ -22,6 +22,23 @@ public class Redemption
     public Reward Reward { get; set; } = null!;
 
     /// <summary>
+    /// What this purchase actually cost, copied from <see cref="Reward.CoinCost"/> when the redemption
+    /// was created — <b>not</b> a live read through the foreign key. Constrained <c>&gt; 0</c>.
+    /// </summary>
+    /// <remarks>
+    /// The mirror of <see cref="ActivityLog.PointsAwarded"/>, and added for the mirror-image reason.
+    /// Task [29] made reward prices editable, so without this column editing a reward from 30 Coins to
+    /// 5 would make every past purchase of it read as having cost 5. One is a catalog edit rewriting
+    /// what a chore was worth, the other a catalog edit rewriting what a reward cost; the schema now
+    /// refuses both.
+    /// <para>
+    /// The Coin balance itself is a stored running total on <see cref="User.Coins"/> rather than a
+    /// replay of these rows, so this column is the record of the charge, not the source of the balance.
+    /// </para>
+    /// </remarks>
+    public int CoinsSpent { get; set; }
+
+    /// <summary>
     /// When the purchase happened. More than an audit field: task [23] reads the calendar day of
     /// this timestamp to decide whether a <see cref="Reward.PausesCompetition"/> redemption voided
     /// that day's competition, so it is part of the scoring rules.

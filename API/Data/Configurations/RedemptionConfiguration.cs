@@ -13,10 +13,21 @@ public class RedemptionConfiguration : IEntityTypeConfiguration<Redemption>
         builder.Property(r => r.RedeemedAt)
             .IsRequired();
 
+        // Snapshot of the reward's price at redemption time, constrained the same way
+        // activity_logs.points_awarded is. A single-row rule, so it belongs in the database (task [30]).
+        builder.Property(r => r.CoinsSpent)
+            .IsRequired();
+
+        builder.ToTable(t => t.HasCheckConstraint("ck_redemptions_coins_spent_positive", "coins_spent > 0"));
+
         // Cascade, forced by the delete graph the same way ActivityLog -> Activity is: households
         // cascade to rewards, so restricting here would make deleting a household fail on its own
-        // cascade. Deleting a reward therefore erases its redemption history, which refunds
-        // nobody - User.Coins is a stored running total, not recomputed from these rows.
+        // cascade.
+        //
+        // Task [29] made that cascade unreachable through the API: DELETE /api/rewards/{id} archives
+        // instead of deleting, precisely because losing these rows would let one partner un-void a day
+        // the other had paid to pause, and set their badge progress back. Only deleting the household
+        // still cascades, and that takes the competitions with it too.
         builder.HasOne(r => r.Reward)
             .WithMany()
             .HasForeignKey(r => r.RewardId)
