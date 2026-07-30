@@ -3,6 +3,7 @@ using API.Dtos;
 using API.Dtos.ActivityLogs;
 using API.Entities;
 using API.Services.Progression;
+using API.Validation;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services;
@@ -256,7 +257,7 @@ public class ActivityLogService(AppDbContext db, IProgressionService progression
         var log = found.Log!;
 
         log.Status = ActivityLogStatus.Rejected;
-        log.RejectReason = reason.Trim();
+        log.RejectReason = TextInput.Normalize(reason);
 
         // No points, and ApprovedByUserId stays null: in a two-person household the rejecter is
         // always the partner who did not log it, so recording it separately would be redundant

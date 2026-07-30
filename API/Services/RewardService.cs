@@ -2,6 +2,7 @@ using API.Data;
 using API.Dtos;
 using API.Dtos.Rewards;
 using API.Entities;
+using API.Validation;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services;
@@ -36,7 +37,10 @@ public enum RewardMutationStatus
     /// </summary>
     NotFound,
 
-    InvalidCoinCost
+    InvalidCoinCost,
+
+    /// <summary>The title is blank once normalised - see the note on the activity equivalent.</summary>
+    InvalidTitle
 }
 
 public sealed record RewardMutationResult(RewardMutationStatus Status, RewardResponse? Reward)
@@ -146,10 +150,16 @@ public class RewardService(AppDbContext db) : IRewardService
             return RewardMutationResult.Failed(RewardMutationStatus.InvalidCoinCost);
         }
 
+        var title = TextInput.Normalize(request.Title);
+        if (title.Length == 0)
+        {
+            return RewardMutationResult.Failed(RewardMutationStatus.InvalidTitle);
+        }
+
         var reward = new Reward
         {
             HouseholdId = household.HouseholdId,
-            Title = request.Title.Trim(),
+            Title = title,
             CoinCost = request.CoinCost,
             PausesCompetition = request.PausesCompetition
         };
@@ -177,13 +187,19 @@ public class RewardService(AppDbContext db) : IRewardService
             return RewardMutationResult.Failed(RewardMutationStatus.InvalidCoinCost);
         }
 
+        // Present-but-blank is refused rather than written - see the activity equivalent (task [32]).
+        if (request.Title is not null && TextInput.Normalize(request.Title).Length == 0)
+        {
+            return RewardMutationResult.Failed(RewardMutationStatus.InvalidTitle);
+        }
+
         var reward = found.Reward!;
 
         // Null means "leave alone" - the whole point of PATCH. Writing every field unconditionally
         // would blank out anything the client did not send.
         if (request.Title is not null)
         {
-            reward.Title = request.Title.Trim();
+            reward.Title = TextInput.Normalize(request.Title);
         }
 
         if (request.CoinCost is not null)

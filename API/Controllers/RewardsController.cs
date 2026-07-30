@@ -119,6 +119,9 @@ public class RewardsController(IRewardService rewards) : ControllerBase
         RewardMutationStatus.InvalidCoinCost =>
             BadRequest(new { error = "Coin cost must be greater than zero." }),
 
+        RewardMutationStatus.InvalidTitle =>
+            BadRequest(new { error = "Title must contain at least one visible character." }),
+
         _ => Unauthorized()
     };
 }

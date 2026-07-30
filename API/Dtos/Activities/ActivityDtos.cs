@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using API.Entities;
+using API.Validation;
 
 namespace API.Dtos.Activities;
 
@@ -35,7 +36,7 @@ public record ActivityQuery
 /// chore in someone else's home.
 /// </remarks>
 public record CreateActivityRequest(
-    [Required, StringLength(Activity.TitleMaxLength, MinimumLength = 1)]
+    [Required, CleanText(Activity.TitleMaxLength)]
     string Title,
     [Range(1, int.MaxValue)]
     int Points,
@@ -49,7 +50,7 @@ public record CreateActivityRequest(
 /// body that cannot express the change beats one that is filtered afterwards.
 /// </remarks>
 public record PatchActivityRequest(
-    [StringLength(Activity.TitleMaxLength, MinimumLength = 1)]
+    [CleanText(Activity.TitleMaxLength)]
     string? Title,
     [Range(1, int.MaxValue)]
     int? Points,

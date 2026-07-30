@@ -2,6 +2,7 @@ using API.Dtos.Auth;
 using API.Entities;
 using API.Extensions;
 using API.Services;
+using API.Validation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +24,9 @@ public class AuthController(
     {
         var user = new User
         {
-            Name = request.Name,
+            // Normalised like every other display name (task [32]); the annotation has already
+            // refused anything that would normalise to nothing.
+            Name = TextInput.Normalize(request.Name),
             Email = request.Email,
             // Login is by email, so UserName carries the email too. That is what makes Identity's
             // existing unique index on normalized_user_name enforce one account per email,

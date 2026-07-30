@@ -2,6 +2,7 @@ using API.Data;
 using API.Dtos;
 using API.Dtos.Activities;
 using API.Entities;
+using API.Validation;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services;
@@ -33,7 +34,14 @@ public enum ActivityMutationStatus
     /// <summary>No such chore, or it belongs to another household — the caller cannot tell which.</summary>
     NotFound,
 
-    InvalidPoints
+    InvalidPoints,
+
+    /// <summary>
+    /// The title is blank once normalised. Not redundant with <see cref="CleanTextAttribute"/>:
+    /// that guards HTTP callers, this makes "a blank title cannot be stored" a property of the
+    /// service itself (task [32]).
+    /// </summary>
+    InvalidTitle
 }
 
 public sealed record ActivityMutationResult(ActivityMutationStatus Status, ActivityResponse? Activity)
@@ -141,10 +149,16 @@ public class ActivityService(AppDbContext db) : IActivityService
             return ActivityMutationResult.Failed(ActivityMutationStatus.InvalidPoints);
         }
 
+        var title = TextInput.Normalize(request.Title);
+        if (title.Length == 0)
+        {
+            return ActivityMutationResult.Failed(ActivityMutationStatus.InvalidTitle);
+        }
+
         var activity = new Activity
         {
             HouseholdId = householdId.HouseholdId,
-            Title = request.Title.Trim(),
+            Title = title,
             Points = request.Points,
             Category = request.Category ?? ActivityCategory.Chore
         };
@@ -172,13 +186,21 @@ public class ActivityService(AppDbContext db) : IActivityService
             return ActivityMutationResult.Failed(ActivityMutationStatus.InvalidPoints);
         }
 
+        // Present-but-blank is refused rather than written. Before task [32] this stored an empty
+        // title: the nullable field carries no [Required], and [StringLength(MinimumLength = 1)]
+        // counted "   " as three characters.
+        if (request.Title is not null && TextInput.Normalize(request.Title).Length == 0)
+        {
+            return ActivityMutationResult.Failed(ActivityMutationStatus.InvalidTitle);
+        }
+
         var activity = found.Activity!;
 
         // Null means "leave alone" - the whole point of PATCH. Writing every field unconditionally
         // would blank out anything the client did not send.
         if (request.Title is not null)
         {
-            activity.Title = request.Title.Trim();
+            activity.Title = TextInput.Normalize(request.Title);
         }
 
         if (request.Points is not null)

@@ -115,6 +115,9 @@ public class ActivitiesController(IActivityService activities) : ControllerBase
         ActivityMutationStatus.InvalidPoints =>
             BadRequest(new { error = "Points must be greater than zero." }),
 
+        ActivityMutationStatus.InvalidTitle =>
+            BadRequest(new { error = "Title must contain at least one visible character." }),
+
         _ => Unauthorized()
     };
 }

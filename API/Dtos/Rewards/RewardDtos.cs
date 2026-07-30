@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using API.Entities;
+using API.Validation;
 
 namespace API.Dtos.Rewards;
 
@@ -66,7 +67,7 @@ public record RewardQuery
 /// </para>
 /// </remarks>
 public record CreateRewardRequest(
-    [Required, StringLength(Reward.TitleMaxLength, MinimumLength = 1)]
+    [Required, CleanText(Reward.TitleMaxLength)]
     string Title,
     [Range(1, int.MaxValue)]
     int CoinCost,
@@ -80,7 +81,7 @@ public record CreateRewardRequest(
 /// body that cannot express the change beats one that is filtered afterwards.
 /// </remarks>
 public record PatchRewardRequest(
-    [StringLength(Reward.TitleMaxLength, MinimumLength = 1)]
+    [CleanText(Reward.TitleMaxLength)]
     string? Title,
     [Range(1, int.MaxValue)]
     int? CoinCost,

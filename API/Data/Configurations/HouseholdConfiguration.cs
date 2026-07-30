@@ -34,5 +34,11 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
         builder.Property(h => h.IsFull)
             .HasDefaultValue(false)
             .IsConcurrencyToken();
+
+        // A blank name is a single-row rule, so it belongs here - the same boundary that puts
+        // points > 0 in the database (SS 3.14). Task [32]'s attribute guards HTTP callers and the
+        // service guards every other caller; this holds whatever reaches the database.
+        builder.ToTable(t => t.HasCheckConstraint("ck_households_name_not_blank", "btrim(name) <> ''"));
+
     }
 }

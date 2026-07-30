@@ -1,5 +1,6 @@
 using API.Data;
 using API.Entities;
+using API.Validation;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services;
@@ -9,7 +10,10 @@ public enum CreateHouseholdStatus
     Created,
     UserNotFound,
     AlreadyInHousehold,
-    CouldNotGenerateInviteCode
+    CouldNotGenerateInviteCode,
+
+    /// <summary>The name is blank once normalised (task [32]).</summary>
+    InvalidName
 }
 
 public sealed record CreateHouseholdResult(CreateHouseholdStatus Status, Household? Household)
@@ -50,7 +54,10 @@ public enum HouseholdAccessStatus
     UserNotFound,
     HouseholdNotFound,
     NotAMember,
-    Conflict
+    Conflict,
+
+    /// <summary>The name is blank once normalised (task [32]).</summary>
+    InvalidName
 }
 
 public sealed record HouseholdDetailsResult(HouseholdAccessStatus Status, Household? Household)
@@ -105,6 +112,14 @@ public class HouseholdService(
             return CreateHouseholdResult.Failed(CreateHouseholdStatus.AlreadyInHousehold);
         }
 
+        // Normalised at the point of storage, not merely trimmed - household names were the one
+        // display field that got no treatment at all before task [32].
+        var cleanName = TextInput.Normalize(name);
+        if (cleanName.Length == 0)
+        {
+            return CreateHouseholdResult.Failed(CreateHouseholdStatus.InvalidName);
+        }
+
         var inviteCode = await GenerateUnusedInviteCodeAsync(ct);
         if (inviteCode is null)
         {
@@ -113,7 +128,7 @@ public class HouseholdService(
 
         var household = new Household
         {
-            Name = name,
+            Name = cleanName,
             InviteCode = inviteCode,
             // One member so far. The join endpoint (task [15]) flips this.
             IsFull = false
@@ -223,7 +238,13 @@ public class HouseholdService(
             return found;
         }
 
-        found.Household!.Name = name;
+        var cleanName = TextInput.Normalize(name);
+        if (cleanName.Length == 0)
+        {
+            return HouseholdDetailsResult.Failed(HouseholdAccessStatus.InvalidName);
+        }
+
+        found.Household!.Name = cleanName;
         await db.SaveChangesAsync(ct);
 
         return found;

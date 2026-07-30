@@ -34,5 +34,12 @@ public class ActivityConfiguration : IEntityTypeConfiguration<Activity>
         // negative point values is in project plan as part of the Security advanced
         // requirement, and a zero-point chore cannot influence a competition anyway.
         builder.ToTable(t => t.HasCheckConstraint("ck_activities_points_positive", "points > 0"));
+
+        // A blank title is a single-row rule, so it belongs here - the same boundary that puts
+        // points > 0 in the database and the affordability check in code (SS 3.14). Task [32]'s
+        // attribute guards HTTP callers and the service guards every other caller; this is the line
+        // that holds whatever reaches the database.
+        builder.ToTable(t => t.HasCheckConstraint("ck_activities_title_not_blank", "btrim(title) <> ''"));
+
     }
 }

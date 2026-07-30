@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using API.Entities;
+using API.Validation;
 
 namespace API.Dtos.ActivityLogs;
 
@@ -40,7 +41,7 @@ public record PendingLogResponse(
     DateTime CompletedAt);
 
 public record RejectActivityLogRequest(
-    [Required, StringLength(ActivityLog.RejectReasonMaxLength, MinimumLength = 1)]
+    [Required, CleanText(ActivityLog.RejectReasonMaxLength)]
     string Reason);
 
 /// <summary>

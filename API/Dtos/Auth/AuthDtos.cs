@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using API.Entities;
+using API.Validation;
 
 namespace API.Dtos.Auth;
 
@@ -13,7 +14,7 @@ namespace API.Dtos.Auth;
 /// </para>
 /// </remarks>
 public record RegisterRequest(
-    [Required, StringLength(User.NameMaxLength, MinimumLength = 1)]
+    [Required, CleanText(User.NameMaxLength)]
     string Name,
     [Required, EmailAddress, StringLength(256)]
     string Email,

@@ -45,6 +45,9 @@ public class HouseholdsController(IHouseholdService households) : ControllerBase
             case CreateHouseholdStatus.UserNotFound:
                 return Unauthorized();
 
+            case CreateHouseholdStatus.InvalidName:
+                return BadRequest(new { error = "Household name must contain at least one visible character." });
+
             case CreateHouseholdStatus.CouldNotGenerateInviteCode:
             default:
                 return StatusCode(
@@ -160,6 +163,9 @@ public class HouseholdsController(IHouseholdService households) : ControllerBase
     {
         HouseholdAccessStatus.HouseholdNotFound or HouseholdAccessStatus.NotAMember =>
             NotFound(new { error = "Household not found." }),
+
+        HouseholdAccessStatus.InvalidName =>
+            BadRequest(new { error = "Household name must contain at least one visible character." }),
 
         HouseholdAccessStatus.Conflict =>
             Conflict(new { error = "The household changed while processing. Please try again." }),

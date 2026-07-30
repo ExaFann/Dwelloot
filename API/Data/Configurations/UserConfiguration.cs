@@ -40,6 +40,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         // was rejected - do not read this constraint as covering it.
         builder.ToTable(t => t.HasCheckConstraint("ck_users_coins_not_negative", "coins >= 0"));
 
+        // A blank name is a single-row rule, so it belongs here - the same boundary that puts
+        // points > 0 in the database (SS 3.14). Task [32]'s attribute guards HTTP callers and the
+        // service guards every other caller; this holds whatever reaches the database.
+        builder.ToTable(t => t.HasCheckConstraint("ck_users_name_not_blank", "btrim(name) <> ''"));
+
+
         // SetNull, not Cascade: leaving a household deletes it once the last member is gone
         // (POST /households/{id}/leave). Cascading would delete the partners along with it;
         // set-null leaves them intact and unpaired, free to create or join another household.
