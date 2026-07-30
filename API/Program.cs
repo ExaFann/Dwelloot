@@ -37,6 +37,7 @@ builder.Services.AddScoped<IInviteCodeGenerator, InviteCodeGenerator>();
 builder.Services.AddScoped<IHouseholdService, HouseholdService>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
 builder.Services.AddScoped<IProgressionService, ProgressionService>();
+builder.Services.AddScoped<IBadgeQueryService, BadgeQueryService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 
 // Days are local, not UTC: this app's users are UTC+12/+13, so a UTC boundary would fall at noon
