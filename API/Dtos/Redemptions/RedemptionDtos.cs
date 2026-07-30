@@ -81,3 +81,76 @@ public record MyRedemptionResponse(
     string RewardTitle,
     int CoinsSpent,
     DateTime RedeemedAt);
+
+/// <summary>Accepted values for <c>GET /api/redemptions?scope=</c>.</summary>
+public static class RedemptionScopes
+{
+    public const string Household = "household";
+
+    public static readonly IReadOnlyList<string> All = [Household];
+}
+
+/// <summary>Query options for the household redemption feed, <c>GET /api/redemptions</c>.</summary>
+public record HouseholdRedemptionQuery
+{
+    /// <summary>
+    /// Optional; <see cref="RedemptionScopes.Household"/> is the only implemented value and the
+    /// default. Compared case-insensitively.
+    /// </summary>
+    /// <remarks>
+    /// An unrecognised value is a <b>400</b> rather than a silent fallback. That follows the sort-field
+    /// precedent from log <c>016</c>, but for a stronger reason: the fallback direction is dangerous
+    /// here. A client that mistypes this and is quietly given the whole household's rows has been
+    /// handed <em>more</em> data than it asked for, so when the two failure modes are "return less" and
+    /// "return more", the parameter is strict.
+    /// </remarks>
+    public string? Scope { get; init; }
+
+    /// <summary>
+    /// Drops the caller's own redemptions, leaving the partner's. What the Notices feed asks for.
+    /// </summary>
+    /// <remarks>
+    /// Defaults to false: an unfiltered household query honestly means the whole household. With this
+    /// set, the result and <c>GET /api/redemptions/mine</c> partition the household's redemptions —
+    /// every row is in exactly one of them.
+    /// </remarks>
+    public bool ExcludeMine { get; init; }
+
+    /// <summary>Treated as a page size — see <see cref="MyRedemptionQuery.Take"/>.</summary>
+    public int? Take { get; init; }
+
+    public int? Page { get; init; }
+
+    public int? PageSize { get; init; }
+
+    public int? EffectivePageSize => PageSize ?? Take;
+}
+
+/// <summary>
+/// Item shape for <c>GET /api/redemptions</c>, the Notices tab's partner-achievements feed.
+/// </summary>
+/// <remarks>
+/// Two fields go beyond <c>api-design.md</c>'s worked example.
+/// <para>
+/// <c>CoinsSpent</c> is the snapshot from task [30]. Without it the feed would show the reward's
+/// <em>current</em> price against a past purchase — exactly the drift that column exists to prevent, and
+/// the difference between "they redeemed the day off for 80 Coins" and whatever it was repriced to
+/// afterwards. It is also what gives this section the competitive weight <c>wireframes.md</c> asks of it.
+/// </para>
+/// <para>
+/// <c>RewardId</c> so a feed entry naming a catalog item carries its identifier instead of forcing the
+/// client to match on title — the fragility task [28] avoided by returning <c>pausesCompetition</c>
+/// rather than letting the UI recognise the day off by name.
+/// </para>
+/// <para>
+/// <c>UserName</c> is deliberately absent: the client already has both members from
+/// <c>GET /api/households/{id}</c>, and copying a name into every row invites it going stale.
+/// </para>
+/// </remarks>
+public record HouseholdRedemptionResponse(
+    int Id,
+    int UserId,
+    int RewardId,
+    string RewardTitle,
+    int CoinsSpent,
+    DateTime RedeemedAt);

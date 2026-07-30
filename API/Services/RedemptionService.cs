@@ -20,7 +20,10 @@ public enum RedemptionStatus
     RewardNotFound,
 
     /// <summary>The balance does not cover the price.</summary>
-    InsufficientCoins
+    InsufficientCoins,
+
+    /// <summary>An unrecognised <c>?scope=</c> on the household feed.</summary>
+    InvalidScope
 }
 
 public sealed record RedemptionResult(RedemptionStatus Status, RedemptionResponse? Redemption)
@@ -41,11 +44,26 @@ public sealed record MyRedemptionResult(
     public static MyRedemptionResult Failed(RedemptionStatus status) => new(status, null);
 }
 
+public sealed record HouseholdRedemptionResult(
+    RedemptionStatus Status,
+    PagedResponse<HouseholdRedemptionResponse>? Page)
+{
+    public static HouseholdRedemptionResult Ok(PagedResponse<HouseholdRedemptionResponse> page) =>
+        new(RedemptionStatus.Ok, page);
+
+    public static HouseholdRedemptionResult Failed(RedemptionStatus status) => new(status, null);
+}
+
 public interface IRedemptionService
 {
     Task<RedemptionResult> CreateAsync(int userId, int rewardId, CancellationToken ct = default);
 
     Task<MyRedemptionResult> ListMineAsync(int userId, MyRedemptionQuery query, CancellationToken ct = default);
+
+    Task<HouseholdRedemptionResult> ListForHouseholdAsync(
+        int userId,
+        HouseholdRedemptionQuery query,
+        CancellationToken ct = default);
 }
 
 /// <summary>
@@ -187,5 +205,72 @@ public class RedemptionService(AppDbContext db, IProgressionService progression)
             .ToListAsync(ct);
 
         return MyRedemptionResult.Ok(new PagedResponse<MyRedemptionResponse>(items, total));
+    }
+
+    /// <summary>
+    /// The household's redemptions, optionally excluding the caller's own — the Notices tab's
+    /// partner-achievements feed.
+    /// </summary>
+    /// <remarks>
+    /// Membership is reached through <c>reward.household_id</c>, <b>never</b> through the redeemer's
+    /// <c>user.household_id</c> (§3.15, log <c>007</c>). That is not hygiene here, it is the behaviour:
+    /// a user's household id is nullable and cleared on leaving, so joining that way would erase a
+    /// departed partner's entire history from the feed the moment they left. Rewards are permanently
+    /// household-owned, so the feed stays stable regardless of who is currently a member.
+    /// </remarks>
+    public async Task<HouseholdRedemptionResult> ListForHouseholdAsync(
+        int userId,
+        HouseholdRedemptionQuery query,
+        CancellationToken ct = default)
+    {
+        var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId, ct);
+        if (user is null)
+        {
+            return HouseholdRedemptionResult.Failed(RedemptionStatus.UserNotFound);
+        }
+
+        if (user.HouseholdId is null)
+        {
+            return HouseholdRedemptionResult.Failed(RedemptionStatus.NoHousehold);
+        }
+
+        // Optional, but not ignorable. A silent fallback on an unrecognised scope would hand a client
+        // that mistyped it *more* data than it asked for, so this rejects rather than guesses.
+        if (query.Scope is not null
+            && !RedemptionScopes.All.Contains(query.Scope.Trim(), StringComparer.OrdinalIgnoreCase))
+        {
+            return HouseholdRedemptionResult.Failed(RedemptionStatus.InvalidScope);
+        }
+
+        var redemptions = db.Redemptions.Where(r => r.Reward.HouseholdId == user.HouseholdId);
+
+        if (query.ExcludeMine)
+        {
+            redemptions = redemptions.Where(r => r.UserId != userId);
+        }
+
+        var total = await redemptions.CountAsync(ct);
+
+        var pageSize = Math.Clamp(
+            query.EffectivePageSize ?? ActivityService.DefaultPageSize,
+            1,
+            ActivityService.MaxPageSize);
+        var page = Math.Max(query.Page ?? 1, 1);
+
+        var items = await redemptions
+            .OrderByDescending(r => r.RedeemedAt)
+            .ThenByDescending(r => r.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(r => new HouseholdRedemptionResponse(
+                r.Id,
+                r.UserId,
+                r.RewardId,
+                r.Reward.Title,
+                r.CoinsSpent,
+                r.RedeemedAt))
+            .ToListAsync(ct);
+
+        return HouseholdRedemptionResult.Ok(new PagedResponse<HouseholdRedemptionResponse>(items, total));
     }
 }

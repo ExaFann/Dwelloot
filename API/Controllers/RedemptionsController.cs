@@ -56,13 +56,53 @@ public class RedemptionsController(IRedemptionService redemptions) : ControllerB
     }
 
     /// <summary>
+    /// The household's redemptions, optionally excluding the caller's own — the Notices tab's
+    /// partner-achievements feed (task [31a]).
+    /// </summary>
+    /// <remarks>
+    /// With <c>excludeMine=true</c> this and <see cref="Mine"/> partition the household's redemptions:
+    /// every row appears in exactly one of them.
+    /// </remarks>
+    [HttpGet]
+    public async Task<ActionResult<PagedResponse<HouseholdRedemptionResponse>>> Feed(
+        [FromQuery] HouseholdRedemptionQuery query,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await redemptions.ListForHouseholdAsync(userId.Value, query, ct);
+
+        return result.Status switch
+        {
+            RedemptionStatus.Ok => Ok(result.Page),
+
+            RedemptionStatus.NoHousehold =>
+                Conflict(new { error = "You are not in a household yet." }),
+
+            // 400 rather than a silent fallback. Unlike the sort fields, the danger here is the
+            // direction of the fallback: quietly widening a mistyped scope to the whole household
+            // returns more data than the caller asked for.
+            RedemptionStatus.InvalidScope =>
+                BadRequest(new
+                {
+                    error = $"Unknown scope. Valid values: {string.Join(", ", RedemptionScopes.All)}."
+                }),
+
+            _ => Unauthorized()
+        };
+    }
+
+    /// <summary>
     /// The caller's own purchase history, newest first.
     /// </summary>
     /// <remarks>
     /// This is <em>not</em> the source for the Notices tab's "partner's redemptions" section —
-    /// <c>api-design.md</c> is explicit that using it there was the earlier draft's mistake, and that
-    /// the correction is a household-scoped query with <c>excludeMine</c>. That endpoint has no task
-    /// yet; log <c>031</c> proposes it as [31a].
+    /// <c>api-design.md</c> is explicit that using it there was the earlier draft's mistake. That is
+    /// <see cref="Feed"/>, with <c>excludeMine=true</c>.
     /// </remarks>
     [HttpGet("mine")]
     public async Task<ActionResult<PagedResponse<MyRedemptionResponse>>> Mine(
