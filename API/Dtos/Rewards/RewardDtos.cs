@@ -1,3 +1,6 @@
+using System.ComponentModel.DataAnnotations;
+using API.Entities;
+
 namespace API.Dtos.Rewards;
 
 /// <summary>
@@ -47,3 +50,38 @@ public record RewardQuery
 
     public int? PageSize { get; init; }
 }
+
+/// <remarks>
+/// Attributes target the constructor parameters — see the note in <c>AuthDtos.cs</c>.
+/// No <c>HouseholdId</c>: the household comes from the caller's token, so a client cannot create a
+/// reward in someone else's store.
+/// <para>
+/// <c>PausesCompetition</c> <b>is</b> client-settable, which was not the first instinct. Withholding
+/// it was considered and rejected: the thing that actually gates abuse of a day-off reward is its
+/// price, and price is already editable through <see cref="PatchRewardRequest"/> — so withholding the
+/// flag would prevent nothing while breaking "every row equally editable" (the point of
+/// copy-on-creation) and making the one seeded pausing reward impossible to recreate once archived.
+/// The mitigation is disclosure instead: the store shows what a pausing reward does at the point of
+/// redemption, derived from this flag, which is why task [28] returns it per item.
+/// </para>
+/// </remarks>
+public record CreateRewardRequest(
+    [Required, StringLength(Reward.TitleMaxLength, MinimumLength = 1)]
+    string Title,
+    [Range(1, int.MaxValue)]
+    int CoinCost,
+    bool PausesCompetition = false);
+
+/// <summary>
+/// Partial update. A null field means "leave it alone", which is what separates this from a PUT.
+/// </summary>
+/// <remarks>
+/// <c>HouseholdId</c> is absent by design, so no request can move a reward between households — a
+/// body that cannot express the change beats one that is filtered afterwards.
+/// </remarks>
+public record PatchRewardRequest(
+    [StringLength(Reward.TitleMaxLength, MinimumLength = 1)]
+    string? Title,
+    [Range(1, int.MaxValue)]
+    int? CoinCost,
+    bool? PausesCompetition);

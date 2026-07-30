@@ -52,4 +52,30 @@ public class Reward
     public int HouseholdId { get; set; }
 
     public Household Household { get; set; } = null!;
+
+    /// <summary>
+    /// When this reward was removed from the store, or null while it is still offered.
+    /// </summary>
+    /// <remarks>
+    /// Removing a reward archives it rather than deleting the row, because
+    /// <see cref="Redemption.RewardId"/> cascades — and the redemptions it would take with it are not
+    /// just history:
+    /// <list type="bullet">
+    /// <item>settlement reads them to decide whether a <see cref="PausesCompetition"/> redemption
+    /// voided a day, so deleting the reward could retroactively <em>un-void</em> a day and change who
+    /// won it;</item>
+    /// <item>the First-redemption and Big-spender badges count them, so a delete would set the
+    /// partner's progress back;</item>
+    /// <item>the Notices feed lists them, so the partner's history would lose entries.</item>
+    /// </list>
+    /// Either partner may remove any of the household's rewards, so each of those is something one
+    /// partner could inflict on the other. Same reasoning and same fix as
+    /// <see cref="Activity.ArchivedAt"/> (task [18] had to reverse a hard delete for it; this one was
+    /// archived from the start).
+    /// <para>
+    /// Readers that must <b>not</b> filter on this: the settlement void check, and the lookup that
+    /// describes an already-opened loot box's prize. Both concern something that already happened.
+    /// </para>
+    /// </remarks>
+    public DateTime? ArchivedAt { get; set; }
 }

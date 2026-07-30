@@ -47,4 +47,78 @@ public class RewardsController(IRewardService rewards) : ControllerBase
             _ => Unauthorized()
         };
     }
+
+    [HttpPost]
+    public async Task<ActionResult<RewardResponse>> Create(CreateRewardRequest request, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await rewards.CreateAsync(userId.Value, request, ct);
+
+        return result.Status == RewardMutationStatus.Ok
+            ? Created($"/api/rewards/{result.Reward!.Id}", result.Reward)
+            : MapMutationFailure(result.Status);
+    }
+
+    [HttpPatch("{id:int}")]
+    public async Task<ActionResult<RewardResponse>> Update(
+        int id,
+        PatchRewardRequest request,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await rewards.UpdateAsync(userId.Value, id, request, ct);
+
+        return result.Status == RewardMutationStatus.Ok
+            ? Ok(result.Reward)
+            : MapMutationFailure(result.Status);
+    }
+
+    /// <summary>
+    /// Removes a reward from the store. Its redemptions survive — the row is archived rather than
+    /// deleted. See <see cref="IRewardService.DeleteAsync"/>.
+    /// </summary>
+    [HttpDelete("{id:int}")]
+    public async Task<ActionResult> Delete(int id, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await rewards.DeleteAsync(userId.Value, id, ct);
+
+        return result.Status == RewardMutationStatus.Ok
+            ? NoContent()
+            : MapMutationFailure(result.Status);
+    }
+
+    /// <remarks>
+    /// <see cref="RewardMutationStatus.NotFound"/> covers "no such reward", "someone else's reward"
+    /// and "archived" alike — see the note on the service. Same 404-not-403 reasoning as
+    /// <see cref="ActivitiesController"/>.
+    /// </remarks>
+    private ActionResult MapMutationFailure(RewardMutationStatus status) => status switch
+    {
+        RewardMutationStatus.NoHousehold =>
+            Conflict(new { error = "You are not in a household yet." }),
+
+        RewardMutationStatus.NotFound =>
+            NotFound(new { error = "Reward not found." }),
+
+        RewardMutationStatus.InvalidCoinCost =>
+            BadRequest(new { error = "Coin cost must be greater than zero." }),
+
+        _ => Unauthorized()
+    };
 }

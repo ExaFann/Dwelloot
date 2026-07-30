@@ -283,6 +283,14 @@ public class CompetitionSettlementService(
     /// Scoped through the reward rather than the redeemer, per log <c>007</c>: a user's
     /// <c>household_id</c> is nullable and cleared on leaving, so joining that way would lose a
     /// departed partner's redemptions. Rewards are permanently household-owned.
+    /// <para>
+    /// <b>Deliberately does not filter <see cref="Reward.ArchivedAt"/>.</b> The store list and the
+    /// loot-box prize pool both do, so the instinct is to add it here for consistency — that would be
+    /// a bug. The redemption already happened, and archiving the reward afterwards must not
+    /// retroactively un-void the day. Letting a catalog edit change a competition already under way is
+    /// the exact hole archiving exists to close (task [29]); filtering here would reopen it through the
+    /// archive path instead of the delete path.
+    /// </para>
     /// </remarks>
     private Task<bool> HasPausingRedemptionAsync(
         int householdId,

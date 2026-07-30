@@ -166,7 +166,14 @@ public class LootBoxService(AppDbContext db, ILootBoxRoller roller) : ILootBoxSe
     /// </remarks>
     private Task<List<int>> EligibleRewardPoolAsync(int householdId, CancellationToken ct) =>
         db.Rewards
-            .Where(r => r.HouseholdId == householdId && !r.PausesCompetition)
+            .Where(r => r.HouseholdId == householdId
+                        && !r.PausesCompetition
+                        // Added in task [29] along with the column. This comment already claimed
+                        // archived rewards were excluded when written in task [25], against a column
+                        // that did not exist yet - the filter is what makes it true. It matters
+                        // because opening a box writes a zero-cost Redemption for the prize, which
+                        // would put a reward the household removed back in front of them.
+                        && r.ArchivedAt == null)
             .Select(r => r.Id)
             .ToListAsync(ct);
 
