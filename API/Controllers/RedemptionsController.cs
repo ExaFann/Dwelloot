@@ -1,3 +1,4 @@
+using API.Dtos;
 using API.Dtos.Redemptions;
 using API.Extensions;
 using API.Services;
@@ -49,6 +50,39 @@ public class RedemptionsController(IRedemptionService redemptions) : ControllerB
 
             RedemptionStatus.InsufficientCoins =>
                 BadRequest(new { error = "Not enough Coins." }),
+
+            _ => Unauthorized()
+        };
+    }
+
+    /// <summary>
+    /// The caller's own purchase history, newest first.
+    /// </summary>
+    /// <remarks>
+    /// This is <em>not</em> the source for the Notices tab's "partner's redemptions" section —
+    /// <c>api-design.md</c> is explicit that using it there was the earlier draft's mistake, and that
+    /// the correction is a household-scoped query with <c>excludeMine</c>. That endpoint has no task
+    /// yet; log <c>031</c> proposes it as [31a].
+    /// </remarks>
+    [HttpGet("mine")]
+    public async Task<ActionResult<PagedResponse<MyRedemptionResponse>>> Mine(
+        [FromQuery] MyRedemptionQuery query,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await redemptions.ListMineAsync(userId.Value, query, ct);
+
+        return result.Status switch
+        {
+            RedemptionStatus.Ok => Ok(result.Page),
+
+            RedemptionStatus.NoHousehold =>
+                Conflict(new { error = "You are not in a household yet." }),
 
             _ => Unauthorized()
         };

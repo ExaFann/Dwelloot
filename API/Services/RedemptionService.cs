@@ -1,4 +1,5 @@
 using API.Data;
+using API.Dtos;
 using API.Dtos.Redemptions;
 using API.Entities;
 using API.Services.Progression;
@@ -30,9 +31,21 @@ public sealed record RedemptionResult(RedemptionStatus Status, RedemptionRespons
     public static RedemptionResult Failed(RedemptionStatus status) => new(status, null);
 }
 
+public sealed record MyRedemptionResult(
+    RedemptionStatus Status,
+    PagedResponse<MyRedemptionResponse>? Page)
+{
+    public static MyRedemptionResult Ok(PagedResponse<MyRedemptionResponse> page) =>
+        new(RedemptionStatus.Ok, page);
+
+    public static MyRedemptionResult Failed(RedemptionStatus status) => new(status, null);
+}
+
 public interface IRedemptionService
 {
     Task<RedemptionResult> CreateAsync(int userId, int rewardId, CancellationToken ct = default);
+
+    Task<MyRedemptionResult> ListMineAsync(int userId, MyRedemptionQuery query, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -113,5 +126,66 @@ public class RedemptionService(AppDbContext db, IProgressionService progression)
             redemption.CoinsSpent,
             user.Coins,
             redemption.RedeemedAt));
+    }
+
+    /// <summary>
+    /// The caller's own purchase history, newest first.
+    /// </summary>
+    /// <remarks>
+    /// Redemptions of <b>archived</b> rewards are included. Archiving removes a reward from the store,
+    /// not from what already happened — the same rule task [22a] applied to logs of archived chores.
+    /// Task [29] archives rather than deletes precisely so these rows survive, so filtering them here
+    /// would undo that at the read layer. The reward row surviving is also what lets the title resolve.
+    /// </remarks>
+    public async Task<MyRedemptionResult> ListMineAsync(
+        int userId,
+        MyRedemptionQuery query,
+        CancellationToken ct = default)
+    {
+        var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId, ct);
+        if (user is null)
+        {
+            return MyRedemptionResult.Failed(RedemptionStatus.UserNotFound);
+        }
+
+        // Not an empty page: an empty history is a legitimate state for someone who has never spent
+        // anything, so conflating it with "you are not paired yet" would hide a routing bug.
+        if (user.HouseholdId is null)
+        {
+            return MyRedemptionResult.Failed(RedemptionStatus.NoHousehold);
+        }
+
+        // Scoped through reward.household_id, never through the redeemer's user.household_id: the
+        // latter is nullable and cleared on leaving, so joining that way silently returns wrong data
+        // (SS 3.15). The household clause itself matches the sibling /activity-logs/mine, so leaving a
+        // household does not bleed its history into the next one.
+        var redemptions = db.Redemptions
+            .Where(r => r.UserId == userId && r.Reward.HouseholdId == user.HouseholdId);
+
+        var total = await redemptions.CountAsync(ct);
+
+        var pageSize = Math.Clamp(
+            query.EffectivePageSize ?? ActivityService.DefaultPageSize,
+            1,
+            ActivityService.MaxPageSize);
+        var page = Math.Max(query.Page ?? 1, 1);
+
+        // Newest first, with Id as the tiebreaker. Two purchases can share a timestamp closely enough
+        // to tie, and PostgreSQL guarantees no order without one - rows would repeat or vanish across
+        // page boundaries (log 016). The (user_id, redeemed_at) index from task [8] serves this.
+        var items = await redemptions
+            .OrderByDescending(r => r.RedeemedAt)
+            .ThenByDescending(r => r.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(r => new MyRedemptionResponse(
+                r.Id,
+                r.RewardId,
+                r.Reward.Title,
+                r.CoinsSpent,
+                r.RedeemedAt))
+            .ToListAsync(ct);
+
+        return MyRedemptionResult.Ok(new PagedResponse<MyRedemptionResponse>(items, total));
     }
 }
