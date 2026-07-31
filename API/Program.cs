@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using API.Data;
+using API.Cors;
 using API.Errors;
 using API.OpenApi;
 using API.Entities;
@@ -155,6 +156,23 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 // wording predates it. Details are never returned, in any environment - see GlobalExceptionHandler.
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+// Named origins, never AllowAnyOrigin - that would make the whole policy decorative, and it is the usual
+// way this gets "fixed" when a frontend cannot connect. The list is configuration because the frontend's
+// deployed origin is not known until task [60].
+//
+// No AllowCredentials, deliberately: authentication is a JWT in the Authorization header, not a cookie,
+// so nothing needs the browser to attach anything automatically - which removes the CORS-plus-cookie
+// CSRF surface entirely rather than mitigating it.
+var corsSettings = builder.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>()
+    ?? new CorsSettings();
+
+builder.Services.AddCors(options => options.AddPolicy(
+    CorsSettings.PolicyName,
+    policy => policy
+        .WithOrigins(corsSettings.NormalizedOrigins)
+        .AllowAnyHeader()
+        .AllowAnyMethod()));
+
 // The transformer is what makes the document usable rather than merely accurate: without the bearer
 // scheme, every [Authorize] endpoint in Scalar answers 401 and the page cannot be tried (task [34]).
 builder.Services.AddOpenApi(options =>
@@ -187,6 +205,25 @@ app.UseStatusCodePages(async context =>
             _ => "Request failed."
         }));
 });
+
+// Before UseHttpsRedirection, and that ordering is the non-obvious part: a CORS preflight is an OPTIONS
+// request, and browsers do not follow redirects for preflight - a 307 to https:// fails it outright and
+// the real request is never sent. With CORS first the preflight is answered and short-circuits before
+// any redirect can happen.
+//
+// After the error middleware, so a 500 still carries the CORS headers. Otherwise a browser reports
+// "blocked by CORS policy" instead of the actual error, which is a bad afternoon for whoever is
+// debugging the frontend.
+app.UseCors(CorsSettings.PolicyName);
+
+// Logged rather than enforced. An empty list is not fatal - the API still serves Scalar and any
+// non-browser client - so a deployment that forgot Cors__AllowedOrigins__0 shows the reason in its own
+// logs instead of presenting as an inexplicable browser error.
+app.Logger.LogInformation(
+    "CORS allowed origins: {Origins}",
+    corsSettings.NormalizedOrigins.Length > 0
+        ? string.Join(", ", corsSettings.NormalizedOrigins)
+        : "(none configured - browser clients will be blocked)");
 
 app.MapOpenApi();
 
