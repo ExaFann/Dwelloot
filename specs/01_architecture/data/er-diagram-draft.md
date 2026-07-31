@@ -14,6 +14,9 @@ erDiagram
     BADGE ||--o{ USERBADGE : "unlocked as"
     HOUSEHOLD ||--o{ COMPETITION : runs
     USER ||--o{ COMPETITION : wins
+    REWARD ||--o{ COMPETITION : "awarded as loot"
+    COMPETITION ||--o{ COMPETITIONCLAIM : "opened as"
+    USER ||--o{ COMPETITIONCLAIM : opens
 
     HOUSEHOLD {
         int id PK
@@ -38,6 +41,7 @@ erDiagram
         string title
         int points
         string category
+        datetime archived_at "nullable - removing a chore archives it so its logs survive"
     }
     ACTIVITYLOG {
         int id PK
@@ -45,6 +49,7 @@ erDiagram
         int logged_by_user_id FK
         int approved_by_user_id FK "must differ from logged_by_user_id"
         string status
+        int points_awarded "snapshot of the chore's points at log time, not a live read"
         datetime completed_at
         datetime approved_at
         string reject_reason
@@ -55,11 +60,13 @@ erDiagram
         string title
         int coin_cost
         bool pauses_competition "true = redeeming voids that day's daily competition"
+        datetime archived_at "nullable - removing a reward archives it so its redemptions survive"
     }
     REDEMPTION {
         int id PK
         int user_id FK
         int reward_id FK
+        int coins_spent "snapshot of the reward's price at purchase time, not a live read"
         datetime redeemed_at
     }
     BADGE {
@@ -76,13 +83,23 @@ erDiagram
     COMPETITION {
         int id PK
         int household_id FK
-        int winner_user_id FK "nullable, null on a win-win"
+        int winner_user_id FK "nullable, null on a win-win or a voided period"
+        int bonus_reward_id FK "nullable, set when the loot box rolled a reward instead of Coins"
         string period_type
         datetime period_start
         datetime period_end
+        int winner_points
+        int loser_points
         int coins_awarded
         bool is_win_win
-        datetime settled_at
+        bool is_voided "a pauses_competition reward was redeemed in this period"
+        datetime settled_at "not null - a row exists only once settled"
+    }
+    COMPETITIONCLAIM {
+        int id PK
+        int competition_id FK
+        int user_id FK
+        datetime opened_at
     }
 ```
 
