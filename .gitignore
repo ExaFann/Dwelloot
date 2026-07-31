@@ -494,3 +494,6 @@ $RECYCLE.BIN/
 **/appsettings.Local.json
 **/appsettings.*.Local.json
 **/secrets.json
+
+
+publish.zip
