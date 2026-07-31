@@ -86,22 +86,37 @@ public class CorsSettingsTests
         Assert.Empty(Normalize());
     }
 
-    [Fact]
-    public void The_shipped_default_configuration_is_the_two_Vite_origins()
+    private static CorsSettings? SettingsFrom(params string[] files)
     {
-        // Pins appsettings.json, so a typo there fails a test rather than a frontend. Both spellings are
+        var builder = new ConfigurationBuilder();
+
+        foreach (var file in files)
+        {
+            builder.AddJsonFile(Path.Combine(RepositoryRoot(), "API", file));
+        }
+
+        return builder.Build().GetSection(CorsSettings.SectionName).Get<CorsSettings>();
+    }
+
+    [Fact]
+    public void The_development_defaults_are_the_two_Vite_origins()
+    {
+        // Pins the shipped defaults, so a typo fails a test rather than a frontend. Both spellings are
         // present on purpose: a browser sends whichever the address bar holds, and localhost and
         // 127.0.0.1 are distinct origins.
-        var configuration = new ConfigurationBuilder()
-            .AddJsonFile(Path.Combine(RepositoryRoot(), "API", "appsettings.json"))
-            .Build();
-
-        var settings = configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>();
-
-        Assert.NotNull(settings);
         Assert.Equal(
             ["http://localhost:5173", "http://127.0.0.1:5173"],
-            settings.NormalizedOrigins);
+            SettingsFrom("appsettings.json", "appsettings.Development.json")!.NormalizedOrigins);
+    }
+
+    [Fact]
+    public void The_base_configuration_ships_no_origins_at_all()
+    {
+        // Task [37] found why this matters. Environment-variable array overrides are applied per index,
+        // so a deployment that sets Cors__AllowedOrigins__0 replaces index 0 and leaves index 1 in place
+        // - a localhost dev origin shipped in appsettings.json stayed allowed in Production. The dev
+        // origins now live in appsettings.Development.json, which a deployment never loads.
+        Assert.Empty(SettingsFrom("appsettings.json")!.NormalizedOrigins);
     }
 
     private static string RepositoryRoot()

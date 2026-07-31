@@ -3,12 +3,15 @@ using System.Text.Json.Serialization;
 using API.Data;
 using API.Cors;
 using API.Errors;
+using API.Hosting;
 using API.OpenApi;
 using API.Entities;
 using API.Services;
 using API.Services.Competitions;
 using API.Services.Progression;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +19,18 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Render, Railway and Fly.io publish the port to bind in PORT; ASP.NET Core does not read it. Without
+// this the platform routes to a port nothing is listening on, and the deploy reports success while every
+// request times out (task [37]). Left alone when PORT is absent, so ASPNETCORE_URLS and
+// launchSettings.json still win locally.
+var bindUrl = HostingConfiguration.BindUrlFromPortVariable(
+    Environment.GetEnvironmentVariable("PORT"),
+    Environment.GetEnvironmentVariable("ASPNETCORE_URLS"));
+if (bindUrl is not null)
+{
+    builder.WebHost.UseUrls(bindUrl);
+}
 
 // Add services to the container.
 
@@ -166,6 +181,27 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 var corsSettings = builder.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>()
     ?? new CorsSettings();
 
+// TLS terminates at the platform's edge, so the app receives plain HTTP with X-Forwarded-Proto: https.
+// Without this Request.Scheme is "http", UseHttpsRedirection issues a 307 to https, the edge forwards it
+// back as HTTP, and every request loops until the browser gives up - preflights included, which would
+// surface as a CORS failure whose real cause is this (task [37]).
+//
+// KnownProxies and KnownNetworks are cleared deliberately: the headers are trusted from any peer, which
+// is wrong on a network where an attacker can reach the app directly and right behind a PaaS edge that
+// is the only route in.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+// Reports whether the database is reachable. Platforms poll one, and it is the "at least one endpoint is
+// reachable live" check task [37] is measured by.
+// A hand-rolled check rather than AddDbContextCheck, which lives in a separate package: this is one
+// CanConnectAsync call, and a dependency added for one call is a dependency to keep patched forever.
+builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
+
 builder.Services.AddCors(options => options.AddPolicy(
     CorsSettings.PolicyName,
     policy => policy
@@ -181,6 +217,10 @@ builder.Services.AddOpenApi(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
+// Before anything that reads the scheme or the client address - which is UseHttpsRedirection, the CORS
+// origin comparison and the error middleware's logging.
+app.UseForwardedHeaders();
 
 // First, so it wraps everything after it. Deliberately not inside an IsDevelopment check and
 // deliberately not paired with a developer exception page: one error shape in every environment, and
@@ -238,5 +278,22 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Anonymous and detail-free: 200 or 503 and nothing else. An unauthenticated endpoint should not
+// describe why the database is unhappy.
+app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = (context, _) => Task.CompletedTask });
+
+// Applied here rather than by a release command, because several free tiers do not have one and a first
+// deploy would otherwise connect fine and then fail every query. Off in Development, where migrations
+// stay a deliberate `dotnet ef database update` - see HostingConfiguration.ShouldMigrateOnStartup.
+if (HostingConfiguration.ShouldMigrateOnStartup(
+        builder.Configuration[HostingConfiguration.MigrateOnStartupKey],
+        app.Environment.IsDevelopment()))
+{
+    app.Logger.LogInformation("Applying database migrations on startup.");
+
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.MigrateAsync();
+}
 
 app.Run();
