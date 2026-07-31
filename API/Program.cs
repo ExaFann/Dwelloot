@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using API.Data;
 using API.Errors;
+using API.OpenApi;
 using API.Entities;
 using API.Services;
 using API.Services.Competitions;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -153,8 +155,10 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 // wording predates it. Details are never returned, in any environment - see GlobalExceptionHandler.
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// The transformer is what makes the document usable rather than merely accurate: without the bearer
+// scheme, every [Authorize] endpoint in Scalar answers 401 and the page cannot be tried (task [34]).
+builder.Services.AddOpenApi(options =>
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>());
 
 var app = builder.Build();
 
@@ -184,10 +188,12 @@ app.UseStatusCodePages(async context =>
         }));
 });
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+app.MapOpenApi();
+
+app.MapScalarApiReference(options => options
+    .WithTitle("Dwelloot API")
+    .WithTheme(ScalarTheme.Purple)
+    .AddPreferredSecuritySchemes(BearerSecuritySchemeTransformer.SchemeName));
 
 app.UseHttpsRedirection();
 
