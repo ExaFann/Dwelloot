@@ -123,4 +123,16 @@ public class TextInputTests
         Assert.False(TextInput.IsClean(new string('x', 81), 80));
         Assert.True(TextInput.IsClean(new string('x', 80), 80));
     }
+
+    [Fact]
+    public void The_attribute_error_message_names_the_limit_and_explains_the_rule()
+    {
+        // Coverage flagged FormatErrorMessage as never executed. It is what a client actually reads on a
+        // 400, so it should say both what is wrong and what the limit is - "invalid" would not.
+        var message = new API.Validation.CleanTextAttribute(80).FormatErrorMessage("Title");
+
+        Assert.Contains("Title", message);
+        Assert.Contains("80", message);
+        Assert.Contains("visible character", message);
+    }
 }

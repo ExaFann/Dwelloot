@@ -186,4 +186,146 @@ public class PeriodCalculatorTests
             Assert.All(closed, p => Assert.InRange((p.EndUtc - p.StartUtc).TotalHours, 23, 25));
         }
     }
+
+    // ------------------------------------------------------------------ DST at local midnight
+
+    /// <summary>
+    /// Cuba transitions at <b>midnight</b>, so its local midnight can be invalid or ambiguous.
+    /// </summary>
+    /// <remarks>
+    /// The branches in <c>ToUtc</c> that handle this had never executed before task [36], and coverage
+    /// is what revealed it: New Zealand transitions at 2am/3am, so a day boundary there is never invalid
+    /// or ambiguous, and every existing test uses Auckland or UTC. §3.6 and log <c>023</c> both describe
+    /// the handling as settled behaviour, which until now rested on nothing.
+    /// <para>
+    /// Same countermeasure as the <c>(ActivityCategory)99</c> row in log <c>016</c>: construct the state
+    /// the normal path cannot produce. Each test first asserts the fixture really is invalid or
+    /// ambiguous, so a future tzdata change that moves Cuba's transition fails loudly rather than
+    /// quietly making the test vacuous.
+    /// </para>
+    /// </remarks>
+    private static readonly TimeZoneInfo Havana = TimeZoneInfo.FindSystemTimeZoneById("America/Havana");
+
+    [Fact]
+    public void A_day_whose_local_midnight_is_skipped_by_a_spring_forward_still_has_a_period()
+    {
+        var midnight = new DateTime(2026, 3, 8, 0, 0, 0, DateTimeKind.Unspecified);
+        Assert.True(Havana.IsInvalidTime(midnight), "fixture premise: this local midnight must not exist");
+
+        var calculator = new PeriodCalculator(Havana);
+        var period = calculator.PeriodContaining(
+            CompetitionPeriodType.Daily,
+            new DateTime(2026, 3, 8, 18, 0, 0, DateTimeKind.Utc));
+
+        // The skipped midnight steps forward to the first real instant, so the day is an hour short but
+        // still a real, forward-going interval.
+        Assert.True(period.EndUtc > period.StartUtc);
+        Assert.InRange((period.EndUtc - period.StartUtc).TotalHours, 22, 24);
+    }
+
+    [Fact]
+    public void A_day_whose_local_midnight_is_repeated_by_a_fall_back_does_not_overlap_its_neighbour()
+    {
+        var midnight = new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Unspecified);
+        Assert.True(Havana.IsAmbiguousTime(midnight), "fixture premise: this local midnight must occur twice");
+
+        var calculator = new PeriodCalculator(Havana);
+        var previous = calculator.PeriodContaining(
+            CompetitionPeriodType.Daily,
+            new DateTime(2026, 10, 31, 18, 0, 0, DateTimeKind.Utc));
+        var ambiguous = calculator.PeriodContaining(
+            CompetitionPeriodType.Daily,
+            new DateTime(2026, 11, 1, 18, 0, 0, DateTimeKind.Utc));
+
+        // The earlier offset is taken, so the boundary is a single instant and the two days meet exactly
+        // rather than overlapping - the property periods are half-open [start, end) to guarantee.
+        Assert.Equal(previous.EndUtc, ambiguous.StartUtc);
+        Assert.True(ambiguous.EndUtc > ambiguous.StartUtc);
+    }
+
+    [Fact]
+    public void Consecutive_days_across_both_transitions_stay_contiguous_and_never_overlap()
+    {
+        // The property that actually matters: no instant belongs to two periods, and none to zero.
+        var calculator = new PeriodCalculator(Havana);
+
+        foreach (var start in new[] { new DateTime(2026, 3, 5), new DateTime(2026, 10, 29) })
+        {
+            var periods = Enumerable.Range(0, 6)
+                .Select(offset => calculator.PeriodContaining(
+                    CompetitionPeriodType.Daily,
+                    DateTime.SpecifyKind(start.AddDays(offset).AddHours(18), DateTimeKind.Utc)))
+                .ToList();
+
+            foreach (var (earlier, later) in periods.Zip(periods.Skip(1)))
+            {
+                Assert.Equal(earlier.EndUtc, later.StartUtc);
+                Assert.True(later.EndUtc > later.StartUtc);
+            }
+        }
+    }
+
+    [Fact]
+    public void An_unrecognised_period_type_throws_rather_than_guessing()
+    {
+        // Unreachable through the API - the enum is bound from a query string and MVC rejects anything
+        // outside it - so the value is constructed by hand, the same way log 016's out-of-range category
+        // row was. A silent fallback to Daily would mis-settle a whole period.
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            Calculator.PeriodContaining((CompetitionPeriodType)99, DateTime.UtcNow));
+    }
+
+    [Fact]
+    public void The_period_returned_for_an_instant_always_contains_that_instant()
+    {
+        // The invariant the contiguity test cannot see. Both the previous day's end and the next day's
+        // start are the same local midnight, so resolving an ambiguous midnight to the *later* offset
+        // shifts both together and the two still meet - which is why mutation testing found
+        // offsets.Max() -> offsets.Min() survived. What it does break is this: the repeated hour then
+        // falls outside the period computed for it, so PeriodContaining hands back a window that does
+        // not contain the instant it was asked about.
+        //
+        // Sampled every 20 minutes across both Cuban transitions, at all three period types.
+        var calculator = new PeriodCalculator(Havana);
+
+        foreach (var day in new[] { new DateTime(2026, 3, 8), new DateTime(2026, 11, 1) })
+        {
+            for (var minutes = 0; minutes < 48 * 60; minutes += 20)
+            {
+                var instant = DateTime.SpecifyKind(day.AddDays(-1).AddMinutes(minutes), DateTimeKind.Utc);
+
+                foreach (var type in new[]
+                {
+                    CompetitionPeriodType.Daily,
+                    CompetitionPeriodType.Weekly,
+                    CompetitionPeriodType.Monthly
+                })
+                {
+                    var period = calculator.PeriodContaining(type, instant);
+
+                    Assert.True(
+                        period.StartUtc <= instant && instant < period.EndUtc,
+                        $"{type} period {period.StartUtc:o}..{period.EndUtc:o} does not contain {instant:o}");
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void The_hour_repeated_by_a_fall_back_belongs_to_the_day_it_is_repeated_in()
+    {
+        // Which side of the boundary the extra hour lands on. Taking the earlier instant for an
+        // ambiguous midnight puts it inside the new day, so a chore logged during the repeated hour
+        // counts toward 1 November rather than 31 October. Pinned because both choices are contiguous
+        // and only this says which one was made.
+        var calculator = new PeriodCalculator(Havana);
+
+        var fallBackDay = calculator.PeriodContaining(
+            CompetitionPeriodType.Daily, new DateTime(2026, 11, 1, 18, 0, 0, DateTimeKind.Utc));
+        var dayBefore = calculator.PeriodContaining(
+            CompetitionPeriodType.Daily, new DateTime(2026, 10, 31, 18, 0, 0, DateTimeKind.Utc));
+
+        Assert.Equal(25, (fallBackDay.EndUtc - fallBackDay.StartUtc).TotalHours);
+        Assert.Equal(24, (dayBefore.EndUtc - dayBefore.StartUtc).TotalHours);
+    }
 }
