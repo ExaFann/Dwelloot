@@ -1,5 +1,6 @@
 using API.Dtos;
 using API.Dtos.ActivityLogs;
+using API.Errors;
 using API.Extensions;
 using API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -34,7 +35,7 @@ public class ActivityLogsController(IActivityLogService logs) : ControllerBase
             ActivityLogStatusCode.Ok => Ok(result.Page),
 
             ActivityLogStatusCode.NoHousehold =>
-                Conflict(new { error = "You are not in a household yet." }),
+                this.Failure(StatusCodes.Status409Conflict, "You are not in a household yet."),
 
             _ => Unauthorized()
         };
@@ -61,7 +62,7 @@ public class ActivityLogsController(IActivityLogService logs) : ControllerBase
             ActivityLogStatusCode.Ok => Ok(result.Page),
 
             ActivityLogStatusCode.NoHousehold =>
-                Conflict(new { error = "You are not in a household yet." }),
+                this.Failure(StatusCodes.Status409Conflict, "You are not in a household yet."),
 
             _ => Unauthorized()
         };
@@ -86,12 +87,12 @@ public class ActivityLogsController(IActivityLogService logs) : ControllerBase
                 Created($"/api/activity-logs/{result.Log!.Id}", result.Log),
 
             ActivityLogStatusCode.NoHousehold =>
-                Conflict(new { error = "You are not in a household yet." }),
+                this.Failure(StatusCodes.Status409Conflict, "You are not in a household yet."),
 
             // Covers "no such chore", "someone else's chore" and "archived chore" alike, so the
             // endpoint cannot be used to discover which ids exist.
             ActivityLogStatusCode.ActivityNotFound =>
-                NotFound(new { error = "Chore not found." }),
+                this.Failure(StatusCodes.Status404NotFound, "Chore not found."),
 
             _ => Unauthorized()
         };
@@ -165,21 +166,19 @@ public class ActivityLogsController(IActivityLogService logs) : ControllerBase
     private ActionResult MapDecisionFailure(ActivityLogStatusCode status) => status switch
     {
         ActivityLogStatusCode.NoHousehold =>
-            Conflict(new { error = "You are not in a household yet." }),
+            this.Failure(StatusCodes.Status409Conflict, "You are not in a household yet."),
 
         ActivityLogStatusCode.LogNotFound =>
-            NotFound(new { error = "Log not found." }),
+            this.Failure(StatusCodes.Status404NotFound, "Log not found."),
 
         ActivityLogStatusCode.SelfApproval =>
-            StatusCode(
-                StatusCodes.Status403Forbidden,
-                new { error = "You cannot approve or reject a chore you logged yourself." }),
+            this.Failure(StatusCodes.Status403Forbidden, "You cannot approve or reject a chore you logged yourself."),
 
         ActivityLogStatusCode.NotPending =>
-            Conflict(new { error = "This log has already been decided." }),
+            this.Failure(StatusCodes.Status409Conflict, "This log has already been decided."),
 
         ActivityLogStatusCode.Conflict =>
-            Conflict(new { error = "This log was decided just now. Refresh and try again." }),
+            this.Failure(StatusCodes.Status409Conflict, "This log was decided just now. Refresh and try again."),
 
         _ => Unauthorized()
     };

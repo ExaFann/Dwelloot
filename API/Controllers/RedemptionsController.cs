@@ -1,5 +1,6 @@
 using API.Dtos;
 using API.Dtos.Redemptions;
+using API.Errors;
 using API.Extensions;
 using API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -40,16 +41,16 @@ public class RedemptionsController(IRedemptionService redemptions) : ControllerB
                 Created($"/api/redemptions/{result.Redemption!.Id}", result.Redemption),
 
             RedemptionStatus.NoHousehold =>
-                Conflict(new { error = "You are not in a household yet." }),
+                this.Failure(StatusCodes.Status409Conflict, "You are not in a household yet."),
 
             // Covers "no such reward", "another household's reward" and "archived reward" alike, so the
             // endpoint cannot be used to discover which ids exist. Same 404-not-403 reasoning as
             // RewardsController.
             RedemptionStatus.RewardNotFound =>
-                NotFound(new { error = "Reward not found." }),
+                this.Failure(StatusCodes.Status404NotFound, "Reward not found."),
 
             RedemptionStatus.InsufficientCoins =>
-                BadRequest(new { error = "Not enough Coins." }),
+                this.Failure(StatusCodes.Status400BadRequest, "Not enough Coins."),
 
             _ => Unauthorized()
         };
@@ -81,16 +82,15 @@ public class RedemptionsController(IRedemptionService redemptions) : ControllerB
             RedemptionStatus.Ok => Ok(result.Page),
 
             RedemptionStatus.NoHousehold =>
-                Conflict(new { error = "You are not in a household yet." }),
+                this.Failure(StatusCodes.Status409Conflict, "You are not in a household yet."),
 
             // 400 rather than a silent fallback. Unlike the sort fields, the danger here is the
             // direction of the fallback: quietly widening a mistyped scope to the whole household
             // returns more data than the caller asked for.
             RedemptionStatus.InvalidScope =>
-                BadRequest(new
-                {
-                    error = $"Unknown scope. Valid values: {string.Join(", ", RedemptionScopes.All)}."
-                }),
+                this.Failure(
+                    StatusCodes.Status400BadRequest,
+                    $"Unknown scope. Valid values: {string.Join(", ", RedemptionScopes.All)}."),
 
             _ => Unauthorized()
         };
@@ -122,7 +122,7 @@ public class RedemptionsController(IRedemptionService redemptions) : ControllerB
             RedemptionStatus.Ok => Ok(result.Page),
 
             RedemptionStatus.NoHousehold =>
-                Conflict(new { error = "You are not in a household yet." }),
+                this.Failure(StatusCodes.Status409Conflict, "You are not in a household yet."),
 
             _ => Unauthorized()
         };

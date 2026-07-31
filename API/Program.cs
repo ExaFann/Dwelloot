@@ -1,12 +1,14 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using API.Data;
+using API.Errors;
 using API.Entities;
 using API.Services;
 using API.Services.Competitions;
 using API.Services.Progression;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -129,12 +131,59 @@ builder.Services
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
+// Model validation is the one place the framework produces an error body of its own, and it used to be
+// the only response in the API shaped like ProblemDetails. Replaced so a failed annotation looks like
+// every other error - the per-field map is kept, since that is what the frontend's forms need (task [33]).
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(entry => entry.Value?.Errors.Count > 0)
+            .ToDictionary(
+                entry => entry.Key,
+                entry => entry.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
+
+        return new BadRequestObjectResult(
+            ApiErrorResponse.For(context.HttpContext, "One or more fields are invalid.", errors));
+    };
+});
+
+// IExceptionHandler is how UseExceptionHandler is extended in .NET 8+; the commit plan's "middleware"
+// wording predates it. Details are never returned, in any environment - see GlobalExceptionHandler.
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
+// First, so it wraps everything after it. Deliberately not inside an IsDevelopment check and
+// deliberately not paired with a developer exception page: one error shape in every environment, and
+// this project only ever runs in Development, so an environment-gated handler could never be verified.
+app.UseExceptionHandler(_ => { });
+
+// Fills in a body for responses that carry a status but no content - the bare 401 from JWT
+// authentication and the 404 for an unmatched route. Both returned nothing at all before task [33],
+// which forced a client to special-case "error with no body".
+app.UseStatusCodePages(async context =>
+{
+    var response = context.HttpContext.Response;
+
+    response.ContentType = "application/json";
+    await response.WriteAsJsonAsync(ApiErrorResponse.For(
+        context.HttpContext,
+        response.StatusCode switch
+        {
+            StatusCodes.Status401Unauthorized => "Authentication is required.",
+            StatusCodes.Status403Forbidden => "You do not have access to that.",
+            StatusCodes.Status404NotFound => "That endpoint does not exist.",
+            _ => "Request failed."
+        }));
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

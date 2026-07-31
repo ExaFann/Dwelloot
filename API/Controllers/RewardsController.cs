@@ -1,5 +1,6 @@
 using API.Dtos;
 using API.Dtos.Rewards;
+using API.Errors;
 using API.Extensions;
 using API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -34,15 +35,14 @@ public class RewardsController(IRewardService rewards) : ControllerBase
             RewardQueryStatus.Ok => Ok(result.Page),
 
             RewardQueryStatus.NoHousehold =>
-                Conflict(new { error = "You are not in a household yet." }),
+                this.Failure(StatusCodes.Status409Conflict, "You are not in a household yet."),
 
             // 400 rather than a silent fallback, so a frontend typo surfaces immediately instead of
             // quietly returning mis-ordered data. Same as ActivitiesController.
             RewardQueryStatus.InvalidSort =>
-                BadRequest(new
-                {
-                    error = $"Unknown sort field. Valid values: {string.Join(", ", RewardSortFields.All)}."
-                }),
+                this.Failure(
+                    StatusCodes.Status400BadRequest,
+                    $"Unknown sort field. Valid values: {string.Join(", ", RewardSortFields.All)}."),
 
             _ => Unauthorized()
         };
@@ -111,16 +111,16 @@ public class RewardsController(IRewardService rewards) : ControllerBase
     private ActionResult MapMutationFailure(RewardMutationStatus status) => status switch
     {
         RewardMutationStatus.NoHousehold =>
-            Conflict(new { error = "You are not in a household yet." }),
+            this.Failure(StatusCodes.Status409Conflict, "You are not in a household yet."),
 
         RewardMutationStatus.NotFound =>
-            NotFound(new { error = "Reward not found." }),
+            this.Failure(StatusCodes.Status404NotFound, "Reward not found."),
 
         RewardMutationStatus.InvalidCoinCost =>
-            BadRequest(new { error = "Coin cost must be greater than zero." }),
+            this.Failure(StatusCodes.Status400BadRequest, "Coin cost must be greater than zero."),
 
         RewardMutationStatus.InvalidTitle =>
-            BadRequest(new { error = "Title must contain at least one visible character." }),
+            this.Failure(StatusCodes.Status400BadRequest, "Title must contain at least one visible character."),
 
         _ => Unauthorized()
     };

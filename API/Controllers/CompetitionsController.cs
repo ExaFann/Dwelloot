@@ -1,5 +1,6 @@
 using API.Dtos.Competitions;
 using API.Entities;
+using API.Errors;
 using API.Extensions;
 using API.Services.Competitions;
 using Microsoft.AspNetCore.Authorization;
@@ -43,7 +44,7 @@ public class CompetitionsController(
             // 404 rather than 403, so household ids cannot be enumerated - same reasoning as
             // HouseholdsController.
             CompetitionQueryStatus.NotAMember =>
-                NotFound(new { error = "Household not found." }),
+                this.Failure(StatusCodes.Status404NotFound, "Household not found."),
 
             _ => Unauthorized()
         };
@@ -72,17 +73,15 @@ public class CompetitionsController(
             LootBoxStatus.Ok => Ok(result.Box),
 
             LootBoxStatus.NotAMember or LootBoxStatus.CompetitionNotFound =>
-                NotFound(new { error = "Competition not found." }),
+                this.Failure(StatusCodes.Status404NotFound, "Competition not found."),
 
             LootBoxStatus.Voided =>
-                Conflict(new { error = "That period was voided, so no loot box was awarded." }),
+                this.Failure(StatusCodes.Status409Conflict, "That period was voided, so no loot box was awarded."),
 
             // 403, not 404: the caller can see this competition on their own dashboard, so hiding
             // it would confuse rather than protect. Same reasoning as self-approval in task [21].
             LootBoxStatus.NotYours =>
-                StatusCode(
-                    StatusCodes.Status403Forbidden,
-                    new { error = "You did not win that period." }),
+                this.Failure(StatusCodes.Status403Forbidden, "You did not win that period."),
 
             _ => Unauthorized()
         };

@@ -1,4 +1,5 @@
 using API.Dtos.Households;
+using API.Errors;
 using API.Extensions;
 using API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -40,19 +41,17 @@ public class HouseholdsController(IHouseholdService households) : ControllerBase
                         household.IsFull));
 
             case CreateHouseholdStatus.AlreadyInHousehold:
-                return Conflict(new { error = "You are already in a household." });
+                return this.Failure(StatusCodes.Status409Conflict, "You are already in a household.");
 
             case CreateHouseholdStatus.UserNotFound:
                 return Unauthorized();
 
             case CreateHouseholdStatus.InvalidName:
-                return BadRequest(new { error = "Household name must contain at least one visible character." });
+                return this.Failure(StatusCodes.Status400BadRequest, "Household name must contain at least one visible character.");
 
             case CreateHouseholdStatus.CouldNotGenerateInviteCode:
             default:
-                return StatusCode(
-                    StatusCodes.Status503ServiceUnavailable,
-                    new { error = "Could not allocate an invite code. Please try again." });
+                return this.Failure(StatusCodes.Status503ServiceUnavailable, "Could not allocate an invite code. Please try again.");
         }
     }
 
@@ -76,13 +75,13 @@ public class HouseholdsController(IHouseholdService households) : ControllerBase
 
             // api-design.md's exact wording.
             JoinHouseholdStatus.HouseholdFull =>
-                Conflict(new { error = "This household already has 2 members" }),
+                this.Failure(StatusCodes.Status409Conflict, "This household already has 2 members"),
 
             JoinHouseholdStatus.AlreadyInHousehold =>
-                Conflict(new { error = "You are already in a household." }),
+                this.Failure(StatusCodes.Status409Conflict, "You are already in a household."),
 
             JoinHouseholdStatus.InviteCodeNotFound =>
-                NotFound(new { error = "No household found with that invite code." }),
+                this.Failure(StatusCodes.Status404NotFound, "No household found with that invite code."),
 
             _ => Unauthorized()
         };
@@ -162,13 +161,13 @@ public class HouseholdsController(IHouseholdService households) : ControllerBase
     private ActionResult MapAccessFailure(HouseholdAccessStatus status) => status switch
     {
         HouseholdAccessStatus.HouseholdNotFound or HouseholdAccessStatus.NotAMember =>
-            NotFound(new { error = "Household not found." }),
+            this.Failure(StatusCodes.Status404NotFound, "Household not found."),
 
         HouseholdAccessStatus.InvalidName =>
-            BadRequest(new { error = "Household name must contain at least one visible character." }),
+            this.Failure(StatusCodes.Status400BadRequest, "Household name must contain at least one visible character."),
 
         HouseholdAccessStatus.Conflict =>
-            Conflict(new { error = "The household changed while processing. Please try again." }),
+            this.Failure(StatusCodes.Status409Conflict, "The household changed while processing. Please try again."),
 
         _ => Unauthorized()
     };

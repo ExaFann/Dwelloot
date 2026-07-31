@@ -1,5 +1,6 @@
 using API.Dtos.Auth;
 using API.Entities;
+using API.Errors;
 using API.Extensions;
 using API.Services;
 using API.Validation;
@@ -59,7 +60,7 @@ public class AuthController(
         // turn this endpoint into an account enumeration oracle.
         if (user is null)
         {
-            return Unauthorized(new { error = InvalidCredentials });
+            return this.Failure(StatusCodes.Status401Unauthorized, InvalidCredentials);
         }
 
         // lockoutOnFailure turns unlimited online password guessing into a rate-limited attack:
@@ -68,14 +69,12 @@ public class AuthController(
 
         if (signIn.IsLockedOut)
         {
-            return StatusCode(
-                StatusCodes.Status423Locked,
-                new { error = "Too many failed attempts. Try again later." });
+            return this.Failure(StatusCodes.Status423Locked, "Too many failed attempts. Try again later.");
         }
 
         if (!signIn.Succeeded)
         {
-            return Unauthorized(new { error = InvalidCredentials });
+            return this.Failure(StatusCodes.Status401Unauthorized, InvalidCredentials);
         }
 
         return Ok(new AuthResponse(
