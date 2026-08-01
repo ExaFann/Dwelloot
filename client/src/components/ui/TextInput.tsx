@@ -35,8 +35,18 @@ export function TextInput({ label, error, className = '', ...rest }: Props) {
         {...rest}
       />
       {error && (
-        // `role="alert"` so the message is announced when it appears after a failed submit.
-        <p id={errorId} role="alert" className="text-sm font-semibold text-danger">
+        /*
+         * Deliberately **not** `role="alert"`.
+         *
+         * Every form that renders these also renders a `FormAlert`, which is the assertive
+         * announcement. Making each field error assertive too means one failed submit fires several
+         * live regions at once, and simultaneous alerts interrupt each other — the user may hear one,
+         * some, or a fragment. The message is still reachable: `aria-describedby` above ties it to the
+         * input, so it is read when focus arrives, and `aria-invalid` marks the field as bad.
+         *
+         * Found in [44] by a test that could not tell two alerts apart.
+         */
+        <p id={errorId} className="text-sm font-semibold text-danger">
           {error}
         </p>
       )}
