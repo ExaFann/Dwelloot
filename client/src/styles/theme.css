@@ -154,6 +154,21 @@
   }
 }
 
+/*
+ * A single visible focus indicator, added in task [40] — the first task with anything focusable.
+ *
+ * `:focus-visible` rather than `:focus`, so a mouse click on a button does not leave a ring behind
+ * while keyboard navigation still shows one. `outline` rather than a box-shadow ring, because every
+ * shadow in this theme is a hard offset and a focus ring drawn as one would be indistinguishable
+ * from the resting elevation.
+ */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 3px solid var(--brand-primary);
+    outline-offset: 2px;
+  }
+}
+
 @layer base {
   html {
     /* Keeps form controls and scrollbars in step with the active scheme. */
