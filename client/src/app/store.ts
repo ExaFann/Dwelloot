@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
 import { baseApi } from '../api/baseApi'
+import { authReducer } from '../features/auth/authSlice'
 
 /**
  * The Redux store. State management is one of the three assessed advanced requirements, so this is
@@ -13,6 +14,7 @@ export function makeStore() {
   return configureStore({
     reducer: {
       [baseApi.reducerPath]: baseApi.reducer,
+      auth: authReducer,
     },
     middleware: (getDefault) => getDefault().concat(baseApi.middleware),
   })

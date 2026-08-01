@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from '@testing-library/react'
+import { Provider } from 'react-redux'
 import { RouterProvider, createMemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it } from 'vitest'
 import { routes } from './routes'
+import { makeStore } from './store'
 
 /**
  * The route skeleton.
@@ -15,9 +17,18 @@ import { routes } from './routes'
 
 afterEach(cleanup)
 
+/**
+ * Wrapped in `<Provider>` since [42]: `/login` and `/register` are real forms now and call RTK Query
+ * hooks, which throw without a store. A fresh store per render keeps cached responses from leaking
+ * between cases.
+ */
 function renderAt(path: string) {
   const router = createMemoryRouter(routes, { initialEntries: [path] })
-  return render(<RouterProvider router={router} />)
+  return render(
+    <Provider store={makeStore()}>
+      <RouterProvider router={router} />
+    </Provider>,
+  )
 }
 
 /** path → the `h1` that path must render. Written by hand from wireframes.md and api-design.md. */

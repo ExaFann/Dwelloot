@@ -25,9 +25,18 @@ export type ApiError = {
 const GENERIC_MESSAGE = 'Something went wrong. Please try again.'
 const OFFLINE_MESSAGE = 'Could not reach the server. Check your connection and try again.'
 
-/** The documented body. `errors` is **always present and null when empty** — never key-checked. */
+/**
+ * The documented body. `errors` is **always present and null when empty** — never key-checked.
+ *
+ * `title` is not part of that contract; it is ASP.NET's **ProblemDetails**, which the API is not
+ * supposed to emit. It does, in exactly one place: `AuthController.cs:46` returns
+ * `ValidationProblem(ModelState)` to surface Identity's errors, so a duplicate email at registration
+ * comes back with `title` and no `error` (task [42]). Reading it as a fallback costs nothing and also
+ * covers any un-caught ASP.NET model-binding path, which produces the same shape.
+ */
 type ErrorEnvelope = {
   error?: unknown
+  title?: unknown
   errors?: unknown
   traceId?: unknown
 }
@@ -83,7 +92,7 @@ export function toApiError(error: unknown): ApiError {
 
   return {
     status,
-    message: readString(body.error) ?? GENERIC_MESSAGE,
+    message: readString(body.error) ?? readString(body.title) ?? GENERIC_MESSAGE,
     fieldErrors: readFieldErrors(body.errors),
     traceId: readString(body.traceId),
   }
