@@ -89,7 +89,9 @@ describe('a successful registration', () => {
     await submit()
 
     await waitFor(() => expect(store.getState().auth.token).toBe('jwt.signed.token'))
-    expect(requests.map((r) => new URL(r.url).pathname)).toEqual([
+    // The first two calls, in order. Not the whole list: since [43] AuthGate follows a successful
+    // sign-in with `/api/auth/me`.
+    expect(requests.slice(0, 2).map((r) => new URL(r.url).pathname)).toEqual([
       '/api/auth/register',
       '/api/auth/login',
     ])

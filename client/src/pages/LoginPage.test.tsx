@@ -90,8 +90,14 @@ describe('a successful sign in', () => {
 
     await submit('typed@example.com', 'TypedPassword1')
 
-    await waitFor(() => expect(requests).toHaveLength(1))
-    expect(await requests[0].json()).toEqual({
+    // Targeted rather than counted: since [43] a successful sign-in is followed by AuthGate's
+    // `/api/auth/me`, so the total is no longer 1.
+    const loginRequest = await waitFor(() => {
+      const found = requests.find((r) => new URL(r.url).pathname === '/api/auth/login')
+      expect(found).toBeDefined()
+      return found!
+    })
+    expect(await loginRequest.json()).toEqual({
       email: 'typed@example.com',
       password: 'TypedPassword1',
     })

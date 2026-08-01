@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link } from 'react-router'
 import { useLoginMutation, useRegisterMutation } from '../features/auth/authApi'
 import { fieldError, toApiError, type ApiError } from '../api/apiError'
 import { Button } from '../components/ui/Button'
@@ -9,7 +9,6 @@ import { FormAlert } from '../components/ui/FormAlert'
 const CLAIMED_FIELDS = ['name', 'email', 'password'] as const
 
 export function RegisterPage() {
-  const navigate = useNavigate()
   const [register, { isLoading: isRegistering }] = useRegisterMutation()
   const [login, { isLoading: isSigningIn }] = useLoginMutation()
   const [error, setError] = useState<ApiError | null>(null)
@@ -32,7 +31,7 @@ export function RegisterPage() {
        * them in with the same values.
        */
       await login(credentials).unwrap()
-      void navigate('/', { replace: true })
+      // No navigation — AuthGate routes on the session change. See LoginPage.
     } catch (caught) {
       setError(toApiError(caught))
     }

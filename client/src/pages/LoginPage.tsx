@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link } from 'react-router'
 import { useLoginMutation } from '../features/auth/authApi'
 import { fieldError, toApiError, type ApiError } from '../api/apiError'
 import { Button } from '../components/ui/Button'
@@ -9,7 +9,6 @@ import { FormAlert } from '../components/ui/FormAlert'
 const CLAIMED_FIELDS = ['email', 'password'] as const
 
 export function LoginPage() {
-  const navigate = useNavigate()
   const [login, { isLoading }] = useLoginMutation()
   const [error, setError] = useState<ApiError | null>(null)
 
@@ -24,11 +23,11 @@ export function LoginPage() {
         password: String(form.get('password') ?? ''),
       }).unwrap()
       /**
-       * Always `/`. The pairing redirect belongs to [43]: the login response carries only
-       * `{ token, user: { id, name } }`, so whether this user has a household needs
-       * `GET /api/auth/me` — and that guard is [43]'s job, not a second request here.
+       * **No navigation here.** Dispatching `signedIn` re-renders `AuthGate`, which owns every
+       * routing decision that depends on identity — including honouring the `from` location this
+       * page may have been redirected to with. Navigating here as well raced that gate and lost,
+       * silently discarding the destination the user originally asked for.
        */
-      void navigate('/', { replace: true })
     } catch (caught) {
       setError(toApiError(caught))
     }

@@ -2,9 +2,10 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { RouterProvider, createMemoryRouter } from 'react-router'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { routes } from './routes'
 import { makeStore } from './store'
+import { signedIn } from '../features/auth/authSlice'
 
 /**
  * The route skeleton.
@@ -15,20 +16,56 @@ import { makeStore } from './store'
  * taxonomy: an expectation derived from the constant under test.
  */
 
-afterEach(cleanup)
+beforeEach(() => {
+  localStorage.clear()
+})
+
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 /**
- * Wrapped in `<Provider>` since [42]: `/login` and `/register` are real forms now and call RTK Query
- * hooks, which throw without a store. A fresh store per render keeps cached responses from leaking
- * between cases.
+ * Wrapped in `<Provider>` since [42], and given a session since [43].
+ *
+ * These tests are about **routing and layout**, so each render is set up with whatever auth state
+ * that route requires — the guard's own behaviour is `AuthGate.test.tsx`'s subject. Defaulting to a
+ * fully paired user keeps every assertion here about the thing it was written to check.
  */
-function renderAt(path: string) {
+function renderAt(path: string, householdId: number | null = 10) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            id: 7,
+            name: 'Alex',
+            email: 'alex@example.com',
+            householdId,
+            lifetimePoints: 0,
+            coins: 0,
+            currentWinStreak: 0,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      ),
+    ),
+  )
+
+  const store = makeStore()
+  // `/login` and `/register` are the signed-out screens; everything else needs a session.
+  if (path !== '/login' && path !== '/register') {
+    store.dispatch(signedIn({ token: 'jwt.token', user: { id: 7, name: 'Alex' } }))
+  }
+
   const router = createMemoryRouter(routes, { initialEntries: [path] })
-  return render(
-    <Provider store={makeStore()}>
+  render(
+    <Provider store={store}>
       <RouterProvider router={router} />
     </Provider>,
   )
+  return router
 }
 
 /** path → the `h1` that path must render. Written by hand from wireframes.md and api-design.md. */
@@ -43,41 +80,58 @@ const APP_SCREENS = [
 const BARE_SCREENS = [
   ['/login', 'Log in'],
   ['/register', 'Create an account'],
-  ['/pairing', 'Set up a household'],
 ] as const
 
+/** Reachable only while signed in without a household, so it needs its own setup. */
+const PAIRING_SCREEN = ['/pairing', 'Set up a household'] as const
+
 describe('every screen is reachable', () => {
-  it.each([...APP_SCREENS, ...BARE_SCREENS])('%s renders "%s"', (path, heading) => {
+  it.each([...APP_SCREENS, ...BARE_SCREENS])('%s renders "%s"', async (path, heading) => {
     renderAt(path)
-    expect(screen.getByRole('heading', { level: 1, name: heading })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument()
+  })
+
+  it('/pairing renders "Set up a household"', async () => {
+    renderAt(PAIRING_SCREEN[0], null)
+    expect(
+      await screen.findByRole('heading', { level: 1, name: PAIRING_SCREEN[1] }),
+    ).toBeInTheDocument()
   })
 
   it('all five wireframe screens plus the three onboarding screens exist', () => {
     // Pins the count, so deleting a route from the table fails here rather than silently reducing
-    // what `it.each` covers.
+    // what `it.each` covers. Onboarding is 3: the two bare screens plus pairing, which is tested
+    // separately because it needs a signed-in-but-unpaired session.
     expect(APP_SCREENS).toHaveLength(5)
-    expect(BARE_SCREENS).toHaveLength(3)
+    expect(BARE_SCREENS).toHaveLength(2)
+    expect(PAIRING_SCREEN).toHaveLength(2)
   })
 })
 
 describe('the navigation appears exactly where it should', () => {
-  it.each(APP_SCREENS)('%s shows the primary nav', (path) => {
+  it.each(APP_SCREENS)('%s shows the primary nav', async (path) => {
     renderAt(path)
-    expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument()
+    expect(await screen.findByRole('navigation', { name: 'Primary' })).toBeInTheDocument()
   })
 
   // The other direction. "Nav renders" alone passes against a layout that renders it everywhere,
   // including on the login screen of a signed-out user.
-  it.each([...BARE_SCREENS.map(([p]) => p), '/no-such-page'] as string[])('%s shows no nav', (path) => {
-    renderAt(path)
-    expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument()
-  })
+  it.each([...BARE_SCREENS.map(([p]) => p), '/no-such-page'] as string[])(
+    '%s shows no nav',
+    async (path) => {
+      renderAt(path)
+      // Wait for the screen itself first — asserting an absence against an empty document would
+      // pass whatever the layout did.
+      await screen.findByRole('heading', { level: 1 })
+      expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument()
+    },
+  )
 })
 
 describe('the active tab is marked, and only the active tab', () => {
-  it.each(APP_SCREENS)('%s marks exactly one link as current', (path) => {
+  it.each(APP_SCREENS)('%s marks exactly one link as current', async (path) => {
     renderAt(path)
-    const nav = screen.getByRole('navigation', { name: 'Primary' })
+    const nav = await screen.findByRole('navigation', { name: 'Primary' })
     const current = within(nav)
       .getAllByRole('link')
       .filter((link) => link.getAttribute('aria-current') === 'page')
@@ -90,9 +144,9 @@ describe('the active tab is marked, and only the active tab', () => {
     ['/notices', 'Notices'],
     ['/store', 'Store'],
     ['/me', 'Me'],
-  ])('%s marks the %s tab', (path, label) => {
+  ])('%s marks the %s tab', async (path, label) => {
     renderAt(path)
-    const nav = screen.getByRole('navigation', { name: 'Primary' })
+    const nav = await screen.findByRole('navigation', { name: 'Primary' })
     expect(within(nav).getByRole('link', { name: label })).toHaveAttribute('aria-current', 'page')
   })
 
@@ -101,9 +155,9 @@ describe('the active tab is marked, and only the active tab', () => {
    * stays highlighted on all five screens — and the "exactly one is current" test above is what
    * catches that, but only if this case is exercised from a non-root path.
    */
-  it('does not leave Home marked while on another tab', () => {
+  it('does not leave Home marked while on another tab', async () => {
     renderAt('/store')
-    const nav = screen.getByRole('navigation', { name: 'Primary' })
+    const nav = await screen.findByRole('navigation', { name: 'Primary' })
     expect(within(nav).getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current')
   })
 })
@@ -115,15 +169,15 @@ describe('the navigation links point where their labels say', () => {
     ['Notices', '/notices'],
     ['Store', '/store'],
     ['Me', '/me'],
-  ])('%s → %s', (label, href) => {
+  ])('%s → %s', async (label, href) => {
     renderAt('/')
-    const nav = screen.getByRole('navigation', { name: 'Primary' })
+    const nav = await screen.findByRole('navigation', { name: 'Primary' })
     expect(within(nav).getByRole('link', { name: label })).toHaveAttribute('href', href)
   })
 
-  it('has five tabs and no more', () => {
+  it('has five tabs and no more', async () => {
     renderAt('/')
-    const nav = screen.getByRole('navigation', { name: 'Primary' })
+    const nav = await screen.findByRole('navigation', { name: 'Primary' })
     expect(within(nav).getAllByRole('link')).toHaveLength(5)
   })
 })
@@ -142,9 +196,9 @@ describe('unknown paths', () => {
    * authenticated SPA with no canonical-URL concern. Recorded as a test because it was found by a
    * failing assertion that expected the opposite, and the next person will assume the same thing.
    */
-  it('matches case-insensitively, so /LOG is the Log screen and not a 404', () => {
+  it('matches case-insensitively, so /LOG is the Log screen and not a 404', async () => {
     renderAt('/LOG')
-    expect(screen.getByRole('heading', { level: 1, name: 'Log a chore' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Log a chore' })).toBeInTheDocument()
   })
 
   // A missing catch-all renders nothing at all, which is easy to mistake for a styling problem.
@@ -160,20 +214,21 @@ describe('unknown paths', () => {
 })
 
 describe('the app shell', () => {
-  it('puts a skip link first, ahead of the five nav tabs', () => {
+  it('puts a skip link first, ahead of the five nav tabs', async () => {
     renderAt('/')
+    await screen.findByRole('navigation', { name: 'Primary' })
     const links = screen.getAllByRole('link')
     expect(links[0]).toHaveAccessibleName(/skip to content/i)
     expect(links[0]).toHaveAttribute('href', '#main')
   })
 
-  it('has a main landmark for the skip link to reach', () => {
+  it('has a main landmark for the skip link to reach', async () => {
     renderAt('/')
-    expect(screen.getByRole('main')).toHaveAttribute('id', 'main')
+    expect(await screen.findByRole('main')).toHaveAttribute('id', 'main')
   })
 
-  it('gives bare screens a main landmark too', () => {
+  it('gives bare screens a main landmark too', async () => {
     renderAt('/login')
-    expect(screen.getByRole('main')).toBeInTheDocument()
+    expect(await screen.findByRole('main')).toBeInTheDocument()
   })
 })

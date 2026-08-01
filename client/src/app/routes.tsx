@@ -1,5 +1,6 @@
 import type { RouteObject } from 'react-router'
 import { RouteError } from './RouteError'
+import { AuthGate } from '../features/auth/AuthGate'
 import { AppLayout } from '../layouts/AppLayout'
 import { BareLayout } from '../layouts/BareLayout'
 import { DashboardPage } from '../pages/DashboardPage'
@@ -30,25 +31,53 @@ import { NotFoundPage } from '../pages/NotFoundPage'
  */
 export const routes: RouteObject[] = [
   {
-    element: <AppLayout />,
+    // Signed in **and** paired. `AuthGate` sends anyone else to /login or /pairing ([43]).
+    element: <AuthGate access="household" />,
     errorElement: <RouteError />,
     children: [
-      { index: true, element: <DashboardPage /> },
-      { path: 'log', element: <LogActivityPage /> },
-      { path: 'notices', element: <NoticesPage /> },
-      { path: 'store', element: <StorePage /> },
-      { path: 'me', element: <MePage /> },
+      {
+        element: <AppLayout />,
+        children: [
+          { index: true, element: <DashboardPage /> },
+          { path: 'log', element: <LogActivityPage /> },
+          { path: 'notices', element: <NoticesPage /> },
+          { path: 'store', element: <StorePage /> },
+          { path: 'me', element: <MePage /> },
+        ],
+      },
     ],
   },
   {
-    element: <BareLayout />,
+    // Signed out only. A signed-in user landing here is sent on rather than shown a login form.
+    element: <AuthGate access="anonymous" />,
     errorElement: <RouteError />,
     children: [
-      { path: 'login', element: <LoginPage /> },
-      { path: 'register', element: <RegisterPage /> },
-      { path: 'pairing', element: <PairingPage /> },
-      // Catch-all. Without it an unknown path renders nothing and looks like a broken build.
-      { path: '*', element: <NotFoundPage /> },
+      {
+        element: <BareLayout />,
+        children: [
+          { path: 'login', element: <LoginPage /> },
+          { path: 'register', element: <RegisterPage /> },
+        ],
+      },
     ],
+  },
+  {
+    // Signed in, no household yet. Guarded on both sides: signing out sends you to /login, and
+    // having a household sends you to /, so nobody can create or join a second one.
+    element: <AuthGate access="pairing" />,
+    errorElement: <RouteError />,
+    children: [
+      {
+        element: <BareLayout />,
+        children: [{ path: 'pairing', element: <PairingPage /> }],
+      },
+    ],
+  },
+  {
+    // Unguarded: a wrong URL should say so whatever your session state is, not bounce you to /login.
+    element: <BareLayout />,
+    errorElement: <RouteError />,
+    // Catch-all. Without it an unknown path renders nothing and looks like a broken build.
+    children: [{ path: '*', element: <NotFoundPage /> }],
   },
 ]
