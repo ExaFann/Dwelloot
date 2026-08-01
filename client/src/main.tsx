@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { Provider } from 'react-redux'
 
 // Fonts are bundled, not fetched from Google Fonts — same reasoning as the self-hosted Scalar assets
 // in task [34]: no third-party request on load, works under a strict CSP and with no outbound
@@ -13,9 +14,12 @@ import '@fontsource/space-grotesk/700.css'
 
 import './styles/theme.css'
 import App from './App.tsx'
+import { store } from './app/store'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <Provider store={store}>
+      <App />
+    </Provider>
   </StrictMode>,
 )

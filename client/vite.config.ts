@@ -1,11 +1,39 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+/**
+ * Warns loudly when a production build has no `VITE_API_BASE_URL`.
+ *
+ * A **warning**, not an error, and the distinction is deliberate. The enforcement lives in
+ * `src/api/config.ts`, which throws at startup — that is the guarantee, and it is unit-tested. Making
+ * the build itself fail would mean every `npm run build` from here to [63] needs the variable set
+ * just to check that the app compiles, and the predictable consequence of that friction is someone
+ * committing a placeholder `.env.production`, which defeats the check entirely.
+ *
+ * Task [60] should treat this warning as a blocker: without the variable the deployed app throws on
+ * load and renders nothing.
+ */
+function warnOnMissingApiBaseUrl(mode: string): Plugin {
+  return {
+    name: 'dwelloot:warn-missing-api-base-url',
+    apply: 'build',
+    configResolved() {
+      const env = loadEnv(mode, process.cwd(), '')
+      if (!env.VITE_API_BASE_URL?.trim()) {
+        this.warn(
+          'VITE_API_BASE_URL is not set. This build will throw on load rather than send requests ' +
+            "to its own origin. Set it before deploying — see .env.example and task [60].",
+        )
+      }
+    },
+  }
+}
+
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
+export default defineConfig(({ mode }) => ({
+  plugins: [react(), tailwindcss(), warnOnMissingApiBaseUrl(mode)],
   server: {
     // Pinned, and pinned *strictly*, because the backend allow-lists exactly two origins:
     // http://localhost:5173 and http://127.0.0.1:5173 (task [35], appsettings.Development.json).
@@ -38,4 +66,4 @@ export default defineConfig({
       exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/main.tsx'],
     },
   },
-})
+}))
