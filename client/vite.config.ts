@@ -1,0 +1,25 @@
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    // Pinned, and pinned *strictly*, because the backend allow-lists exactly two origins:
+    // http://localhost:5173 and http://127.0.0.1:5173 (task [35], appsettings.Development.json).
+    //
+    // Vite's default is 5173 but it increments when the port is busy, so a stale dev server is
+    // enough to move this app to 5174 — an origin the API does not allow. The resulting failure is
+    // near-invisible: the request is sent, the server answers it normally, and the browser discards
+    // the response for want of an Access-Control-Allow-Origin header. strictPort turns that silent
+    // mismatch into a startup error that names the port. See log 038.
+    port: 5173,
+    strictPort: true,
+  },
+  // Deliberately no `server.proxy`. Proxying /api through this origin would make development
+  // same-origin and bypass CORS entirely, which means task [35]'s configuration would first be
+  // exercised in production — where it is hardest to debug. Calling the API cross-origin in
+  // development runs the same code path as the deployment. Nothing requires same-origin here:
+  // auth is a JWT in the Authorization header, not a cookie, so no request depends on the browser
+  // attaching anything automatically.
+})
