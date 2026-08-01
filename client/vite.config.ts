@@ -1,9 +1,11 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
     // Pinned, and pinned *strictly*, because the backend allow-lists exactly two origins:
     // http://localhost:5173 and http://127.0.0.1:5173 (task [35], appsettings.Development.json).
@@ -22,4 +24,18 @@ export default defineConfig({
   // development runs the same code path as the deployment. Nothing requires same-origin here:
   // auth is a JWT in the Authorization header, not a cookie, so no request depends on the browser
   // attaching anything automatically.
+  test: {
+    // `jsdom` only where a test asks for it, via a per-file `@vitest-environment` docblock. The
+    // token tests are pure string and number work over a stylesheet and are markedly faster in node.
+    environment: 'node',
+    globals: false,
+    setupFiles: ['./src/test/setup.ts'],
+    css: false,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/main.tsx'],
+    },
+  },
 })

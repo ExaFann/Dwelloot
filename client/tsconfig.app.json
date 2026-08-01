@@ -22,5 +22,8 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  /* Tests live alongside the code they cover but typecheck under tsconfig.test.json, which has Node
+     types. Excluding them here keeps `fs` and friends out of reach of application code. */
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test"]
 }

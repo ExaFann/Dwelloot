@@ -1,0 +1,184 @@
+@import 'tailwindcss';
+
+/*
+ * Dwelloot design tokens — the single source of truth.
+ *
+ * Documented in specs/1_architecture_and_ux/design-tokens.md, and asserted by
+ * src/theme/tokens.test.ts, which parses *this file* rather than a copy of its values. If you change
+ * a color here, the test measures the change; it does not measure a duplicate that drifted.
+ *
+ * Layout of the file:
+ *   1. `@custom-variant dark` — how the dark scheme is selected
+ *   2. `:root` / `[data-theme=dark]` — raw scheme-dependent values
+ *   3. `@theme inline` — maps the raw values onto Tailwind's namespaces, producing utilities
+ *   4. `@utility` — the press physics
+ *   5. `@layer base` — element defaults
+ */
+
+/*
+ * Dark applies **only** when [data-theme="dark"] is set on a container. Not `prefers-color-scheme`.
+ *
+ * Tailwind's default is the media query, which would make the app follow the OS with nothing written
+ * to switch it. That is the theme switch half-implemented — and task [57] owns switching, which is
+ * one of the three assessed advanced requirements. It also has a practical cost: every screenshot and
+ * every UI task from [40] to [58] would render differently depending on the developer's OS setting.
+ *
+ * [57] writes the attribute. It can still offer a "follow system" option; that is a question of what
+ * sets the attribute, not of what this file defines.
+ */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root {
+  /* Brand fills, and the foreground measured against each. See design-tokens.md §2. */
+  --brand-primary: #6c00ff;
+  --brand-primary-fg: #ffffff;
+  --brand-success: #00c96f;
+  --brand-success-fg: #0a0a0a;
+  --brand-warning: #ffd600;
+  --brand-warning-fg: #0a0a0a;
+  --brand-danger: #ff3b5c;
+  --brand-danger-fg: #0a0a0a;
+
+  --surface-page: #f0ebff;
+  --surface-card: #ffffff;
+  --text-primary: #0a0a0a;
+  --text-secondary: #4a4458;
+
+  /*
+   * Ink — three tokens, not one. `--ink-accent` deliberately does NOT change between schemes:
+   * a light border on a #FFD600 fill is 1.21:1, which is not a border. See design-tokens.md §3.
+   */
+  --ink-accent: #000000;
+  --ink-surface: #000000;
+  --ink-shadow: #000000;
+
+  /* Hard offsets: zero blur, zero spread. The trailing `0 0` is the whole style. */
+  --shadow-press: 2px 2px 0 0 var(--ink-shadow);
+  --shadow-rest: 4px 4px 0 0 var(--ink-shadow);
+  --shadow-raised: 5px 5px 0 0 var(--ink-shadow);
+
+  --border-width: 2px;
+  /*
+   * Named `--geometry-radius`, not `--radius-base`. `--radius-*` is one of Tailwind's own theme
+   * namespaces, and the `@theme inline` block below maps into it — declaring the raw value under the
+   * same name produced `--radius-base: var(--radius-base)`, a self-reference that resolved to
+   * nothing. `tokens.test.ts` now pins that no raw name is reused as a mapped name.
+   */
+  --geometry-radius: 8px;
+  --press-travel: 2px;
+}
+
+[data-theme='dark'] {
+  /* Purple and green are lightened to read as accents on a dark ground; yellow already does. */
+  --brand-primary: #a87bff;
+  /* Black, not white: white on #A87BFF is 1.90:1. The one scheme-dependent foreground. */
+  --brand-primary-fg: #0a0a0a;
+  --brand-success: #00e87f;
+  --brand-success-fg: #0a0a0a;
+  --brand-warning: #ffd600;
+  --brand-warning-fg: #0a0a0a;
+  --brand-danger: #ff6b85;
+  --brand-danger-fg: #0a0a0a;
+
+  --surface-page: #171226;
+  --surface-card: #241c3d;
+  --text-primary: #f5f1ff;
+  --text-secondary: #b8aed6;
+
+  /* Borders on bright fills stay black; surfaces and shadows invert. */
+  --ink-accent: #000000;
+  --ink-surface: #f0ebff;
+  --ink-shadow: #f0ebff;
+}
+
+/*
+ * `inline` matters here: it makes each utility emit the *resolved* expression, e.g.
+ * `.bg-primary { background-color: var(--brand-primary) }`, so the value is read from whichever
+ * scheme is active on the element. Without `inline` the utility would reference `--color-primary`,
+ * which is defined once at `:root` and would freeze the light value.
+ */
+@theme inline {
+  --color-primary: var(--brand-primary);
+  --color-primary-fg: var(--brand-primary-fg);
+  --color-success: var(--brand-success);
+  --color-success-fg: var(--brand-success-fg);
+  --color-warning: var(--brand-warning);
+  --color-warning-fg: var(--brand-warning-fg);
+  --color-danger: var(--brand-danger);
+  --color-danger-fg: var(--brand-danger-fg);
+
+  --color-page: var(--surface-page);
+  --color-card: var(--surface-card);
+  --color-body: var(--text-primary);
+  --color-muted: var(--text-secondary);
+
+  --color-ink: var(--ink-surface);
+  --color-ink-accent: var(--ink-accent);
+
+  --shadow-hard-sm: var(--shadow-press);
+  --shadow-hard: var(--shadow-rest);
+  --shadow-hard-lg: var(--shadow-raised);
+
+  --radius-base: var(--geometry-radius);
+
+  --font-display: 'Chakra Petch', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/*
+ * The physical press, as one utility so the physics live with the tokens rather than being retyped
+ * as six classes on every control — which is how the four rules in design-tokens.md §1 drift apart.
+ *
+ * Both axes, not just Y: the shadow is on a diagonal, so contracting it 4px→2px while moving only
+ * vertically leaves the horizontal gap unchanged and reads as sliding rather than pressing.
+ */
+@utility pressable {
+  box-shadow: var(--shadow-rest);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+
+  &:hover {
+    box-shadow: var(--shadow-press);
+    transform: translate(var(--press-travel), var(--press-travel));
+  }
+
+  &:active {
+    box-shadow: none;
+    transform: translate(4px, 4px);
+  }
+
+  /* The travel still happens — only the animation is removed, so the affordance survives. */
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+@layer base {
+  html {
+    /* Keeps form controls and scrollbars in step with the active scheme. */
+    color-scheme: light;
+  }
+
+  html:where([data-theme='dark']) {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--surface-page);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+  }
+}
