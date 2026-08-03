@@ -1,3 +1,4 @@
+import { Zap } from 'lucide-react'
 import { useMeQuery } from '../auth/authApi'
 import { useGetHouseholdQuery } from '../household/householdApi'
 import { useCurrentCompetitionQuery } from './competitionApi'
@@ -82,6 +83,8 @@ export function HeadToHeadCard() {
     competition.data.myPoints,
     competition.data.partnerPoints,
   )
+  /** A settled or voided period is finished — nothing is being contested, so nothing sparks. */
+  const isLive = standing.kind !== 'voided' && !competition.data.settled
 
   return (
     <Shell>
@@ -102,12 +105,13 @@ export function HeadToHeadCard() {
       ) : (
         <>
           <div className="mt-4 flex items-end justify-between gap-4">
+            {/* Purple is you, green is your opponent — design-tokens.md §2.1. */}
             <Score name="You" points={competition.data.myPoints} align="left" swatch="bg-primary" />
             <Score
               name={partner?.name ?? 'Partner'}
               points={competition.data.partnerPoints}
               align="right"
-              swatch="bg-warning"
+              swatch="bg-success"
             />
           </div>
 
@@ -119,14 +123,29 @@ export function HeadToHeadCard() {
            * Without it a 100/0 lead is one solid block with nothing to compare against — found only
            * once screenshots became available; see log `045`.
            */}
-          <div
-            aria-hidden="true"
-            className="relative mt-3 flex h-6 overflow-hidden rounded-base border-2 border-ink"
-          >
-            <div className="bg-primary" style={{ width: `${mine}%` }} />
-            <div className="border-l-2 border-ink bg-warning" style={{ width: `${theirs}%` }} />
-            {/* Halfway. The gap between this and the colour boundary is the lead, made visible. */}
-            <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-ink opacity-40" />
+          <div aria-hidden="true" className="relative mt-3">
+            <div className="relative flex h-6 overflow-hidden rounded-base border-2 border-ink">
+              <div className="bg-primary" style={{ width: `${mine}%` }} />
+              <div className="border-l-2 border-ink bg-success" style={{ width: `${theirs}%` }} />
+              {/* Halfway. The gap between this and the colour boundary is the lead, made visible. */}
+              <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-ink opacity-40" />
+            </div>
+
+            {/*
+             * The spark sits where the two sides meet — the colour boundary, which moves — rather
+             * than at the fixed midpoint. That is the point of contention in a tug of war, and it
+             * travels as someone pulls ahead.
+             *
+             * Live periods only: a settled or voided period is not an active clash.
+             */}
+            {isLive && (
+              <span
+                className="spark absolute top-1/2 z-10 flex size-6 items-center justify-center rounded-full border-2 border-ink-accent bg-warning text-warning-fg"
+                style={{ left: `${mine}%` }}
+              >
+                <Zap size={12} strokeWidth={3} fill="currentColor" />
+              </span>
+            )}
           </div>
 
           <p className="mt-3 font-display text-sm font-bold">{summarise(standing, partner?.name)}</p>

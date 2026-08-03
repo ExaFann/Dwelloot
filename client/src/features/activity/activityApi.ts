@@ -41,6 +41,23 @@ export const activityApi = baseApi.injectEndpoints({
       providesTags: ['Activity'],
     }),
 
+    /**
+     * The full chore list for the log screen ([47]).
+     *
+     * `sort=title` is fixed: alphabetical is what makes a list scannable, and the only other valid
+     * value is `points` — confirmed from the API's own 400, which names them
+     * ("Unknown sort field. Valid values: title, points."). Sorting is the Store's job ([51]).
+     */
+    activities: build.query<Paged<Activity>, { search?: string }>({
+      query: ({ search }) => {
+        const params = new URLSearchParams({ category: 'Chore', sort: 'title' })
+        // Only sent when non-empty: `search=` would be a filter for the empty string.
+        if (search?.trim()) params.set('search', search.trim())
+        return `/api/activities?${params.toString()}`
+      },
+      providesTags: ['Activity'],
+    }),
+
     myActivityLogs: build.query<Paged<MyActivityLog>, { take?: number }>({
       query: ({ take = 5 }) => `/api/activity-logs/mine?take=${take}`,
       providesTags: ['ActivityLog'],
@@ -65,6 +82,7 @@ export const activityApi = baseApi.injectEndpoints({
 
 export const {
   useQuickAddActivitiesQuery,
+  useActivitiesQuery,
   useMyActivityLogsQuery,
   useCreateActivityLogMutation,
 } = activityApi

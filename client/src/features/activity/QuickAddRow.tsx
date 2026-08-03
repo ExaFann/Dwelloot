@@ -85,7 +85,7 @@ export function QuickAddRow() {
                   onClick={() => void log(activity.id, activity.title)}
                   className={[
                     'focus-ring flex w-full items-center justify-between gap-3 rounded-base border-2 border-ink bg-card px-3 py-2.5 text-left font-display text-sm font-semibold',
-                    isBusy ? 'cursor-wait opacity-60' : 'pressable',
+                    isBusy ? 'cursor-wait opacity-60' : 'pressable-sm',
                   ].join(' ')}
                 >
                   <span>{activity.title}</span>

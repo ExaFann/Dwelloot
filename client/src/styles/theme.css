@@ -155,6 +155,71 @@
 }
 
 /*
+ * The same physics at a smaller offset, for controls that repeat down the page.
+ *
+ * A 4px shadow under a full-width row is a 4px-tall black band the width of the screen; five of them
+ * stacked read as a striped page rather than five liftable objects. Standalone buttons keep
+ * `pressable`. Owner's note reviewing [46].
+ */
+@utility pressable-sm {
+  box-shadow: var(--shadow-press);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+
+  &:hover {
+    box-shadow: none;
+    transform: translate(var(--press-travel), var(--press-travel));
+  }
+
+  &:active {
+    box-shadow: none;
+    transform: translate(var(--press-travel), var(--press-travel));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/*
+ * The spark where the two sides of the tug bar meet.
+ *
+ * Flicker only — no glow, no gradient, nothing that would break the flat-fill rule. The element is
+ * decorative and `aria-hidden`; under `prefers-reduced-motion` it holds still rather than
+ * disappearing, so the clash point is still marked.
+ */
+@keyframes dwelloot-spark {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  40% {
+    transform: scale(1.2) rotate(-8deg);
+  }
+  60% {
+    transform: scale(0.92) rotate(6deg);
+  }
+}
+
+@utility spark {
+  /*
+   * Centring uses the standalone `translate` property, **not** `transform`.
+   *
+   * Putting `translate(-50%, -50%)` inside the keyframes would tie the element's position to the
+   * animation running — and `prefers-reduced-motion` switches the animation off, which would leave
+   * the spark hanging off its own anchor point for exactly the users least able to cope with a
+   * layout surprise. `translate` and `transform` compose, so the keyframes only do scale and rotate.
+   */
+  translate: -50% -50%;
+  animation: dwelloot-spark 900ms steps(1, end) infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/*
  * A single visible focus indicator, added in task [40] — the first task with anything focusable.
  *
  * `:focus-visible` rather than `:focus`, so a mouse click on a button does not leave a ring behind
