@@ -21,8 +21,26 @@ export type CreateHouseholdResponse = {
 export type JoinHouseholdRequest = { inviteCode: string }
 export type JoinHouseholdResponse = { id: number; isFull: boolean }
 
+export type HouseholdMember = { id: number; name: string }
+export type HouseholdResponse = {
+  id: number
+  name: string
+  inviteCode: string
+  /**
+   * One or two entries. **This is the only way to know whether a partner has joined** — a solo
+   * household's `competitions/current` is an ordinary `0–0` payload with no field distinguishing it
+   * from a quiet two-person day (task [45]).
+   */
+  members: HouseholdMember[]
+}
+
 export const householdApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    getHousehold: build.query<HouseholdResponse, { householdId: number }>({
+      query: ({ householdId }) => `/api/households/${householdId}`,
+      providesTags: ['Household'],
+    }),
+
     createHousehold: build.mutation<CreateHouseholdResponse, CreateHouseholdRequest>({
       query: (body) => ({ url: '/api/households', method: 'POST', body }),
     }),
@@ -33,4 +51,5 @@ export const householdApi = baseApi.injectEndpoints({
   }),
 })
 
-export const { useCreateHouseholdMutation, useJoinHouseholdMutation } = householdApi
+export const { useGetHouseholdQuery, useCreateHouseholdMutation, useJoinHouseholdMutation } =
+  householdApi
