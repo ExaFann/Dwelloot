@@ -102,24 +102,31 @@ export function HeadToHeadCard() {
       ) : (
         <>
           <div className="mt-4 flex items-end justify-between gap-4">
-            <Score name="You" points={competition.data.myPoints} align="left" />
+            <Score name="You" points={competition.data.myPoints} align="left" swatch="bg-primary" />
             <Score
               name={partner?.name ?? 'Partner'}
               points={competition.data.partnerPoints}
               align="right"
+              swatch="bg-warning"
             />
           </div>
 
           {/*
            * Decorative. Every number and every judgement it encodes is in the text above and below,
            * so exposing it would only make a screen reader repeat itself.
+           *
+           * The centre tick is what makes this read as a tug-of-war rather than a progress bar.
+           * Without it a 100/0 lead is one solid block with nothing to compare against — found only
+           * once screenshots became available; see log `045`.
            */}
           <div
             aria-hidden="true"
-            className="mt-3 flex h-5 overflow-hidden rounded-base border-2 border-ink"
+            className="relative mt-3 flex h-6 overflow-hidden rounded-base border-2 border-ink"
           >
             <div className="bg-primary" style={{ width: `${mine}%` }} />
             <div className="border-l-2 border-ink bg-warning" style={{ width: `${theirs}%` }} />
+            {/* Halfway. The gap between this and the colour boundary is the lead, made visible. */}
+            <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-ink opacity-40" />
           </div>
 
           <p className="mt-3 font-display text-sm font-bold">{summarise(standing, partner?.name)}</p>
@@ -133,14 +140,28 @@ function Score({
   name,
   points,
   align,
+  swatch,
 }: {
   name: string
   points: number
   align: 'left' | 'right'
+  /** Ties the name to its half of the bar; without it the colours mean nothing. */
+  swatch: string
 }) {
   return (
     <div className={align === 'right' ? 'text-right' : undefined}>
-      <p className="font-display text-sm font-semibold text-muted">{name}</p>
+      <p
+        className={[
+          'flex items-center gap-1.5 font-display text-sm font-semibold text-muted',
+          align === 'right' ? 'flex-row-reverse' : '',
+        ].join(' ')}
+      >
+        <span
+          aria-hidden="true"
+          className={`inline-block size-3 rounded-sm border-2 border-ink-accent ${swatch}`}
+        />
+        {name}
+      </p>
       <p className="font-display text-3xl font-bold">
         {points}
         <span className="ml-1 text-sm font-semibold text-muted">pts</span>

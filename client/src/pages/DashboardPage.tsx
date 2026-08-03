@@ -1,19 +1,18 @@
 import { HeadToHeadCard } from '../features/competition/HeadToHeadCard'
+import { QuickAddRow } from '../features/activity/QuickAddRow'
+import { RecentActivityFeed } from '../features/activity/RecentActivityFeed'
 
 /**
- * Still partly a placeholder. [45] fills in the head-to-head widget; [46] adds the quick-add row and
- * the recent activity feed, and [53] the loot box reveal.
+ * [45] built the head-to-head widget, [46] the quick-add row and the feed. [53] adds the loot box
+ * reveal, and the streak/Coins line from `wireframes.md` §1 is still unowned — see log `046`.
  */
 export function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl">Home</h1>
-
       <HeadToHeadCard />
-
-      <p className="rounded-base border-2 border-ink-accent bg-warning px-3 py-1.5 font-display text-sm font-bold text-warning-fg">
-        Quick-add and recent activity — built in [46]
-      </p>
+      <QuickAddRow />
+      <RecentActivityFeed />
     </div>
   )
 }

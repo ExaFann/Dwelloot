@@ -33,24 +33,54 @@ afterEach(() => {
  * fully paired user keeps every assertion here about the thing it was written to check.
  */
 function renderAt(path: string, householdId: number | null = 10) {
+  /**
+   * Routed **by path**. It used to answer every request with the `/me` body, which was harmless
+   * until [46] gave the dashboard its own queries — `/api/activities` then resolved to an object
+   * with no `items`, `data.items.length` threw, and the route rendered its error element instead of
+   * the page.
+   *
+   * It surfaced as a *flake*: the `h1` is static, so whether the test passed depended on whether the
+   * assertion won the race against the crash. Passed alone, failed under full-suite load.
+   */
+  const json = (body: unknown) =>
+    Promise.resolve(
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+
   vi.stubGlobal(
     'fetch',
-    vi.fn(() =>
-      Promise.resolve(
-        new Response(
-          JSON.stringify({
-            id: 7,
-            name: 'Alex',
-            email: 'alex@example.com',
-            householdId,
-            lifetimePoints: 0,
-            coins: 0,
-            currentWinStreak: 0,
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } },
-        ),
-      ),
-    ),
+    vi.fn((input: Request) => {
+      const requestPath = new URL(input.url).pathname
+      if (requestPath === '/api/activities') return json({ items: [], total: 0 })
+      if (requestPath === '/api/activity-logs/mine') return json({ items: [], total: 0 })
+      if (requestPath.endsWith('/competitions/current')) {
+        return json({
+          periodType: 'Daily',
+          periodStart: '2026-08-02T12:00:00Z',
+          periodEnd: '2026-08-03T12:00:00Z',
+          myPoints: 0,
+          partnerPoints: 0,
+          settled: false,
+          voided: false,
+          unopenedLootBox: null,
+        })
+      }
+      if (requestPath.startsWith('/api/households/')) {
+        return json({ id: 10, name: 'House', inviteCode: 'ABC123', members: [{ id: 7, name: 'Alex' }] })
+      }
+      return json({
+        id: 7,
+        name: 'Alex',
+        email: 'alex@example.com',
+        householdId,
+        lifetimePoints: 0,
+        coins: 0,
+        currentWinStreak: 0,
+      })
+    }),
   )
 
   const store = makeStore()
