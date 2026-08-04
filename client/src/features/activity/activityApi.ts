@@ -26,6 +26,16 @@ export type MyActivityLog = {
   rejectReason: string | null
 }
 
+/** Item shape of `GET /api/activity-logs` — the partner's logs. Confirmed against the API. */
+export type PartnerActivityLog = {
+  id: number
+  activityTitle: string
+  pointsAwarded: number
+  loggedByUserId: number
+  status: ActivityLogStatus
+  completedAt: string
+}
+
 export type CreateActivityLogResponse = {
   id: number
   activityId: number
@@ -58,9 +68,70 @@ export const activityApi = baseApi.injectEndpoints({
       providesTags: ['Activity'],
     }),
 
+    /**
+     * The **partner's** logs — `GET /api/activity-logs` never returns the caller's own.
+     *
+     * The `status` filter is optional, which is not obvious from `api-design.md`'s quick reference
+     * (it documents the path as `?status=pending`, the approval queue). Omitting it returns every
+     * status, which is what the dashboard's per-person feed needs: the point is to see what your
+     * partner has been doing, approved or not.
+     */
+    partnerActivityLogs: build.query<Paged<PartnerActivityLog>, { pageSize?: number }>({
+      query: ({ pageSize = 4 }) => `/api/activity-logs?pageSize=${pageSize}`,
+      providesTags: ['ActivityLog'],
+    }),
+
     myActivityLogs: build.query<Paged<MyActivityLog>, { take?: number }>({
       query: ({ take = 5 }) => `/api/activity-logs/mine?take=${take}`,
       providesTags: ['ActivityLog'],
+    }),
+
+    /**
+     * A household's own chore, added from the Log screen ([47a]).
+     *
+     * `category` is sent explicitly even though the API defaults it — v1 is Chore-only
+     * (`wireframes.md` §2), and being explicit means adding a second category later is a UI change
+     * rather than a silent behaviour change here.
+     *
+     * Invalidates `Activity`, which refreshes both this screen's list and the dashboard's quick-add
+     * row — the new chore is eligible for one-tap logging immediately.
+     */
+    createActivity: build.mutation<Activity, { title: string; points: number }>({
+      query: (body) => ({
+        url: '/api/activities',
+        method: 'POST',
+        body: { ...body, category: 'Chore' },
+      }),
+      invalidatesTags: ['Activity'],
+    }),
+
+    /**
+     * Rename a chore or re-price it. `PATCH` accepts partial bodies — sending only `title` keeps the
+     * existing points, confirmed against the API — but the editor always sends both, because it
+     * always has both.
+     *
+     * Points are a **snapshot** on each log (handover §4.3), so re-pricing changes what future logs
+     * are worth and leaves history alone. That is why editing is safe to expose at all.
+     */
+    updateActivity: build.mutation<Activity, { id: number; title: string; points: number }>({
+      query: ({ id, ...body }) => ({ url: `/api/activities/${id}`, method: 'PATCH', body }),
+      invalidatesTags: ['Activity'],
+    }),
+
+    /**
+     * Removes a chore from the household's list.
+     *
+     * The server **archives** rather than deletes (handover §4.2): a hard delete would cascade to
+     * `activity_logs`, and the live competition period is computed from approved logs — so deleting
+     * a chore mid-period would retroactively reduce whoever logged it. Either partner can delete any
+     * chore, which made that a weapon.
+     *
+     * Nothing here says "archive": from the user's side the chore is gone. The copy does promise
+     * that already-logged points survive, which is the part they can observe.
+     */
+    deleteActivity: build.mutation<void, { id: number }>({
+      query: ({ id }) => ({ url: `/api/activities/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['Activity'],
     }),
 
     createActivityLog: build.mutation<CreateActivityLogResponse, { activityId: number }>({
@@ -84,5 +155,9 @@ export const {
   useQuickAddActivitiesQuery,
   useActivitiesQuery,
   useMyActivityLogsQuery,
+  usePartnerActivityLogsQuery,
+  useCreateActivityMutation,
+  useUpdateActivityMutation,
+  useDeleteActivityMutation,
   useCreateActivityLogMutation,
 } = activityApi

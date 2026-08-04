@@ -1,25 +1,38 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { useActivitiesQuery, useCreateActivityLogMutation } from '../features/activity/activityApi'
+import { Pencil, Plus, Undo2 } from 'lucide-react'
+import { useActivitiesQuery, type Activity } from '../features/activity/activityApi'
+import { ChoreEditor } from '../features/activity/ChoreEditor'
+import { useDeferredLog } from '../features/activity/useDeferredLog'
+import { useLongPress } from '../features/activity/useLongPress'
 import { toApiError } from '../api/apiError'
 import { Button } from '../components/ui/Button'
 
 /**
- * The deliberate logging path, as distinct from the dashboard's quick-add ([46]).
+ * The Log tab: a household's whole chore catalogue, plus logging one or several.
  *
- * Quick-add is one tap on five common chores. This is the full list with a selection and a submit —
- * it optimises for finding the chore you *don't* do every day.
+ * Everything the API offers for activities lives here — list, search, create, rename, re-price and
+ * remove ([18] built the CRUD; this is its only consumer) — because they are one job.
  *
- * No note field and no voice input: cut deliberately in `wireframes.md` §2, not overlooked.
+ * ### How editing is reached, and why it is not a hidden gesture
+ *
+ * Tapping a chore **selects** it, and selection is multi: several can be logged in one go. Once
+ * exactly one chore is selected, the action bar also offers **Edit** and **Remove**. That is the
+ * discoverable route — the actions appear as a consequence of something the user already did, with
+ * nothing to know in advance.
+ *
+ * **Press-and-hold** on a row opens its editor directly, for anyone who learns it. It is a shortcut
+ * on top of the visible path, never the only way in: a gesture that is the sole route to deleting
+ * something is a feature most people never find.
  */
 export function LogActivityPage() {
   const [search, setSearch] = useState('')
   const [debounced, setDebounced] = useState('')
-  const [selectedId, setSelectedId] = useState<number | null>(null)
-  const [confirmation, setConfirmation] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
 
-  // A request per keystroke is wasteful for a list this size.
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(search), 250)
     return () => clearTimeout(timer)
@@ -32,24 +45,29 @@ export function LogActivityPage() {
     error: loadError,
     refetch,
   } = useActivitiesQuery({ search: debounced })
-  const [createLog, { isLoading: isSubmitting }] = useCreateActivityLogMutation()
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (selectedId === null) return
+  /** Same undo window as the dashboard — nothing is sent until it closes. */
+  const { queued, queue, undo, failure } = useDeferredLog()
 
-    const chore = data?.items.find((item) => item.id === selectedId)
-    setConfirmation(null)
-    setError(null)
+  /** A plain notice with no undo (create/edit/remove) fades; queued logs manage their own life. */
+  useEffect(() => {
+    if (!notice) return
+    const timer = setTimeout(() => setNotice(null), 4000)
+    return () => clearTimeout(timer)
+  }, [notice])
 
-    try {
-      await createLog({ activityId: selectedId }).unwrap()
-      setConfirmation(`${chore?.title ?? 'Chore'} logged — waiting for approval.`)
-      // Cleared so a second log is a deliberate choice, not a stray tap on a still-live button.
-      setSelectedId(null)
-    } catch (caught) {
-      setError(toApiError(caught).message)
-    }
+  const selected = data?.items.filter((item) => selectedIds.includes(item.id)) ?? []
+  const onlySelected = selected.length === 1 ? selected[0] : null
+
+  function toggle(id: number) {
+    setSelectedIds((current) =>
+      current.includes(id) ? current.filter((x) => x !== id) : [...current, id],
+    )
+  }
+
+  function logSelected() {
+    for (const chore of selected) queue(chore.id, chore.title)
+    setSelectedIds([])
   }
 
   return (
@@ -57,122 +75,165 @@ export function LogActivityPage() {
       <div>
         <h1 className="text-3xl">Log a chore</h1>
         <p className="mt-2 text-muted">
-          Pick what you did. Your partner approves it before the points count.
+          Tap the chores you did — pick several if you like. Your partner approves them before the
+          points count.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="chore-search" className="font-display text-sm font-semibold">
-            Search
-          </label>
-          <input
-            id="chore-search"
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Dishes, laundry…"
-            className="focus-ring rounded-base border-2 border-ink bg-card px-3 py-2.5 text-body placeholder:text-muted"
-          />
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="chore-search" className="font-display text-sm font-semibold">
+          Search
+        </label>
+        <input
+          id="chore-search"
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Dishes, laundry…"
+          className="focus-ring rounded-base border-2 border-ink bg-card px-3 py-2.5 text-body placeholder:text-muted"
+        />
+      </div>
+
+      {isError ? (
+        <div className="rounded-base border-2 border-ink bg-card p-5 shadow-hard-lg">
+          <p role="alert" className="text-muted">
+            {toApiError(loadError).message}
+          </p>
+          <Button variant="neutral" className="mt-3" onClick={() => void refetch()}>
+            Try again
+          </Button>
         </div>
+      ) : isLoading || !data ? (
+        <p role="status" className="text-muted">
+          Loading chores…
+        </p>
+      ) : data.items.length === 0 ? (
+        <p className="rounded-base border-2 border-ink bg-card p-5 text-muted shadow-hard-lg">
+          {debounced ? `No chores match “${debounced}”.` : 'No chores in your household yet.'}
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {data.items.map((activity) =>
+            editingId === activity.id ? (
+              <li key={activity.id}>
+                <ChoreEditor
+                  activity={activity}
+                  onDone={(message) => {
+                    setEditingId(null)
+                    setSelectedIds((ids) => ids.filter((id) => id !== activity.id))
+                    setNotice(message)
+                  }}
+                  onCancel={() => setEditingId(null)}
+                />
+              </li>
+            ) : (
+              <ChoreRow
+                key={activity.id}
+                activity={activity}
+                isSelected={selectedIds.includes(activity.id)}
+                onToggle={() => toggle(activity.id)}
+                onLongPress={() => {
+                  setEditingId(activity.id)
+                  setIsCreating(false)
+                }}
+              />
+            ),
+          )}
+        </ul>
+      )}
 
-        {isError ? (
-          <div className="rounded-base border-2 border-ink bg-card p-5 shadow-hard-lg">
-            <p role="alert" className="text-muted">
-              {toApiError(loadError).message}
-            </p>
-            <Button variant="neutral" className="mt-3" onClick={() => void refetch()}>
-              Try again
-            </Button>
+      {isCreating ? (
+        <ChoreEditor onDone={setNotice} onCancel={() => setIsCreating(false)} />
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            setIsCreating(true)
+            setEditingId(null)
+          }}
+          className="focus-ring flex items-center justify-center gap-2 rounded-base border-2 border-dashed border-ink bg-transparent px-3 py-2.5 font-display text-sm font-semibold text-primary"
+        >
+          <Plus size={16} strokeWidth={3} aria-hidden="true" />
+          New custom chore
+        </button>
+      )}
+
+      <p className="rounded-base border-2 border-ink bg-card px-3 py-2.5 text-sm text-muted">
+        Logged chores start as <strong className="text-body">Pending</strong>. Points count towards
+        the duel only once your partner approves them.
+      </p>
+
+      {/*
+       * Sticky action region. Everything that reports back to the user lives here rather than in the
+       * flow above: rendered in normal flow, a confirmation was laid out behind this bar and clipped.
+       */}
+      <div className="sticky bottom-[4.5rem] -mx-4 flex flex-col gap-2 border-t-2 border-ink bg-page px-4 pb-2 pt-3">
+        {failure && (
+          <p
+            role="alert"
+            className="rounded-base border-2 border-ink-accent bg-danger px-3 py-2 font-display text-sm font-bold text-danger-fg"
+          >
+            {failure}
+          </p>
+        )}
+
+        {/* One row per queued chore, each with its own undo — nothing has been sent yet. */}
+        {queued.map((item) => (
+          <div
+            key={item.key}
+            className="flex items-center justify-between gap-3 rounded-base border-2 border-ink-accent bg-success px-3 py-2 text-success-fg"
+          >
+            <span role="status" className="font-display text-sm font-bold">
+              {item.title} logged
+            </span>
+            <button
+              type="button"
+              onClick={() => undo(item.key)}
+              className="focus-ring flex shrink-0 items-center gap-1 rounded-base border-2 border-ink-accent bg-card px-2 py-1 font-display text-xs font-bold text-body"
+            >
+              <Undo2 size={12} strokeWidth={3} aria-hidden="true" />
+              Undo
+            </button>
           </div>
-        ) : isLoading || !data ? (
-          <p role="status" className="text-muted">
-            Loading chores…
-          </p>
-        ) : data.items.length === 0 ? (
-          <p className="rounded-base border-2 border-ink bg-card p-5 text-muted shadow-hard-lg">
-            {debounced ? `No chores match “${debounced}”.` : 'No chores in your household yet.'}
-          </p>
-        ) : (
-          /*
-           * A real radio group, restyled rather than replaced. Arrow-key navigation, single
-           * selection and `aria-checked` all come from the native control; a div-based list would
-           * need every one of them rebuilt, and usually ends up with none.
-           */
-          <fieldset className="flex flex-col gap-2">
-            <legend className="sr-only">Choose a chore</legend>
-            {data.items.map((activity) => {
-              const isSelected = selectedId === activity.id
-              return (
-                <label
-                  key={activity.id}
-                  className={[
-                    'pressable-sm flex cursor-pointer items-center justify-between gap-3 rounded-base border-2 px-3 py-2.5 font-display text-sm font-semibold',
-                    isSelected
-                      ? 'border-ink-accent bg-primary text-primary-fg'
-                      : 'border-ink bg-card',
-                    // The focus ring has to come from the hidden input, or keyboard users see nothing.
-                    'has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary',
-                  ].join(' ')}
-                >
-                  <span className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="activityId"
-                      value={activity.id}
-                      checked={isSelected}
-                      onChange={() => setSelectedId(activity.id)}
-                      className="sr-only"
-                    />
-                    {activity.title}
-                  </span>
-                  <span
-                    className={[
-                      'shrink-0 rounded-base border-2 border-ink-accent px-2 py-0.5 text-xs font-bold',
-                      isSelected ? 'bg-card text-body' : 'bg-warning text-warning-fg',
-                    ].join(' ')}
-                  >
-                    {activity.points} pts
-                  </span>
-                </label>
-              )
-            })}
-          </fieldset>
-        )}
+        ))}
 
-        {error && (
-          <p role="alert" className="font-display text-sm font-bold text-danger">
-            {error}
-          </p>
-        )}
-        {confirmation && (
+        {notice && (
           <p
             role="status"
-            className="rounded-base border-2 border-ink-accent bg-success px-3 py-2.5 font-display text-sm font-bold text-success-fg"
+            className="rounded-base border-2 border-ink-accent bg-success px-3 py-2 font-display text-sm font-bold text-success-fg"
           >
-            {confirmation}
+            {notice}
           </p>
         )}
 
         {/*
-         * Sticky, sitting just above the bottom navigation.
-         *
-         * The list is twelve rows on a fresh household and grows with custom chores, so a submit
-         * button after it means selecting the first chore and then scrolling the entire list to act
-         * on it. Only visible once a screenshot showed the button off-screen below the fold.
+         * Edit and Remove appear beside the log button when exactly one chore is selected. This is
+         * what makes them findable without a gesture — and why they are absent for a multi-selection,
+         * where "edit" has no single subject.
          */}
-        <div className="sticky bottom-[4.5rem] -mx-4 border-t-2 border-ink bg-page px-4 pb-2 pt-3">
+        <div className="flex gap-2">
           <Button
-            type="submit"
-            className="w-full"
-            disabled={selectedId === null}
-            pending={isSubmitting}
-            pendingLabel="Logging…"
+            className="flex-1"
+            disabled={selected.length === 0}
+            onClick={logSelected}
           >
-            Log this chore
+            {selected.length > 1 ? `Log ${selected.length} chores` : 'Log this chore'}
           </Button>
+
+          {onlySelected && (
+            <Button
+              variant="neutral"
+              aria-label={`Edit ${onlySelected.title}`}
+              onClick={() => {
+                setEditingId(onlySelected.id)
+                setIsCreating(false)
+              }}
+            >
+              <Pencil size={16} strokeWidth={3} aria-hidden="true" />
+            </Button>
+          )}
         </div>
-      </form>
+      </div>
 
       <p className="text-sm text-muted">
         <Link to="/" className="focus-ring font-semibold text-primary underline">
@@ -180,5 +241,67 @@ export function LogActivityPage() {
         </Link>
       </p>
     </div>
+  )
+}
+
+/**
+ * A selectable chore. `aria-pressed` rather than a checkbox role: the row is a toggle button whose
+ * pressed state means "included in the next log", which is what a screen reader should hear.
+ */
+function ChoreRow({
+  activity,
+  isSelected,
+  onToggle,
+  onLongPress,
+}: {
+  activity: Activity
+  isSelected: boolean
+  onToggle: () => void
+  onLongPress: () => void
+}) {
+  const { handlers, consumedRef } = useLongPress(onLongPress)
+
+  return (
+    <li>
+      <button
+        type="button"
+        aria-pressed={isSelected}
+        onClick={() => {
+          // A hold already acted; without this the row would also toggle on release.
+          if (consumedRef.current) return
+          onToggle()
+        }}
+        {...handlers}
+        className={[
+          'pressable-sm flex w-full touch-none items-center justify-between gap-3 rounded-base border-2 px-3 py-2.5 text-left font-display text-sm font-semibold',
+          isSelected ? 'border-ink-accent bg-primary text-primary-fg' : 'border-ink bg-card',
+        ].join(' ')}
+      >
+        <span className="flex min-w-0 items-center gap-2.5">
+          {/*
+           * A visible box, because `aria-pressed` alone is invisible and a colour change is not a
+           * selection affordance — it reads as "highlighted", not "ticked".
+           */}
+          <span
+            aria-hidden="true"
+            className={[
+              'grid size-4 shrink-0 place-items-center rounded-[3px] border-2 border-ink-accent',
+              isSelected ? 'bg-card' : 'bg-transparent',
+            ].join(' ')}
+          >
+            {isSelected && <span className="size-2 rounded-[1px] bg-primary" />}
+          </span>
+          <span className="truncate">{activity.title}</span>
+        </span>
+        <span
+          className={[
+            'shrink-0 rounded-base border-2 border-ink-accent px-2 py-0.5 text-xs font-bold',
+            isSelected ? 'bg-card text-body' : 'bg-warning text-warning-fg',
+          ].join(' ')}
+        >
+          {activity.points} pts
+        </span>
+      </button>
+    </li>
   )
 }

@@ -1,4 +1,7 @@
 import { Zap } from 'lucide-react'
+import { Avatar } from '../../components/ui/Avatar'
+import { RecentChoresColumn, type RecentChore } from '../activity/RecentChoresColumn'
+import { useMyActivityLogsQuery, usePartnerActivityLogsQuery } from '../activity/activityApi'
 import { useMeQuery } from '../auth/authApi'
 import { useGetHouseholdQuery } from '../household/householdApi'
 import { useCurrentCompetitionQuery } from './competitionApi'
@@ -38,6 +41,13 @@ export function HeadToHeadCard() {
     { householdId: householdId as number },
     { skip: householdId === undefined },
   )
+
+  /**
+   * Each partner's last few chores, shown under their avatar. Two endpoints, because the API splits
+   * them: `/mine` is the caller's, and `/api/activity-logs` returns only the *other* partner's.
+   */
+  const myChores = useMyActivityLogsQuery({ take: 4 })
+  const partnerChores = usePartnerActivityLogsQuery({ pageSize: 4 })
 
   if (competition.isError || household.isError) {
     const message = toApiError(competition.error ?? household.error).message
@@ -105,13 +115,28 @@ export function HeadToHeadCard() {
       ) : (
         <>
           <div className="mt-4 flex items-end justify-between gap-4">
-            {/* Purple is you, green is your opponent — design-tokens.md §2.1. */}
-            <Score name="You" points={competition.data.myPoints} align="left" swatch="bg-primary" />
+            {/*
+             * Purple is you, green is your opponent — design-tokens.md §2.1. The avatars carry the
+             * colour, so the separate swatches they replaced are gone: two marks of the same colour
+             * beside one name was one more than the mapping needed.
+             */}
+            <Score
+              name="You"
+              points={competition.data.myPoints}
+              align="left"
+              avatar={<Avatar userId={me.id} name={me.name} role="self" />}
+              chores={myChores.data?.items ?? []}
+              emptyLabel="Nothing logged yet."
+            />
             <Score
               name={partner?.name ?? 'Partner'}
               points={competition.data.partnerPoints}
               align="right"
-              swatch="bg-success"
+              avatar={
+                partner ? <Avatar userId={partner.id} name={partner.name} role="opponent" /> : null
+              }
+              chores={partnerChores.data?.items ?? []}
+              emptyLabel="Nothing yet."
             />
           </div>
 
@@ -159,32 +184,36 @@ function Score({
   name,
   points,
   align,
-  swatch,
+  avatar,
+  chores,
+  emptyLabel,
 }: {
   name: string
   points: number
   align: 'left' | 'right'
-  /** Ties the name to its half of the bar; without it the colours mean nothing. */
-  swatch: string
+  /** Carries the player colour, so it also ties this side to its half of the bar. */
+  avatar: React.ReactNode
+  chores: RecentChore[]
+  emptyLabel: string
 }) {
   return (
-    <div className={align === 'right' ? 'text-right' : undefined}>
-      <p
+    <div className="flex min-w-0 flex-1 flex-col">
+      <div
         className={[
-          'flex items-center gap-1.5 font-display text-sm font-semibold text-muted',
-          align === 'right' ? 'flex-row-reverse' : '',
+          'flex min-w-0 items-center gap-3',
+          align === 'right' ? 'flex-row-reverse text-right' : '',
         ].join(' ')}
       >
-        <span
-          aria-hidden="true"
-          className={`inline-block size-3 rounded-sm border-2 border-ink-accent ${swatch}`}
-        />
-        {name}
-      </p>
-      <p className="font-display text-3xl font-bold">
-        {points}
-        <span className="ml-1 text-sm font-semibold text-muted">pts</span>
-      </p>
+        {avatar}
+        <div className="min-w-0">
+          <p className="truncate font-display text-sm font-semibold text-muted">{name}</p>
+          <p className="font-display text-3xl font-bold">
+            {points}
+            <span className="ml-1 text-sm font-semibold text-muted">pts</span>
+          </p>
+        </div>
+      </div>
+      <RecentChoresColumn chores={chores} align={align} emptyLabel={emptyLabel} />
     </div>
   )
 }

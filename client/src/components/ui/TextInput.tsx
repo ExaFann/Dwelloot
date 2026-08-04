@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes } from 'react'
+import { useId, type ComponentPropsWithRef } from 'react'
 
 /**
  * A labelled text input that can show a server-side field error.
@@ -8,7 +8,12 @@ import { useId, type InputHTMLAttributes } from 'react'
  * even though it looks correct.
  */
 
-type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> & {
+/**
+ * `ComponentPropsWithRef` rather than `InputHTMLAttributes`, so callers can hold a ref — [47a] needs
+ * one to move focus into the disclosure it opens. React 19 passes `ref` as an ordinary prop, so no
+ * `forwardRef` wrapper is required.
+ */
+type Props = Omit<ComponentPropsWithRef<'input'>, 'id'> & {
   label: string
   /** A message from the API, already resolved through `fieldError`. */
   error?: string

@@ -16,8 +16,6 @@ const CHORES = [
 
 type Overrides = {
   list?: { status: number; body: unknown }
-  create?: { status: number; body: unknown }
-  /** Keyed by the `search` term, so a filtered request can return a different list. */
   bySearch?: Record<string, unknown>
 }
 
@@ -35,10 +33,10 @@ function stub(overrides: Overrides = {}) {
     'fetch',
     vi.fn(async (input: Request) => {
       const url = new URL(input.url)
-      const body = input.method === 'POST' ? await input.clone().text() : undefined
+      const body = input.method === 'GET' ? undefined : await input.clone().text()
       calls.push({ path: url.pathname, search: url.search, method: input.method, body })
 
-      if (url.pathname === '/api/activities') {
+      if (url.pathname === '/api/activities' && input.method === 'GET') {
         const term = url.searchParams.get('search')
         if (term && overrides.bySearch && term in overrides.bySearch) {
           return json(overrides.bySearch[term])
@@ -47,11 +45,7 @@ function stub(overrides: Overrides = {}) {
         return json(r.body, r.status)
       }
       if (url.pathname === '/api/activity-logs' && input.method === 'POST') {
-        const r = overrides.create ?? {
-          status: 201,
-          body: { id: 9, activityId: 1, status: 'Pending', completedAt: new Date().toISOString() },
-        }
-        return json(r.body, r.status)
+        return json({ id: 9, activityId: 1, status: 'Pending', completedAt: '' }, 201)
       }
       return json({ error: 'That endpoint does not exist.', errors: null }, 404)
     }),
@@ -71,6 +65,8 @@ function renderPage() {
   )
 }
 
+const chore = (name: RegExp) => screen.getByRole('button', { name })
+
 beforeEach(() => localStorage.clear())
 afterEach(() => {
   cleanup()
@@ -82,28 +78,14 @@ describe('the chore list', () => {
     stub()
     renderPage()
 
-    expect(await screen.findByRole('radio', { name: /change the bed sheets/i })).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: /clean the bathroom/i })).toBeInTheDocument()
-    expect(screen.getByText('25 pts')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /^change the bed sheets/i })).toBeInTheDocument()
+    expect(chore(/^clean the bathroom/i)).toHaveTextContent('25 pts')
   })
 
-  /**
-   * Asserted through the radio role, which fails if the semantics were faked with divs — that is
-   * the whole reason for using a native control here.
-   */
-  it('is a single-selection radio group', async () => {
-    stub()
-    renderPage()
-
-    const radios = await screen.findAllByRole('radio')
-    expect(radios).toHaveLength(3)
-    expect(radios.every((r) => r.getAttribute('name') === 'activityId')).toBe(true)
-  })
-
-  it('asks the server for chores, sorted by title', async () => {
+  it('asks the server for chores sorted by title', async () => {
     const calls = stub()
     renderPage()
-    await screen.findAllByRole('radio')
+    await screen.findByRole('button', { name: /^change the bed sheets/i })
 
     const request = calls.find((c) => c.path === '/api/activities')
     expect(request?.search).toContain('category=Chore')
@@ -115,84 +97,155 @@ describe('the chore list', () => {
     renderPage()
 
     expect(await screen.findByRole('alert')).toHaveTextContent('An unexpected error occurred.')
-    expect(screen.queryAllByRole('radio')).toHaveLength(0)
   })
 })
 
 describe('selection', () => {
-  it('starts with nothing selected and submit disabled', async () => {
+  it('starts with nothing selected and the log button disabled', async () => {
     stub()
     renderPage()
-    await screen.findAllByRole('radio')
+    await screen.findByRole('button', { name: /^change the bed sheets/i })
 
-    expect(screen.getAllByRole('radio').every((r) => !(r as HTMLInputElement).checked)).toBe(true)
+    expect(chore(/^wash dishes/i)).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByRole('button', { name: /log this chore/i })).toBeDisabled()
   })
 
-  // The other direction — a form that enabled submit unconditionally would pass "it submits".
-  it('enables submit once a chore is chosen', async () => {
+  it('selects on tap and enables logging', async () => {
     stub()
     renderPage()
 
-    await userEvent.setup().click(await screen.findByRole('radio', { name: /wash dishes/i }))
+    await userEvent.setup().click(await screen.findByRole('button', { name: /^wash dishes/i }))
 
+    expect(chore(/^wash dishes/i)).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: /log this chore/i })).toBeEnabled()
   })
 
-  it('keeps only one chore selected', async () => {
+  it('deselects on a second tap', async () => {
     stub()
     renderPage()
     const user = userEvent.setup()
 
-    await user.click(await screen.findByRole('radio', { name: /wash dishes/i }))
-    await user.click(screen.getByRole('radio', { name: /clean the bathroom/i }))
+    const target = await screen.findByRole('button', { name: /^wash dishes/i })
+    await user.click(target)
+    await user.click(target)
 
-    expect((screen.getByRole('radio', { name: /clean the bathroom/i }) as HTMLInputElement).checked).toBe(true)
-    expect((screen.getByRole('radio', { name: /wash dishes/i }) as HTMLInputElement).checked).toBe(false)
+    expect(chore(/^wash dishes/i)).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: /log this chore/i })).toBeDisabled()
+  })
+
+  /** Multi-select is the point — logging a morning's worth of chores should be one action. */
+  it('keeps several selected at once and counts them', async () => {
+    stub()
+    renderPage()
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: /^wash dishes/i }))
+    await user.click(chore(/^clean the bathroom/i))
+
+    expect(chore(/^wash dishes/i)).toHaveAttribute('aria-pressed', 'true')
+    expect(chore(/^clean the bathroom/i)).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /log 2 chores/i })).toBeEnabled()
   })
 })
 
-describe('submitting', () => {
-  it('posts the chore that was chosen, not the first in the list', async () => {
+describe('logging a selection', () => {
+  it('queues every selected chore', async () => {
+    stub()
+    renderPage()
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: /^wash dishes/i }))
+    await user.click(chore(/^clean the bathroom/i))
+    await user.click(screen.getByRole('button', { name: /log 2 chores/i }))
+
+    expect(await screen.findByText(/wash dishes logged/i)).toBeInTheDocument()
+    expect(screen.getByText(/clean the bathroom logged/i)).toBeInTheDocument()
+  })
+
+  /**
+   * Nothing is sent during the undo window — there is no endpoint to delete a log, so this is the
+   * only moment an accidental tap can be taken back.
+   */
+  it('sends nothing straight away, and offers undo', async () => {
     const calls = stub()
     renderPage()
     const user = userEvent.setup()
 
-    await user.click(await screen.findByRole('radio', { name: /wash dishes/i }))
+    await user.click(await screen.findByRole('button', { name: /^wash dishes/i }))
     await user.click(screen.getByRole('button', { name: /log this chore/i }))
 
-    await waitFor(() => {
-      const post = calls.find((c) => c.path === '/api/activity-logs' && c.method === 'POST')
-      // 540 is Wash dishes; 544 is the first row. The distinction is the point.
-      expect(post?.body).toBe(JSON.stringify({ activityId: 540 }))
-    })
+    await screen.findByText(/wash dishes logged/i)
+    expect(calls.filter((c) => c.path === '/api/activity-logs')).toHaveLength(0)
+    expect(screen.getByRole('button', { name: /undo/i })).toBeInTheDocument()
   })
 
-  it('confirms by name and clears the selection', async () => {
+  it('clears the selection so the same chores cannot be logged twice by mistake', async () => {
     stub()
     renderPage()
     const user = userEvent.setup()
 
-    await user.click(await screen.findByRole('radio', { name: /clean the bathroom/i }))
+    await user.click(await screen.findByRole('button', { name: /^wash dishes/i }))
     await user.click(screen.getByRole('button', { name: /log this chore/i }))
 
-    expect(await screen.findByRole('status')).toHaveTextContent(/clean the bathroom logged/i)
-    // Cleared, so a stray second tap cannot double-log.
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: /log this chore/i })).toBeDisabled(),
-    )
+    await screen.findByText(/wash dishes logged/i)
+    expect(chore(/^wash dishes/i)).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: /log this chore/i })).toBeDisabled()
   })
 
-  it('shows the server message on failure and does not confirm', async () => {
-    stub({ create: { status: 409, body: { error: 'You are not in a household yet.', errors: null } } })
+  it('undo removes the pending row', async () => {
+    stub()
     renderPage()
     const user = userEvent.setup()
 
-    await user.click(await screen.findByRole('radio', { name: /wash dishes/i }))
+    await user.click(await screen.findByRole('button', { name: /^wash dishes/i }))
     await user.click(screen.getByRole('button', { name: /log this chore/i }))
+    await screen.findByText(/wash dishes logged/i)
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('You are not in a household yet.')
-    expect(screen.queryByText(/logged — waiting/i)).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /undo/i }))
+
+    await waitFor(() => expect(screen.queryByText(/wash dishes logged/i)).not.toBeInTheDocument())
+  })
+})
+
+describe('reaching edit without a hidden gesture', () => {
+  /**
+   * The discoverability answer: Edit appears as a consequence of selecting one chore, so there is
+   * nothing to know in advance. Long-press is a shortcut on top, not the only route.
+   */
+  it('offers Edit once exactly one chore is selected', async () => {
+    stub()
+    renderPage()
+
+    await userEvent.setup().click(await screen.findByRole('button', { name: /^wash dishes/i }))
+
+    expect(screen.getByRole('button', { name: /edit wash dishes/i })).toBeInTheDocument()
+  })
+
+  // Both directions — "edit" has no single subject when several are selected.
+  it('hides Edit when nothing, or more than one, is selected', async () => {
+    stub()
+    renderPage()
+    const user = userEvent.setup()
+    await screen.findByRole('button', { name: /^wash dishes/i })
+
+    expect(screen.queryByRole('button', { name: /^edit /i })).not.toBeInTheDocument()
+
+    await user.click(chore(/^wash dishes/i))
+    await user.click(chore(/^clean the bathroom/i))
+
+    expect(screen.queryByRole('button', { name: /^edit /i })).not.toBeInTheDocument()
+  })
+
+  it('opens the editor from the action bar', async () => {
+    stub()
+    renderPage()
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: /^wash dishes/i }))
+    await user.click(screen.getByRole('button', { name: /edit wash dishes/i }))
+
+    expect(screen.getByLabelText('Chore')).toHaveValue('Wash dishes')
+    expect(screen.getByRole('button', { name: /remove this chore/i })).toBeInTheDocument()
   })
 })
 
@@ -200,7 +253,7 @@ describe('search', () => {
   it('sends the typed term to the server', async () => {
     const calls = stub({ bySearch: { clean: { items: [CHORES[1]], total: 1 } } })
     renderPage()
-    await screen.findAllByRole('radio')
+    await screen.findByRole('button', { name: /^wash dishes/i })
 
     await userEvent.setup().type(screen.getByLabelText('Search'), 'clean')
 
@@ -211,21 +264,10 @@ describe('search', () => {
     )
   })
 
-  it('narrows the list to what came back', async () => {
-    stub({ bySearch: { clean: { items: [CHORES[1]], total: 1 } } })
-    renderPage()
-    await screen.findAllByRole('radio')
-
-    await userEvent.setup().type(screen.getByLabelText('Search'), 'clean')
-
-    await waitFor(() => expect(screen.getAllByRole('radio')).toHaveLength(1))
-    expect(screen.getByRole('radio', { name: /clean the bathroom/i })).toBeInTheDocument()
-  })
-
-  it('says so when nothing matches, rather than showing a bare list', async () => {
+  it('says so when nothing matches', async () => {
     stub({ bySearch: { zzz: { items: [], total: 0 } } })
     renderPage()
-    await screen.findAllByRole('radio')
+    await screen.findByRole('button', { name: /^wash dishes/i })
 
     await userEvent.setup().type(screen.getByLabelText('Search'), 'zzz')
 
@@ -235,9 +277,22 @@ describe('search', () => {
   it('does not send an empty search parameter', async () => {
     const calls = stub()
     renderPage()
-    await screen.findAllByRole('radio')
+    await screen.findByRole('button', { name: /^wash dishes/i })
 
     // `search=` would be a filter for the empty string rather than no filter at all.
     expect(calls.every((c) => !c.search.includes('search='))).toBe(true)
+  })
+})
+
+describe('adding a chore', () => {
+  it('opens the editor in create mode', async () => {
+    stub()
+    renderPage()
+
+    await userEvent.setup().click(await screen.findByRole('button', { name: /new custom chore/i }))
+
+    expect(screen.getByLabelText('Chore')).toHaveValue('')
+    // Nothing to remove yet.
+    expect(screen.queryByRole('button', { name: /remove this chore/i })).not.toBeInTheDocument()
   })
 })
