@@ -220,6 +220,40 @@
 }
 
 /*
+ * The loot box prize arriving — the app's one celebratory moment, task [53].
+ *
+ * Scale and rotate only. No glow, no gradient: `design-tokens.md`'s flat-fill rule holds here too,
+ * and a soft halo on a hard-shadowed yellow badge would be the one Material-ish thing in the app.
+ *
+ * `transform` is deliberately untouched, for the reason log `045` found with the spark: an element
+ * that depends on its animation to sit in the right place ends up stranded when
+ * `prefers-reduced-motion` switches the animation off. Here that means the prize simply appears at
+ * full size rather than popping — which is exactly what reduced motion should mean.
+ */
+@keyframes dwelloot-loot-pop {
+  0% {
+    scale: 0.6;
+    rotate: -6deg;
+  }
+  60% {
+    scale: 1.08;
+    rotate: 2deg;
+  }
+  100% {
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+
+@utility loot-pop {
+  animation: dwelloot-loot-pop 320ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/*
  * A single visible focus indicator, added in task [40] — the first task with anything focusable.
  *
  * `:focus-visible` rather than `:focus`, so a mouse click on a button does not leave a ring behind
