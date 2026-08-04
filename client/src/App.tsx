@@ -1,5 +1,6 @@
 import { RouterProvider, createBrowserRouter } from 'react-router'
 import { routes } from './app/routes'
+import { useThemeEffect } from './features/theme/useThemeEffect'
 
 /**
  * Replaces the task [39] theme preview.
@@ -10,6 +11,12 @@ import { routes } from './app/routes'
 const router = createBrowserRouter(routes)
 
 function App() {
+  /*
+   * At the root, so "System" keeps following the OS on every screen — not only on the one that
+   * happens to hold the control ([57]).
+   */
+  useThemeEffect()
+
   return <RouterProvider router={router} />
 }
 

@@ -5,6 +5,33 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dwelloot</title>
+    <!--
+      Applies the saved theme before the first paint.
+
+      This cannot live in React: `createRoot().render()` runs after the browser has already painted,
+      so a dark-mode user would get a full-brightness flash of #F0EBFF on every load before the app
+      corrected it.
+
+      It is a second copy of the logic in src/theme/themeMode.ts, in a file that module cannot
+      import. `src/theme/themeBoot.test.ts` reads this file and pins the storage key, the attribute
+      and the mode strings against the module, so the two cannot drift apart silently.
+
+      Note for [60]: this is an inline script, so a deployed Content-Security-Policy needs a hash or
+      nonce for it rather than a blanket `script-src 'self'`.
+    -->
+    <script>
+      (function () {
+        try {
+          var mode = localStorage.getItem('dwelloot.theme') || 'system'
+          var dark =
+            mode === 'dark' ||
+            (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          if (dark) document.documentElement.setAttribute('data-theme', 'dark')
+        } catch (e) {
+          // Storage blocked, or no matchMedia. The light scheme is the default and renders fine.
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

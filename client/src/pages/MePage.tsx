@@ -3,6 +3,7 @@ import { SignOutButton } from '../features/auth/SignOutButton'
 import { Avatar } from '../components/ui/Avatar'
 import { BadgeShelf } from '../features/progression/BadgeShelf'
 import { HouseholdSettings } from '../features/household/HouseholdSettings'
+import { ThemeToggle } from '../features/theme/ThemeToggle'
 import { toApiError } from '../api/apiError'
 
 /**
@@ -91,6 +92,9 @@ export function MePage() {
       {me.householdId !== null && (
         <HouseholdSettings householdId={me.householdId} selfId={me.id} />
       )}
+
+      {/* A device preference, so it sits with the other settings rather than in the nav ([57]). */}
+      <ThemeToggle />
 
       {/*
        * Sign-out's final home. It landed under the `/me` placeholder in [43] because no task owned

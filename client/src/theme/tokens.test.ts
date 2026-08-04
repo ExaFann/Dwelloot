@@ -240,7 +240,14 @@ describe('nothing switches scheme on its own', () => {
     expect(CSS).toContain("@custom-variant dark (&:where([data-theme='dark']")
   })
 
-  it('has no prefers-color-scheme rule — [57] owns switching', () => {
+  /**
+   * Still true after [57], and now an invariant rather than a "not yet".
+   *
+   * "Follow system" is resolved in JavaScript and written to this same attribute, deliberately: a
+   * media query here would be a **second** selector for one piece of state, and an explicit Light
+   * choice on a dark machine would have to fight it. One mechanism — see `themeMode.ts`.
+   */
+  it('has no prefers-color-scheme rule — the attribute is the only selector', () => {
     // Asserted against comment-stripped CSS: the comment explaining this decision names the query.
     expect(CSS).not.toMatch(/@media[^{]*prefers-color-scheme/)
   })
