@@ -36,6 +36,21 @@ export type PartnerActivityLog = {
   completedAt: string
 }
 
+/** `GET /api/activity-logs?status=pending` — the approval queue. Same shape as PartnerActivityLog. */
+export type PendingApproval = PartnerActivityLog
+
+/** `POST /api/activity-logs/bulk-approve`. Note `skipped`, which `api-design.md` omits. */
+export type BulkApproveResult = {
+  approved: number[]
+  skipped: { id: number; reason: string }[]
+}
+
+export type ActivityLogDecision = {
+  id: number
+  status: ActivityLogStatus
+  approvedAt: string | null
+}
+
 export type CreateActivityLogResponse = {
   id: number
   activityId: number
@@ -81,9 +96,53 @@ export const activityApi = baseApi.injectEndpoints({
       providesTags: ['ActivityLog'],
     }),
 
-    myActivityLogs: build.query<Paged<MyActivityLog>, { take?: number }>({
-      query: ({ take = 5 }) => `/api/activity-logs/mine?take=${take}`,
+    myActivityLogs: build.query<Paged<MyActivityLog>, { take?: number; status?: ActivityLogStatus }>({
+      query: ({ take = 5, status }) => {
+        const params = new URLSearchParams({ take: String(take) })
+        if (status) params.set('status', status)
+        return `/api/activity-logs/mine?${params.toString()}`
+      },
       providesTags: ['ActivityLog'],
+    }),
+
+    /** The approval queue. Excludes the caller's own logs by construction — handover §4.4. */
+    pendingApprovals: build.query<Paged<PendingApproval>, void>({
+      query: () => '/api/activity-logs?status=pending',
+      providesTags: ['ActivityLog'],
+    }),
+
+    /**
+     * Approving turns a pending log into points, so unlike creating one this **does** move the
+     * standing — measured in [48], `partnerPoints` went 0 → 10 straight after. Hence `Competition`
+     * as well as `ActivityLog`; this is the invalidation [46] deferred.
+     *
+     * Not `Me`: the points go to the *logger*, and the approver is the other person.
+     */
+    approveLog: build.mutation<ActivityLogDecision, { id: number }>({
+      query: ({ id }) => ({ url: `/api/activity-logs/${id}/approve`, method: 'PATCH' }),
+      invalidatesTags: ['ActivityLog', 'Competition'],
+    }),
+
+    /** A reason is required — trimmed server-side, capped at 200 characters. */
+    rejectLog: build.mutation<ActivityLogDecision, { id: number; reason: string }>({
+      query: ({ id, reason }) => ({
+        url: `/api/activity-logs/${id}/reject`,
+        method: 'PATCH',
+        body: { reason },
+      }),
+      // A rejected log will never award points, so the standing is unchanged — but a pending log the
+      // user can see disappears from the queue, and `Competition` costs nothing to refresh here.
+      invalidatesTags: ['ActivityLog', 'Competition'],
+    }),
+
+    /**
+     * **Partial success at HTTP 200.** The response carries `skipped` alongside `approved`, with
+     * reasons `NotPending` (someone already dealt with it) and `LogNotFound`. Counting the request
+     * rather than the response would misreport the common two-device race — see log `048`.
+     */
+    bulkApprove: build.mutation<BulkApproveResult, { ids: number[] }>({
+      query: (body) => ({ url: '/api/activity-logs/bulk-approve', method: 'POST', body }),
+      invalidatesTags: ['ActivityLog', 'Competition'],
     }),
 
     /**
@@ -156,6 +215,10 @@ export const {
   useActivitiesQuery,
   useMyActivityLogsQuery,
   usePartnerActivityLogsQuery,
+  usePendingApprovalsQuery,
+  useApproveLogMutation,
+  useRejectLogMutation,
+  useBulkApproveMutation,
   useCreateActivityMutation,
   useUpdateActivityMutation,
   useDeleteActivityMutation,

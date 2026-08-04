@@ -20,18 +20,62 @@ const SIGNED_IN_USER = { id: 7, name: 'Alex' }
 
 type MeShape = { householdId: number | null }
 
+/**
+ * Routed **by path**, and `response` applies only to `/api/auth/me` — the thing these tests are
+ * about.
+ *
+ * It used to answer every request with that one body, which was harmless while the guarded pages
+ * fetched nothing of their own. Once [46]–[48] gave them queries, `/api/activities` resolved to the
+ * `/me` object, `data.items.length` threw, and the route rendered its error element instead of the
+ * page. It surfaced as a **flake**, because the heading under assertion is static markup: passing
+ * depended on whether the assertion won the race against the crash.
+ *
+ * This is the second time the same lying stub has been found — `routes.test.tsx` had it too, fixed
+ * during [46]. **A stub that answers a path it was never told about is a lie with a delayed fuse.**
+ */
 function stubMe(response: { status: number; body: unknown } | 'never') {
   const requests: Request[] = []
-  const spy = vi.fn((input: Request) => {
-    requests.push(input)
-    if (response === 'never') return new Promise<Response>(() => {}) // stays pending
-    return Promise.resolve(
-      new Response(JSON.stringify(response.body), {
-        status: response.status,
+  const empty = (body: unknown) =>
+    Promise.resolve(
+      new Response(JSON.stringify(body), {
+        status: 200,
         headers: { 'Content-Type': 'application/json' },
       }),
     )
+
+  const spy = vi.fn((input: Request) => {
+    requests.push(input)
+    const path = new URL(input.url).pathname
+
+    if (path === '/api/auth/me') {
+      if (response === 'never') return new Promise<Response>(() => {}) // stays pending
+      return Promise.resolve(
+        new Response(JSON.stringify(response.body), {
+          status: response.status,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      )
+    }
+
+    // Everything the guarded pages fetch. Shapes, not contents — these tests are about routing.
+    if (path.endsWith('/competitions/current')) {
+      return empty({
+        periodType: 'Daily',
+        periodStart: '2026-08-03T12:00:00Z',
+        periodEnd: '2026-08-04T12:00:00Z',
+        myPoints: 0,
+        partnerPoints: 0,
+        settled: false,
+        voided: false,
+        unopenedLootBox: null,
+      })
+    }
+    if (path.startsWith('/api/households/')) {
+      return empty({ id: 10, name: 'House', inviteCode: 'X', members: [{ id: 7, name: 'Alex' }] })
+    }
+    return empty({ items: [], total: 0 })
   })
+
   vi.stubGlobal('fetch', spy)
   return { spy, requests }
 }
