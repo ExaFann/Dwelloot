@@ -112,7 +112,8 @@ export function LogActivityPage() {
           {debounced ? `No chores match “${debounced}”.` : 'No chores in your household yet.'}
         </p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        /* Two-up from `lg` ([58]): twelve default chores is two screens of scrolling at one column. */
+        <ul className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:items-start">
           {data.items.map((activity) =>
             editingId === activity.id ? (
               <li key={activity.id}>
@@ -167,7 +168,11 @@ export function LogActivityPage() {
        * Sticky action region. Everything that reports back to the user lives here rather than in the
        * flow above: rendered in normal flow, a confirmation was laid out behind this bar and clipped.
        */}
-      <div className="sticky bottom-[4.5rem] -mx-4 flex flex-col gap-2 border-t-2 border-ink bg-page px-4 pb-2 pt-3">
+      {/*
+       * `bottom-[4.5rem]` clears the bottom tab bar. From `md` the nav is a left rail and there is
+       * nothing below the bar to clear, so the offset becomes a 72px gap for no reason ([58]).
+       */}
+      <div className="sticky bottom-[4.5rem] -mx-4 flex flex-col gap-2 border-t-2 border-ink bg-page px-4 pb-2 pt-3 md:bottom-0 md:pb-3">
         {failure && (
           <p
             role="alert"

@@ -82,19 +82,27 @@ export function MePage() {
         </dl>
       </section>
 
-      <BadgeShelf />
-
       {/*
-       * `householdId` is non-null here by construction: this route sits behind `AuthGate`'s
-       * `household` access, which sends anyone without one to `/pairing`. The guard is a type
-       * narrowing, not a state with a UI.
+       * Two columns from `lg` ([58]): the badge grid is already a grid and pairs naturally with the
+       * two settings cards, which are short. `items-start` so neither column stretches to the other.
        */}
-      {me.householdId !== null && (
-        <HouseholdSettings householdId={me.householdId} selfId={me.id} />
-      )}
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
+        <BadgeShelf />
 
-      {/* A device preference, so it sits with the other settings rather than in the nav ([57]). */}
-      <ThemeToggle />
+        <div className="flex flex-col gap-6">
+          {/*
+           * `householdId` is non-null here by construction: this route sits behind `AuthGate`'s
+           * `household` access, which sends anyone without one to `/pairing`. The guard is a type
+           * narrowing, not a state with a UI.
+           */}
+          {me.householdId !== null && (
+            <HouseholdSettings householdId={me.householdId} selfId={me.id} />
+          )}
+
+          {/* A device preference, so it sits with the other settings rather than in the nav ([57]). */}
+          <ThemeToggle />
+        </div>
+      </div>
 
       {/*
        * Sign-out's final home. It landed under the `/me` placeholder in [43] because no task owned

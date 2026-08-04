@@ -19,9 +19,18 @@ export function NoticesPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl">Notices</h1>
-      <PendingApprovals />
-      <PrizeRedeemFeed />
-      <ChoresFeed />
+      {/*
+       * Two columns from `lg` ([58]), and the split follows the section order rather than cutting
+       * across it: the only section with a decision to make keeps the top of the reading order on
+       * its own, and the two feeds — both chronological, both read-only — stack beside it.
+       */}
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
+        <PendingApprovals />
+        <div className="flex flex-col gap-6">
+          <PrizeRedeemFeed />
+          <ChoresFeed />
+        </div>
+      </div>
     </div>
   )
 }

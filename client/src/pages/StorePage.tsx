@@ -121,8 +121,12 @@ export function StorePage() {
         )}
       </section>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1.5">
+      {/*
+       * Stacked on a phone, one row from `lg` ([58]). Full-width controls are right at 390px and
+       * absurd at 1024 — a search box the width of the page reads as a mistake, not a feature.
+       */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-4">
+        <div className="flex flex-col gap-1.5 lg:max-w-sm lg:flex-1">
           <label htmlFor="reward-search" className="font-display text-sm font-semibold">
             Search
           </label>
@@ -140,7 +144,11 @@ export function StorePage() {
          * Three states rather than a checkbox, because the API honours three — `affordable=false` is
          * the "what am I saving for" view log `028` built the complement branch for.
          */}
-        <div role="group" aria-label="Filter by what you can afford" className="flex flex-wrap gap-2">
+        <div
+          role="group"
+          aria-label="Filter by what you can afford"
+          className="flex flex-wrap gap-2 lg:shrink-0 lg:pb-1"
+        >
           {FILTER_OPTIONS.map((option) => (
             <button
               key={option.value}
@@ -165,7 +173,7 @@ export function StorePage() {
          * `color-scheme`, so reproducing it would be bundle for no behaviour.
          */}
         {/* Inline, not stacked: three stacked controls pushed the first reward off a 390px screen. */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 lg:w-72 lg:shrink-0">
           <label htmlFor="reward-sort" className="shrink-0 font-display text-sm font-semibold">
             Sort
           </label>
@@ -202,7 +210,8 @@ export function StorePage() {
           <EmptyMessage search={debounced} affordability={affordability} />
         </p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        /* Two-up from `lg` ([58]). The page size is 6, so a full page is a complete 2 × 3 block. */
+        <ul className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:items-start">
           {items.map((reward) =>
             editingId === reward.id ? (
               <li key={reward.id}>

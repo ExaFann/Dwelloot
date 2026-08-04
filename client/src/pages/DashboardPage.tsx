@@ -18,8 +18,19 @@ export function DashboardPage() {
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl">Home</h1>
       <LootBoxReveal />
-      <HeadToHeadCard />
-      <QuickLogTiles />
+      {/*
+       * Side by side from `lg` ([58]). The duel is the hero and keeps the wider column; the tile wall
+       * is the thing that most wants the extra width, since each tile is sized by its own chore name.
+       * `items-start` so the shorter card does not stretch to match the taller one.
+       */}
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-5 lg:items-start">
+        <div className="lg:col-span-3">
+          <HeadToHeadCard />
+        </div>
+        <div className="lg:col-span-2">
+          <QuickLogTiles />
+        </div>
+      </div>
     </div>
   )
 }
