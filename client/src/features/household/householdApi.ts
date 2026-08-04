@@ -48,8 +48,64 @@ export const householdApi = baseApi.injectEndpoints({
     joinHousehold: build.mutation<JoinHouseholdResponse, JoinHouseholdRequest>({
       query: (body) => ({ url: '/api/households/join', method: 'POST', body }),
     }),
+
+    /**
+     * Rename, from the Me screen ([56]).
+     *
+     * The response is `{ id, name }` only — deliberately not the full details object (log `015`) —
+     * so `Household` is invalidated rather than the reply being merged into the cache. `Me` is not
+     * invalidated: the household's name is not on `/api/auth/me`.
+     */
+    renameHousehold: build.mutation<{ id: number; name: string }, { householdId: number; name: string }>(
+      {
+        query: ({ householdId, name }) => ({
+          url: `/api/households/${householdId}`,
+          method: 'PATCH',
+          body: { name },
+        }),
+        invalidatesTags: ['Household'],
+      },
+    ),
+
+    /**
+     * Leave the household. Two branches server-side (log `015`), and the caller cannot choose:
+     *
+     * - **One of two leaves** — `household_id` cleared, `is_full` reset so the partner can pair again.
+     * - **The last member leaves** — the household row is **deleted**, taking its activities,
+     *   rewards, competitions and claims with it by cascade.
+     *
+     * ### No navigation here
+     *
+     * Invalidating `Me` sets `householdId` to null, and **`AuthGate` redirects to `/pairing`** on the
+     * next render. Navigating here as well would be a second mechanism doing the gate's job —
+     * `LoginPage` already proved what that costs, racing the gate and silently discarding the
+     * requested destination (handover §3).
+     *
+     * Every household-scoped tag goes too, because every one of them is now unreadable: a departed
+     * member gets a 404 from `GET /api/households/{id}` immediately, verified over HTTP in [16].
+     */
+    leaveHousehold: build.mutation<{ left: boolean }, { householdId: number }>({
+      query: ({ householdId }) => ({
+        url: `/api/households/${householdId}/leave`,
+        method: 'POST',
+      }),
+      invalidatesTags: [
+        'Me',
+        'Household',
+        'Activity',
+        'ActivityLog',
+        'Competition',
+        'Reward',
+        'Redemption',
+      ],
+    }),
   }),
 })
 
-export const { useGetHouseholdQuery, useCreateHouseholdMutation, useJoinHouseholdMutation } =
-  householdApi
+export const {
+  useGetHouseholdQuery,
+  useCreateHouseholdMutation,
+  useJoinHouseholdMutation,
+  useRenameHouseholdMutation,
+  useLeaveHouseholdMutation,
+} = householdApi
