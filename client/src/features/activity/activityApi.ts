@@ -60,11 +60,12 @@ export type CreateActivityLogResponse = {
 
 export const activityApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    /** The quick-add row. `sort`/`pageSize` are `api-design.md`'s, not a hand-picked list. */
-    quickAddActivities: build.query<Paged<Activity>, void>({
-      query: () => '/api/activities?category=Chore&pageSize=5&sort=title',
-      providesTags: ['Activity'],
-    }),
+    /*
+     * `quickAddActivities` was here — a five-item `?pageSize=5` query for the dashboard's original
+     * "quick-add row". [46] replaced that row with the tile wall, which shows the whole catalogue
+     * through `activities` below, and left this behind. Deleted in [59]'s sweep: it had no caller,
+     * and a second way to fetch chores is a thing to accidentally pick.
+     */
 
     /**
      * The full chore list for the log screen ([47]).
@@ -117,6 +118,12 @@ export const activityApi = baseApi.injectEndpoints({
      * as well as `ActivityLog`; this is the invalidation [46] deferred.
      *
      * Not `Me`: the points go to the *logger*, and the approver is the other person.
+     */
+    /*
+     * **Unused today**, and kept deliberately. The approval queue sends every decision through
+     * `bulkApprove`, even a single row, so nothing calls this — but it binds a real documented
+     * endpoint (`PATCH .../approve`) rather than being superseded work, and the invalidation
+     * reasoning below is the record of what [48] measured. Flagged by [59]'s sweep, not deleted.
      */
     approveLog: build.mutation<ActivityLogDecision, { id: number }>({
       query: ({ id }) => ({ url: `/api/activity-logs/${id}/approve`, method: 'PATCH' }),
@@ -211,7 +218,6 @@ export const activityApi = baseApi.injectEndpoints({
 })
 
 export const {
-  useQuickAddActivitiesQuery,
   useActivitiesQuery,
   useMyActivityLogsQuery,
   usePartnerActivityLogsQuery,

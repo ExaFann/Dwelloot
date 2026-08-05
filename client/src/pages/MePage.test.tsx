@@ -238,7 +238,14 @@ describe('household settings', () => {
     expect(await screen.findByText(/give your household a name/i)).toBeInTheDocument()
     expect(calls.filter((c) => c.method === 'PATCH')).toHaveLength(0)
 
-    await user.type(input, 'a'.repeat(61))
+    /*
+     * **Pasted, not typed.** `user.type` sends 61 separate key events, each with a React re-render;
+     * under v8 coverage instrumentation that was slow enough to blow the test timeout, so this
+     * failed only in `npm run coverage` and passed everywhere else. A test that is correct but too
+     * slow is still a flake, and pasting is a real user action that exercises the same handler.
+     */
+    await user.click(input)
+    await user.paste('a'.repeat(61))
     await user.click(screen.getByRole('button', { name: /^save$/i }))
 
     expect(await screen.findByText(/60 characters or fewer/i)).toBeInTheDocument()
