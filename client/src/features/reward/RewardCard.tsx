@@ -55,7 +55,7 @@ export function RewardCard({ reward, balance, onEdit, onRedeemed, onFailed }: Pr
   }
 
   return (
-    <li className="rounded-base border-2 border-ink bg-card p-3 shadow-hard-sm">
+    <li className="rounded-base border-2 border-ink bg-card p-3">
       <div className="flex items-start justify-between gap-3">
         <h3 className="min-w-0 font-display text-sm font-semibold">{reward.title}</h3>
         {/* Yellow is Coins and loot, and only those — `design-tokens.md` §2.1. */}

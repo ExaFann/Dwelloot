@@ -52,7 +52,7 @@ export function LootBoxReveal() {
   return (
     <section
       aria-labelledby="loot-box-heading"
-      className="rounded-base border-2 border-ink bg-card p-5 shadow-hard-lg"
+      className="rounded-base border-2 border-ink bg-card p-5"
     >
       <div className="flex items-center gap-2">
         <Gift size={18} strokeWidth={3} aria-hidden="true" className="text-primary" />

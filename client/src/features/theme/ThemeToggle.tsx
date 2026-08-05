@@ -29,7 +29,7 @@ export function ThemeToggle() {
   return (
     <section
       aria-labelledby="appearance-heading"
-      className="rounded-base border-2 border-ink bg-card p-4 shadow-hard-lg sm:p-5"
+      className="rounded-base border-2 border-ink bg-card p-4 sm:p-5"
     >
       <h2 id="appearance-heading" className="text-lg">
         Appearance
@@ -49,7 +49,7 @@ export function ThemeToggle() {
               aria-pressed={isActive}
               onClick={() => dispatch(themeModeChanged(option.value))}
               className={[
-                'pressable-sm flex items-center gap-2 rounded-base border-2 px-3 py-1.5 font-display text-sm font-semibold',
+                'pressable-sm flex items-center gap-2 rounded-control border-2 px-3 py-1.5 font-display text-sm font-semibold',
                 isActive ? 'border-ink-accent bg-primary text-primary-fg' : 'border-ink bg-card',
               ].join(' ')}
             >

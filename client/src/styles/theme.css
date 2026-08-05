@@ -29,15 +29,51 @@
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 :root {
-  /* Brand fills, and the foreground measured against each. See design-tokens.md §2. */
-  --brand-primary: #6c00ff;
+  /*
+   * Brand fills, and the foreground measured against each. See design-tokens.md §2.
+   *
+   * **Softened in `ui-exp01`.** The first palette was picked for maximum punch and read as alarming
+   * once it was on real screens: `#FF3B5C` is a warning light, `#00C96F` a highlighter, `#6C00FF`
+   * close to pure spectral violet. Neo-brutalism gets its energy from flat fills and heavy black
+   * outlines, not from saturation — so every hue keeps its identity and steps back from the edge.
+   * Purple and green still lead.
+   *
+   * Every value below is checked by `tokens.test.ts` for AA against its own foreground *and* for a
+   * ≥3:1 black border, in both schemes. The measured ratios are in design-tokens.md §2.
+   */
+  --brand-primary: #7c4dff;
   --brand-primary-fg: #ffffff;
-  --brand-success: #00c96f;
+  --brand-success: #3ddc97;
   --brand-success-fg: #0a0a0a;
-  --brand-warning: #ffd600;
+  --brand-warning: #ffe14a;
   --brand-warning-fg: #0a0a0a;
-  --brand-danger: #ff3b5c;
+  --brand-danger: #ff7a70;
   --brand-danger-fg: #0a0a0a;
+  /*
+   * Points get their own hue, and it is the one cool accent in the set.
+   *
+   * Purple was standing in for Points on the profile, but purple already means **you** — on the
+   * head-to-head card it is the colour of a *person*, not of a currency. Using it for a stat made
+   * one token carry two unrelated jobs, which is why that tile never looked like it belonged with
+   * the other two.
+   *
+   * Blue is also the only hue far enough from yellow and orange to keep the three stats apart: the
+   * three now step 0.76 → 0.50 → 0.40 in luminance *and* sit at three different points on the wheel,
+   * so they separate by brightness and by hue rather than relying on either alone.
+   */
+  --brand-points: #4cc9f0;
+  --brand-points-fg: #0a0a0a;
+  /*
+   * A fifth hue, added for the streak.
+   *
+   * The three profile stats needed three fills, and the existing four could not supply them: green
+   * is the *opponent's* colour and red is destructive, so "Coins / Points / Streak" in yellow, green
+   * and red read as "good, neutral, something is wrong". Orange is a flame, which is what a streak
+   * already is, and it sits between the yellow and the red without borrowing either one's meaning.
+   */
+  /* Deepened so it reads as a distinct hue beside the yellow, not a duller version of it. */
+  --brand-flame: #ff8a3d;
+  --brand-flame-fg: #0a0a0a;
 
   --surface-page: #f0ebff;
   --surface-card: #ffffff;
@@ -64,7 +100,26 @@
    * same name produced `--radius-base: var(--radius-base)`, a self-reference that resolved to
    * nothing. `tokens.test.ts` now pins that no raw name is reused as a mapped name.
    */
-  --geometry-radius: 8px;
+  /*
+   * **Zero, from `ui-exp01`.** Rounded corners were softening the one thing the style is built on:
+   * neo-brutalism is hard edges and flat fills, and an 8px radius on every card, input and chip read
+   * as a generic app wearing a bold palette. One token squares the whole app, which is the argument
+   * for having had it as a token in the first place.
+   */
+  --geometry-radius: 0px;
+  /*
+   * **Controls keep their corners.** Surfaces are square; things you press are not.
+   *
+   * Squaring everything made a button look like a small card with a shadow under it rather than a
+   * physical key — the shadow alone was doing all the work of saying "this lifts". A rounded cap on
+   * a hard-offset shadow reads as an object with a top and a side; a square one reads as a sheet of
+   * paper. So `--geometry-radius` squares every surface and `--geometry-radius-control` keeps the
+   * press affordance three-dimensional. Owner's call, `ui-exp01`.
+   *
+   * The bottom nav is deliberately *not* a control here: its tabs are navigation, not buttons, and
+   * they stay square with the surfaces.
+   */
+  --geometry-radius-control: 8px;
   --press-travel: 2px;
 }
 
@@ -73,12 +128,16 @@
   --brand-primary: #a87bff;
   /* Black, not white: white on #A87BFF is 1.90:1. The one scheme-dependent foreground. */
   --brand-primary-fg: #0a0a0a;
-  --brand-success: #00e87f;
+  --brand-success: #57e6b0;
   --brand-success-fg: #0a0a0a;
-  --brand-warning: #ffd600;
+  --brand-warning: #ffea6b;
   --brand-warning-fg: #0a0a0a;
-  --brand-danger: #ff6b85;
+  --brand-danger: #ff9a90;
   --brand-danger-fg: #0a0a0a;
+  --brand-flame: #ffa85c;
+  --brand-flame-fg: #0a0a0a;
+  --brand-points: #6fd6f7;
+  --brand-points-fg: #0a0a0a;
 
   --surface-page: #171226;
   --surface-card: #241c3d;
@@ -106,6 +165,10 @@
   --color-warning-fg: var(--brand-warning-fg);
   --color-danger: var(--brand-danger);
   --color-danger-fg: var(--brand-danger-fg);
+  --color-flame: var(--brand-flame);
+  --color-flame-fg: var(--brand-flame-fg);
+  --color-points: var(--brand-points);
+  --color-points-fg: var(--brand-points-fg);
 
   --color-page: var(--surface-page);
   --color-card: var(--surface-card);
@@ -120,6 +183,7 @@
   --shadow-hard-lg: var(--shadow-raised);
 
   --radius-base: var(--geometry-radius);
+  --radius-control: var(--geometry-radius-control);
 
   --font-display: 'Chakra Petch', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-body: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -132,20 +196,38 @@
  * Both axes, not just Y: the shadow is on a diagonal, so contracting it 4px→2px while moving only
  * vertically leaves the horizontal gap unchanged and reads as sliding rather than pressing.
  */
+/*
+ * **Reversed in `ui-exp01`, because the original had it backwards.** Hover used to *contract* the
+ * shadow and push the element down — the look of a button already held down — while a real click
+ * only changed colour. The strongest physical signal fired for the weakest input, and the actual
+ * press had no physics at all.
+ *
+ * | State  | Shadow | Transform | Reads as |
+ * |--------|--------|-----------|----------|
+ * | rest   | 4px    | none      | sitting on the page |
+ * | hover  | 5px    | −1px      | lifted, ready to take |
+ * | active | none   | +4px      | pushed flat into its own shadow |
+ *
+ * Releasing overshoots slightly (the `1.4` in the curve) so the button rebounds rather than gliding
+ * back — the bounce the press was missing. Down is faster than up, which is also how a key feels.
+ *
+ * **Only genuinely pressable things may wear this.** A card that does nothing when clicked is flat.
+ */
 @utility pressable {
   box-shadow: var(--shadow-rest);
   transition:
-    transform 120ms ease,
-    box-shadow 120ms ease;
+    transform 140ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    box-shadow 140ms ease;
 
   &:hover {
-    box-shadow: var(--shadow-press);
-    transform: translate(var(--press-travel), var(--press-travel));
+    box-shadow: var(--shadow-raised);
+    transform: translate(-1px, -1px);
   }
 
   &:active {
     box-shadow: none;
     transform: translate(4px, 4px);
+    transition-duration: 60ms;
   }
 
   /* The travel still happens — only the animation is removed, so the affordance survives. */
@@ -164,17 +246,18 @@
 @utility pressable-sm {
   box-shadow: var(--shadow-press);
   transition:
-    transform 120ms ease,
-    box-shadow 120ms ease;
+    transform 140ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    box-shadow 140ms ease;
 
   &:hover {
-    box-shadow: none;
-    transform: translate(var(--press-travel), var(--press-travel));
+    box-shadow: var(--shadow-rest);
+    transform: translate(-1px, -1px);
   }
 
   &:active {
     box-shadow: none;
     transform: translate(var(--press-travel), var(--press-travel));
+    transition-duration: 60ms;
   }
 
   @media (prefers-reduced-motion: reduce) {

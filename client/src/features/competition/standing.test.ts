@@ -134,17 +134,46 @@ describe('a settled period', () => {
 })
 
 describe('tugShares', () => {
+  /**
+   * **Rewritten in `ui-exp01`.** These used to pin share-of-total — `10/0 → 100/0`, `5/15 → 25/75`.
+   * That rule made the rope lie exactly when people look at it most: one chore to nil is 100% of the
+   * points scored, so the marker slammed to the end and announced a rout over a single 5-point
+   * chore, while by evening the same gap barely moved it. Position now comes from the **lead**
+   * against a floor of 30, so early scores nudge and real leads lean.
+   *
+   * Literal expectations, deliberately. Expressing them as `50 + lead / scale * 46` would be the
+   * production formula restated in the test, which passes whatever that formula becomes.
+   */
   it.each([
-    ['a clean sweep', 10, 0, 100, 0],
-    ['the other way', 0, 10, 0, 100],
-    ['a quarter', 5, 15, 25, 75],
-    ['level', 20, 20, 50, 50],
+    ['nothing has happened', 0, 0, 50, 50],
+    ['one chore is a nudge, not a rout', 5, 0, 58, 42],
+    ['the other way, symmetrically', 0, 5, 42, 58],
+    ['a real lead leans', 15, 0, 73, 27],
+    ['a big day is capped short of the end', 60, 10, 83, 17],
+    ['level at any score', 20, 20, 50, 50],
   ])('%s → %i/%i', (_name, mine, theirs, expectedMine, expectedTheirs) => {
     expect(tugShares(mine, theirs)).toEqual({ mine: expectedMine, partner: expectedTheirs })
   })
 
-  it('splits 0–0 evenly rather than collapsing the bar', () => {
+  /** The defect this replaced, asserted directly so it cannot come back. */
+  it('never pins the marker to an end on a one-sided early score', () => {
+    expect(tugShares(5, 0).mine).toBeLessThan(70)
+    expect(tugShares(1, 0).mine).toBeLessThan(60)
+  })
+
+  /** Equal scores are centred whether both are zero or both are large. */
+  it('splits a level game evenly rather than collapsing the bar', () => {
     expect(tugShares(0, 0)).toEqual({ mine: 50, partner: 50 })
+    expect(tugShares(120, 120)).toEqual({ mine: 50, partner: 50 })
+  })
+
+  /** Even a hopeless margin leaves both colours on the rope — it is still a contest. */
+  it('keeps the marker off both ends', () => {
+    for (const [mine, theirs] of [[999, 0], [0, 999], [50, 1], [1, 50]]) {
+      const shares = tugShares(mine, theirs)
+      expect(shares.mine).toBeGreaterThanOrEqual(4)
+      expect(shares.mine).toBeLessThanOrEqual(96)
+    }
   })
 
   /**

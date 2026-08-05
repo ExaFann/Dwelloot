@@ -1,4 +1,5 @@
-import { Lock, Medal } from 'lucide-react'
+import { Lock } from 'lucide-react'
+import { BadgeMark } from '../../components/ui/marks'
 import { useBadgesQuery } from './badgeApi'
 import { describeBadge, describeProgress } from './badgeDisplay'
 import { toApiError } from '../../api/apiError'
@@ -21,7 +22,7 @@ export function BadgeShelf() {
   return (
     <section
       aria-labelledby="badges-heading"
-      className="rounded-base border-2 border-ink bg-card p-4 shadow-hard-lg sm:p-5"
+      className="rounded-base border-2 border-ink bg-card p-4 sm:p-5"
     >
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="badges-heading" className="text-lg">
@@ -62,12 +63,31 @@ export function BadgeShelf() {
                     : 'border-ink bg-page',
                 ].join(' ')}
               >
-                <div className="flex items-start gap-2">
-                  {badge.unlocked ? (
-                    <Medal size={16} strokeWidth={3} aria-hidden="true" className="mt-0.5 shrink-0" />
-                  ) : (
-                    <Lock size={16} strokeWidth={3} aria-hidden="true" className="mt-0.5 shrink-0 text-muted" />
-                  )}
+                <div className="flex items-start gap-2.5">
+                  {/*
+                   * **Its own motif, not a shared medal** (`ui-exp01`). Every badge used the same
+                   * `Medal` glyph, so six achievements looked like one achievement six times and the
+                   * only thing distinguishing them was the text. Each now has a drawing — see
+                   * `marks.tsx`, where the id→motif lookup is presentation only.
+                   *
+                   * Locked is **desaturated and padlocked**, not merely a different fill: the mark is
+                   * still shown, so the reward for earning it is visible in advance, but it is
+                   * plainly not yours yet.
+                   */}
+                  <span className="relative mt-0.5 shrink-0">
+                    <BadgeMark
+                      id={badge.id}
+                      className={badge.unlocked ? 'size-7' : 'size-7 text-muted opacity-40'}
+                    />
+                    {!badge.unlocked && (
+                      <Lock
+                        size={12}
+                        strokeWidth={3}
+                        aria-hidden="true"
+                        className="absolute -bottom-0.5 -right-1 bg-page text-muted"
+                      />
+                    )}
+                  </span>
                   <div className="min-w-0">
                     <p className="font-display text-sm font-bold">{badge.name}</p>
                     {/*

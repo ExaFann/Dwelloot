@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Check } from 'lucide-react'
 import {
   useBulkApproveMutation,
   usePendingApprovalsQuery,
@@ -87,7 +88,7 @@ export function PendingApprovals() {
   return (
     <section
       aria-labelledby="pending-heading"
-      className="rounded-base border-2 border-ink bg-card p-4 shadow-hard-lg sm:p-5"
+      className="rounded-base border-2 border-ink bg-card p-4 sm:p-5"
     >
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="pending-heading" className="text-lg">
@@ -156,23 +157,22 @@ export function PendingApprovals() {
                   aria-pressed={selectedIds.includes(log.id)}
                   onClick={() => toggle(log.id)}
                   className={[
-                    'pressable-sm flex w-full items-center justify-between gap-3 rounded-base border-2 px-3 py-2.5 text-left',
+                    'pressable-sm flex w-full items-center justify-between gap-3 rounded-control border-2 px-3 py-2.5 text-left',
                     selectedIds.includes(log.id)
                       ? 'border-ink-accent bg-primary text-primary-fg'
                       : 'border-ink bg-card',
                   ].join(' ')}
                 >
                   <span className="flex min-w-0 items-center gap-2.5">
+                    {/* A tick, not a filled square — see the note in `LogActivityPage` (`ui-exp01`). */}
                     <span
                       aria-hidden="true"
                       className={[
-                        'grid size-4 shrink-0 place-items-center rounded-[3px] border-2 border-ink-accent',
-                        selectedIds.includes(log.id) ? 'bg-card' : 'bg-transparent',
+                        'grid size-5 shrink-0 place-items-center border-2 border-ink-accent',
+                        selectedIds.includes(log.id) ? 'bg-card text-primary' : 'bg-transparent',
                       ].join(' ')}
                     >
-                      {selectedIds.includes(log.id) && (
-                        <span className="size-2 rounded-[1px] bg-primary" />
-                      )}
+                      {selectedIds.includes(log.id) && <Check size={14} strokeWidth={4} />}
                     </span>
                     <span className="min-w-0">
                       <span className="block truncate font-display text-sm font-semibold">
@@ -183,10 +183,11 @@ export function PendingApprovals() {
                       </span>
                     </span>
                   </span>
+                  {/* Blue is Points, yellow is Coins — see the note on the same badge in the Log tab. */}
                   <span
                     className={[
                       'shrink-0 rounded-base border-2 border-ink-accent px-2 py-0.5 font-display text-xs font-bold',
-                      selectedIds.includes(log.id) ? 'bg-card text-body' : 'bg-warning text-warning-fg',
+                      selectedIds.includes(log.id) ? 'bg-card text-body' : 'bg-points text-points-fg',
                     ].join(' ')}
                   >
                     {log.pointsAwarded} pts

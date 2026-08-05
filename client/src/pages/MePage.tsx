@@ -1,6 +1,7 @@
 import { useMeQuery } from '../features/auth/authApi'
 import { SignOutButton } from '../features/auth/SignOutButton'
 import { Avatar } from '../components/ui/Avatar'
+import { CoinMark, PointsMark, StreakMark } from '../components/ui/marks'
 import { BadgeShelf } from '../features/progression/BadgeShelf'
 import { HouseholdSettings } from '../features/household/HouseholdSettings'
 import { ThemeToggle } from '../features/theme/ThemeToggle'
@@ -23,7 +24,7 @@ export function MePage() {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl">Me</h1>
-        <div className="rounded-base border-2 border-ink bg-card p-5 shadow-hard-lg">
+        <div className="rounded-base border-2 border-ink bg-card p-5">
           <p role="alert" className="text-muted">
             {toApiError(error).message}
           </p>
@@ -56,7 +57,7 @@ export function MePage() {
 
       <section
         aria-labelledby="profile-heading"
-        className="rounded-base border-2 border-ink bg-card p-4 shadow-hard-lg sm:p-5"
+        className="rounded-base border-2 border-ink bg-card p-4 sm:p-5"
       >
         <div className="flex items-center gap-3">
           {/* Purple: this is always you. `design-tokens.md` §2.1. */}
@@ -70,15 +71,35 @@ export function MePage() {
         </div>
 
         <dl className="mt-4 grid grid-cols-3 gap-2">
-          {/* Coins are loot, so they wear the yellow. Points and streaks are not — §2.1 again. */}
-          <Stat label="Coins" value={me.coins} tone="loot" />
-          <Stat label="Lifetime pts" value={me.lifetimePoints} tone="plain" />
+          {/*
+           * All three carry a fill now (`ui-exp01`), and the three hues were chosen to avoid reading
+           * as a traffic light. Green is the *opponent's* colour and red is destructive, so
+           * yellow/green/red here would say "good, neutral, something is wrong" about three things
+           * that are all simply yours.
+           *
+           * Coins keep the yellow (loot). Points take **blue**, their own hue — purple was standing
+           * in for them, but purple already means *you*, so one token was carrying two unrelated
+           * jobs and that tile never looked like it belonged. The streak takes flame orange: a
+           * streak is a fire, and orange borrows no other meaning.
+           */}
+          <Stat label="Coins" value={me.coins} tone="loot" mark={<CoinMark className="size-4" />} />
+          <Stat
+            label="Lifetime pts"
+            value={me.lifetimePoints}
+            tone="points"
+            mark={<PointsMark className="size-4" />}
+          />
           {/*
            * The **current** streak. `users.longest_win_streak` exists but `/api/auth/me` does not
            * return it, and the wireframe asks for "win streak" — satisfied. Recorded rather than
            * worked around.
            */}
-          <Stat label="Win streak" value={me.currentWinStreak} tone="plain" />
+          <Stat
+            label="Win streak"
+            value={me.currentWinStreak}
+            tone="flame"
+            mark={<StreakMark className="size-4" />}
+          />
         </dl>
       </section>
 
@@ -117,7 +138,23 @@ export function MePage() {
   )
 }
 
-function Stat({ label, value, tone }: { label: string; value: number; tone: 'loot' | 'plain' }) {
+function Stat({
+  label,
+  value,
+  tone,
+  mark,
+}: {
+  label: string
+  value: number
+  tone: 'loot' | 'points' | 'flame'
+  /** The mark sits *with the label*, so the number stays the biggest thing in the tile. */
+  mark: React.ReactNode
+}) {
+  const FILL = {
+    loot: 'bg-warning text-warning-fg',
+    points: 'bg-points text-points-fg',
+    flame: 'bg-flame text-flame-fg',
+  } as const
   return (
     /*
      * `dt` before `dd` in the DOM, which is the order the spec requires, with `flex-col-reverse`
@@ -126,11 +163,12 @@ function Stat({ label, value, tone }: { label: string; value: number; tone: 'loo
      */
     <div
       className={[
-        'flex flex-col-reverse rounded-base border-2 px-2 py-2.5 text-center',
-        tone === 'loot' ? 'border-ink-accent bg-warning text-warning-fg' : 'border-ink bg-page',
+        'flex flex-col-reverse rounded-base border-2 border-ink-accent px-2 py-2.5 text-center',
+        FILL[tone],
       ].join(' ')}
     >
-      <dt className="font-display text-[0.7rem] font-semibold uppercase tracking-[0.06em] opacity-80">
+      <dt className="flex items-center justify-center gap-1 font-display text-[0.7rem] font-semibold uppercase tracking-[0.06em] opacity-80">
+        {mark}
         {label}
       </dt>
       <dd className="font-display text-2xl font-bold">{value}</dd>

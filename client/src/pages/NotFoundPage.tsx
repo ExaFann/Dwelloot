@@ -12,7 +12,7 @@ export function NotFoundPage() {
       <p className="mt-2 text-muted">That page does not exist.</p>
       <Link
         to="/"
-        className="focus-ring pressable mt-6 inline-block rounded-base border-2 border-ink-accent bg-primary px-4 py-2 font-display text-sm font-bold uppercase tracking-[0.02em] text-primary-fg"
+        className="focus-ring pressable mt-6 inline-block rounded-control border-2 border-ink-accent bg-primary px-4 py-2 font-display text-sm font-bold uppercase tracking-[0.02em] text-primary-fg"
       >
         Back to Home
       </Link>

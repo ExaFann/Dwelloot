@@ -77,7 +77,7 @@ export function PrizeRedeemFeed() {
   return (
     <section
       aria-labelledby="prize-feed-heading"
-      className="rounded-base border-2 border-ink bg-card p-4 shadow-hard-lg sm:p-5"
+      className="rounded-base border-2 border-ink bg-card p-4 sm:p-5"
     >
       <h2 id="prize-feed-heading" className="text-lg">
         Prizes &amp; rewards

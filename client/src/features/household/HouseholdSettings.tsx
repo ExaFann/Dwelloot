@@ -100,7 +100,7 @@ export function HouseholdSettings({
   return (
     <section
       aria-labelledby="household-heading"
-      className="rounded-base border-2 border-ink bg-card p-4 shadow-hard-lg sm:p-5"
+      className="rounded-base border-2 border-ink bg-card p-4 sm:p-5"
     >
       <h2 id="household-heading" className="text-lg">
         Household

@@ -65,11 +65,45 @@ export function describeStanding(
  * `partner` is derived by subtraction rather than computed independently, so rounding can never
  * leave a one-pixel gap or overflow the track.
  */
+/**
+ * How far a rope has been pulled, as whole percentages that always sum to 100.
+ *
+ * ### Why this is not `myPoints / total`
+ *
+ * Share-of-total was the original rule and it made the rope lie at exactly the moment people look at
+ * it most. **One chore to nil is 100% of the points scored**, so the marker slammed to the far end
+ * and the widget announced a rout over a single 5-point chore. By the end of a busy day the same
+ * 5-point gap barely moved it. The bar was most dramatic when the least had happened — which is the
+ * problem the owner reported.
+ *
+ * So position is driven by the **lead**, measured against a scale that starts at `SETTLING_SCALE` and
+ * grows once the real scores exceed it:
+ *
+ * | Scores | Lead | Marker |
+ * |---|---|---|
+ * | 0–0 | 0 | dead centre |
+ * | 5–0 | 5 of 30 | 58% — a nudge |
+ * | 15–0 | 15 of 30 | 75% |
+ * | 60–10 | 50 of 70 | 86%, and capped below the end |
+ *
+ * `MAX_LEAN` keeps the marker off the ends entirely: a rope pulled fully out of the frame stops
+ * reading as a contest, and no lead in a two-person day is ever truly final.
+ */
+const SETTLING_SCALE = 30
+const MAX_LEAN = 46
+
 export function tugShares(myPoints: number, partnerPoints: number): { mine: number; partner: number } {
-  const total = myPoints + partnerPoints
+  const lead = myPoints - partnerPoints
   // An even split is the honest picture of 0–0, and zero-width segments read as a broken component.
-  if (total <= 0) return { mine: 50, partner: 50 }
-  const mine = Math.round((myPoints / total) * 100)
+  if (lead === 0) return { mine: 50, partner: 50 }
+
+  /**
+   * The scale only ever grows. Using the raw total instead would shrink the denominator whenever
+   * scores are low, which is the share-of-total behaviour this replaced.
+   */
+  const scale = Math.max(SETTLING_SCALE, myPoints + partnerPoints)
+  const lean = Math.max(-1, Math.min(1, lead / scale)) * MAX_LEAN
+  const mine = Math.round(50 + lean)
   return { mine, partner: 100 - mine }
 }
 

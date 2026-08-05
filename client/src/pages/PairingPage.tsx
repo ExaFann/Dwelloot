@@ -77,7 +77,7 @@ export function PairingPage() {
         Dwelloot is for two people. Start one, or join your partner&apos;s.
       </p>
 
-      <section className="mt-8 rounded-base border-2 border-ink bg-card p-5 shadow-hard-lg">
+      <section className="mt-8 rounded-base border-2 border-ink bg-card p-5">
         <h2 className="text-lg">Create a household</h2>
         <form onSubmit={handleCreate} className="mt-4 flex flex-col gap-4" noValidate>
           <FormAlert error={createError} claimedFields={CREATE_FIELDS} />
@@ -95,7 +95,7 @@ export function PairingPage() {
         </form>
       </section>
 
-      <section className="mt-6 rounded-base border-2 border-ink bg-card p-5 shadow-hard-lg">
+      <section className="mt-6 rounded-base border-2 border-ink bg-card p-5">
         <h2 className="text-lg">Join your partner</h2>
         <form onSubmit={handleJoin} className="mt-4 flex flex-col gap-4" noValidate>
           <FormAlert error={joinError} claimedFields={JOIN_FIELDS} />

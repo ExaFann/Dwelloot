@@ -32,7 +32,7 @@ export function QuickLogTiles() {
   return (
     <section
       aria-labelledby="quick-log-heading"
-      className="rounded-base border-2 border-ink bg-card p-4 shadow-hard-lg sm:p-5"
+      className="rounded-base border-2 border-ink bg-card p-4 sm:p-5"
     >
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="quick-log-heading" className="text-lg">
@@ -54,7 +54,7 @@ export function QuickLogTiles() {
           <button
             type="button"
             onClick={() => void refetch()}
-            className="focus-ring pressable-sm mt-3 rounded-base border-2 border-ink bg-card px-3 py-1.5 font-display text-sm font-bold uppercase"
+            className="focus-ring pressable-sm mt-3 rounded-control border-2 border-ink bg-card px-3 py-1.5 font-display text-sm font-bold uppercase"
           >
             Try again
           </button>
@@ -66,19 +66,41 @@ export function QuickLogTiles() {
       ) : data.items.length === 0 ? (
         <p className="mt-3 text-muted">No chores in your household yet.</p>
       ) : (
-        <ul className="mt-4 flex flex-wrap gap-2.5">
+        /*
+         * Tighter tiles on a phone (`ui-exp01`).
+         *
+         * At 390px two long titles filled a row and left a ragged margin down the right — two bricks
+         * per row is a list with extra steps, and the "hand-stacked wall" only appeared on a desktop.
+         * Smaller type and padding below `sm` fits three or more per row, which is what makes the
+         * wrap look deliberate rather than starved.
+         */
+        <ul className="mt-4 flex flex-wrap items-start gap-1.5 sm:gap-2.5">
           {/* Long and short interleaved, so each row gets a wide brick and a narrow one. */}
           {interleaveBySize(data.items, (a) => a.title.length).map((activity) => {
             const waiting = isQueued(activity.id)
             return (
-              <li key={activity.id}>
+              /*
+               * **The sizing lives on the `li`, because that is the flex child** — the button is
+               * inside it, so `grow` on the button did nothing. Cost one wrong measurement to find.
+               *
+               * `grow` + a small `basis` is what removes the dead margin the owner saw: tiles share
+               * whatever is left of a row instead of leaving up to 113px unused at the right edge.
+               * The wall still looks hand-stacked because titles wrap at different lengths and the
+               * rows hold different counts — variety now comes from height, not from ragged slack.
+               *
+               * `basis` is deliberately small: it is the *minimum* a tile bids for, so three or four
+               * fit a narrow column. This is why the Quick log looks right in the dashboard's 332px
+               * side column at 1280 as well as full-width on a phone — the tiles respond to the space
+               * they are in, which a `sm:` viewport breakpoint could never do.
+               */
+              <li key={activity.id} className="grow basis-[5.5rem]">
                 <button
                   type="button"
                   onClick={() => queue(activity.id, activity.title)}
                   // Announced so the queued state is not purely visual.
                   aria-pressed={waiting}
                   className={[
-                    'focus-ring rounded-base border-2 px-3 py-2.5 font-display text-xs font-semibold transition-[rotate]',
+                    'focus-ring w-full rounded-control border-2 px-2 py-1.5 text-left font-display text-[0.7rem] font-semibold leading-tight transition-[rotate] sm:px-3 sm:py-2.5 sm:text-xs',
                     // Straightening on hover is what makes a tilted tile feel picked up.
                     waiting
                       ? 'rotate-0 border-ink-accent bg-success text-success-fg'

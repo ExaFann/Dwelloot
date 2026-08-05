@@ -86,7 +86,7 @@ export function StorePage() {
 
       <section
         aria-labelledby="balance-heading"
-        className="rounded-base border-2 border-ink bg-card p-4 shadow-hard-lg"
+        className="rounded-base border-2 border-ink bg-card p-4"
       >
         <div className="flex items-center justify-between gap-3">
           <h2 id="balance-heading" className="font-display text-sm font-bold uppercase tracking-[0.02em]">
@@ -156,7 +156,7 @@ export function StorePage() {
               aria-pressed={affordability === option.value}
               onClick={() => changeQuery(() => setAffordability(option.value))}
               className={[
-                'pressable-sm rounded-base border-2 px-3 py-1.5 font-display text-sm font-semibold',
+                'pressable-sm rounded-control border-2 px-3 py-1.5 font-display text-sm font-semibold',
                 affordability === option.value
                   ? 'border-ink-accent bg-primary text-primary-fg'
                   : 'border-ink bg-card',
@@ -193,7 +193,7 @@ export function StorePage() {
       </div>
 
       {isError ? (
-        <div className="rounded-base border-2 border-ink bg-card p-5 shadow-hard-lg">
+        <div className="rounded-base border-2 border-ink bg-card p-5">
           <p role="alert" className="text-muted">
             {toApiError(error).message}
           </p>
@@ -206,7 +206,7 @@ export function StorePage() {
           Loading rewards…
         </p>
       ) : items.length === 0 ? (
-        <p className="rounded-base border-2 border-ink bg-card p-5 text-muted shadow-hard-lg">
+        <p className="rounded-base border-2 border-ink bg-card p-5 text-muted">
           <EmptyMessage search={debounced} affordability={affordability} />
         </p>
       ) : (

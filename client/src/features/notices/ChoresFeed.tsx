@@ -106,7 +106,7 @@ export function ChoresFeed() {
               <li key={entry.key} className="flex items-baseline gap-2 text-sm">
                 <span
                   aria-hidden="true"
-                  className={`size-2 shrink-0 translate-y-[-1px] rounded-full border border-ink-accent ${DOT[entry.status]}`}
+                  className={`size-2 shrink-0 translate-y-[-1px] border border-ink-accent ${DOT[entry.status]}`}
                 />
                 <span
                   className={[

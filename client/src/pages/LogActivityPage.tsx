@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { Pencil, Plus, Undo2 } from 'lucide-react'
+import { Check, Pencil, Plus, Undo2 } from 'lucide-react'
 import { useActivitiesQuery, type Activity } from '../features/activity/activityApi'
 import { ChoreEditor } from '../features/activity/ChoreEditor'
 import { useDeferredLog } from '../features/activity/useDeferredLog'
@@ -95,7 +95,7 @@ export function LogActivityPage() {
       </div>
 
       {isError ? (
-        <div className="rounded-base border-2 border-ink bg-card p-5 shadow-hard-lg">
+        <div className="rounded-base border-2 border-ink bg-card p-5">
           <p role="alert" className="text-muted">
             {toApiError(loadError).message}
           </p>
@@ -108,7 +108,7 @@ export function LogActivityPage() {
           Loading chores…
         </p>
       ) : data.items.length === 0 ? (
-        <p className="rounded-base border-2 border-ink bg-card p-5 text-muted shadow-hard-lg">
+        <p className="rounded-base border-2 border-ink bg-card p-5 text-muted">
           {debounced ? `No chores match “${debounced}”.` : 'No chores in your household yet.'}
         </p>
       ) : (
@@ -278,7 +278,7 @@ function ChoreRow({
         }}
         {...handlers}
         className={[
-          'pressable-sm flex w-full touch-none items-center justify-between gap-3 rounded-base border-2 px-3 py-2.5 text-left font-display text-sm font-semibold',
+          'pressable-sm flex w-full touch-none items-center justify-between gap-3 rounded-control border-2 px-3 py-2.5 text-left font-display text-sm font-semibold',
           isSelected ? 'border-ink-accent bg-primary text-primary-fg' : 'border-ink bg-card',
         ].join(' ')}
       >
@@ -286,22 +286,33 @@ function ChoreRow({
           {/*
            * A visible box, because `aria-pressed` alone is invisible and a colour change is not a
            * selection affordance — it reads as "highlighted", not "ticked".
+           *
+           * **A tick, not a filled square** (`ui-exp01`). The filled inner square was the same
+           * failure one level down: a block of colour inside a box that had also changed colour read
+           * as decoration, so a selected row looked much like an unselected one. A checkmark is the
+           * one mark that means "chosen" without having to be learned.
            */}
           <span
             aria-hidden="true"
             className={[
-              'grid size-4 shrink-0 place-items-center rounded-[3px] border-2 border-ink-accent',
-              isSelected ? 'bg-card' : 'bg-transparent',
+              'grid size-5 shrink-0 place-items-center border-2 border-ink-accent',
+              isSelected ? 'bg-card text-primary' : 'bg-transparent',
             ].join(' ')}
           >
-            {isSelected && <span className="size-2 rounded-[1px] bg-primary" />}
+            {isSelected && <Check size={14} strokeWidth={4} />}
           </span>
           <span className="truncate">{activity.title}</span>
         </span>
+        {/*
+         * **Blue, because this is Points.** The currency a badge names is what decides its colour:
+         * yellow is Coins (the Store's prices, the balance, the Coins stat) and blue is Points (this,
+         * and the Lifetime pts stat). Both badges were yellow until `ui-exp01`, which quietly said
+         * "chores are worth Coins" — they are not, and the two currencies are never interchangeable.
+         */}
         <span
           className={[
             'shrink-0 rounded-base border-2 border-ink-accent px-2 py-0.5 text-xs font-bold',
-            isSelected ? 'bg-card text-body' : 'bg-warning text-warning-fg',
+            isSelected ? 'bg-card text-body' : 'bg-points text-points-fg',
           ].join(' ')}
         >
           {activity.points} pts

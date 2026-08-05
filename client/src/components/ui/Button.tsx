@@ -42,7 +42,12 @@ export function Button({
       // Announced by screen readers while the request is in flight, without moving focus.
       aria-busy={pending || undefined}
       className={[
-        'focus-ring rounded-base border-2 px-4 py-2.5 font-display text-sm font-bold uppercase tracking-[0.02em]',
+        /*
+         * `rounded-control`, not `rounded-base`. Surfaces are square; things you press keep their
+         * corners, because a square slab with a hard shadow reads as a card lying on the page rather
+         * than a key standing off it. See `--geometry-radius-control` in `theme.css`.
+         */
+        'focus-ring rounded-control border-2 px-4 py-2.5 font-display text-sm font-bold uppercase tracking-[0.02em]',
         VARIANTS[variant],
         // `pressable` carries the shadow; a disabled control should not look liftable.
         isDisabled ? 'cursor-not-allowed opacity-60' : 'pressable',

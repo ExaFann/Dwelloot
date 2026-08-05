@@ -64,6 +64,9 @@ const FILL_PAIRS = [
   ['--brand-success', '--brand-success-fg'],
   ['--brand-warning', '--brand-warning-fg'],
   ['--brand-danger', '--brand-danger-fg'],
+  /* Added in `ui-exp01` for the streak and Points stats — see the notes beside them in `theme.css`. */
+  ['--brand-flame', '--brand-flame-fg'],
+  ['--brand-points', '--brand-points-fg'],
 ] as const
 
 const SCHEMES = [
@@ -78,7 +81,8 @@ describe('theme.css parses', () => {
   })
 
   it('reads a known value, so a silently-empty parse cannot pass the suite', () => {
-    expect(light['--brand-primary']).toBe('#6c00ff')
+    // Softened in `ui-exp01`: #6c00ff was near-spectral violet and read as harsh on real screens.
+    expect(light['--brand-primary']).toBe('#7c4dff')
     expect(dark['--brand-primary']).toBe('#a87bff')
   })
 })

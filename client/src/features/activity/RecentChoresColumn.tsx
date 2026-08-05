@@ -60,7 +60,7 @@ export function RecentChoresColumn({
              */}
             <span
               aria-hidden="true"
-              className={`size-2 shrink-0 rounded-full border border-ink-accent ${DOT[chore.status]}`}
+              className={`size-2 shrink-0 border border-ink-accent ${DOT[chore.status]}`}
             />
             <span className="truncate font-display font-semibold">{chore.activityTitle}</span>
             {/* `describeLogPoints` keeps a pending or rejected chore from reading as earned. */}

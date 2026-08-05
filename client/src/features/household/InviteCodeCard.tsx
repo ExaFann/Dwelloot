@@ -32,7 +32,7 @@ export function InviteCodeCard({ code, onContinue }: { code: string; onContinue:
         Send this code to your partner. They enter it to join — it is the only way in.
       </p>
 
-      <div className="mt-6 rounded-base border-2 border-ink bg-card p-5 shadow-hard-lg">
+      <div className="mt-6 rounded-base border-2 border-ink bg-card p-5">
         <p className="font-display text-xs font-semibold uppercase tracking-[0.08em] text-muted">
           Invite code
         </p>

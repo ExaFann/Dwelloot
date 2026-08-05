@@ -1,6 +1,7 @@
 import { Zap } from 'lucide-react'
 import { Avatar } from '../../components/ui/Avatar'
-import { RecentChoresColumn, type RecentChore } from '../activity/RecentChoresColumn'
+import { PointsMark } from '../../components/ui/marks'
+import { RecentChoresColumn } from '../activity/RecentChoresColumn'
 import { useMyActivityLogsQuery, usePartnerActivityLogsQuery } from '../activity/activityApi'
 import { useMeQuery } from '../auth/authApi'
 import { useGetHouseholdQuery } from '../household/householdApi'
@@ -22,7 +23,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <section
       aria-labelledby="head-to-head-heading"
-      className="rounded-base border-2 border-ink bg-card p-5 shadow-hard-lg"
+      className="rounded-base border-2 border-ink bg-card p-5"
     >
       {children}
     </section>
@@ -46,8 +47,15 @@ export function HeadToHeadCard() {
    * Each partner's last few chores, shown under their avatar. Two endpoints, because the API splits
    * them: `/mine` is the caller's, and `/api/activity-logs` returns only the *other* partner's.
    */
-  const myChores = useMyActivityLogsQuery({ take: 4 })
-  const partnerChores = usePartnerActivityLogsQuery({ pageSize: 4 })
+  /**
+   * **Twelve fetched, four visible** (`ui-exp01`).
+   *
+   * These asked for 4, and `RecentChoresColumn` is a `max-h-28 overflow-y-auto` box — so the column
+   * looked scrollable and had nothing to scroll to. Reported as a bug, and it was one: the ceiling
+   * was in the request, not in the styling. Four is what fits the card; the rest are reachable.
+   */
+  const myChores = useMyActivityLogsQuery({ take: 12 })
+  const partnerChores = usePartnerActivityLogsQuery({ pageSize: 12 })
 
   if (competition.isError || household.isError) {
     const message = toApiError(competition.error ?? household.error).message
@@ -114,28 +122,43 @@ export function HeadToHeadCard() {
         </p>
       ) : (
         <>
-          <div className="mt-4 flex items-end justify-between gap-4">
-            {/*
-             * Purple is you, green is your opponent — design-tokens.md §2.1. The avatars carry the
-             * colour, so the separate swatches they replaced are gone: two marks of the same colour
-             * beside one name was one more than the mapping needed.
-             */}
-            <Score
+          {/*
+           * A two-row grid, **not two flex columns** (`ui-exp01`).
+           *
+           * The flex version aligned the two sides' *bottoms*, so whoever had logged fewer chores got
+           * a shorter column and their avatar sat lower than the other's — the misalignment the owner
+           * reported. Alignment was a side effect of content height, which is exactly the thing that
+           * differs between two people.
+           *
+           * A grid puts both headers in row 1 and both lists in row 2 by construction, so the avatars
+           * share a line whatever either person has done.
+           *
+           * Purple is you, green is your opponent — design-tokens.md §2.1. The avatars carry the
+           * colour, so the separate swatches they replaced are gone.
+           */}
+          <div className="mt-4 grid grid-cols-2 items-start gap-4">
+            <ScoreHeader
               name="You"
               points={competition.data.myPoints}
               align="left"
               avatar={<Avatar userId={me.id} name={me.name} role="self" />}
-              chores={myChores.data?.items ?? []}
-              emptyLabel="Nothing logged yet."
             />
-            <Score
+            <ScoreHeader
               name={partner?.name ?? 'Partner'}
               points={competition.data.partnerPoints}
               align="right"
               avatar={
                 partner ? <Avatar userId={partner.id} name={partner.name} role="opponent" /> : null
               }
+            />
+            <RecentChoresColumn
+              chores={myChores.data?.items ?? []}
+              align="left"
+              emptyLabel="Nothing logged yet."
+            />
+            <RecentChoresColumn
               chores={partnerChores.data?.items ?? []}
+              align="right"
               emptyLabel="Nothing yet."
             />
           </div>
@@ -148,27 +171,47 @@ export function HeadToHeadCard() {
            * Without it a 100/0 lead is one solid block with nothing to compare against — found only
            * once screenshots became available; see log `045`.
            */}
-          <div aria-hidden="true" className="relative mt-3">
-            <div className="relative flex h-6 overflow-hidden rounded-base border-2 border-ink">
-              <div className="bg-primary" style={{ width: `${mine}%` }} />
-              <div className="border-l-2 border-ink bg-success" style={{ width: `${theirs}%` }} />
-              {/* Halfway. The gap between this and the colour boundary is the lead, made visible. */}
+          <div aria-hidden="true" className="relative mt-4">
+            {/*
+             * A rope with a grip on it, rather than a progress bar (`ui-exp01`).
+             *
+             * The bar reads as a tug now that `tugShares` is driven by the **lead** rather than by
+             * share-of-total — see the note there. The grip is what the two of you are pulling, and
+             * it starts dead centre instead of slamming to one end over a single chore.
+             *
+             * The centre tick stays. It is the reference the grip's offset is read against; without
+             * it a big lead is one solid block with nothing to compare to (log `045`).
+             */}
+            <div className="relative flex h-7 overflow-hidden border-2 border-ink">
+              <div className="bg-primary transition-[width] duration-500" style={{ width: `${mine}%` }} />
+              <div className="bg-success transition-[width] duration-500" style={{ width: `${theirs}%` }} />
+              {/* Halfway. The gap between this and the grip is the lead, made visible. */}
               <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-ink opacity-40" />
             </div>
 
             {/*
-             * The spark sits where the two sides meet — the colour boundary, which moves — rather
-             * than at the fixed midpoint. That is the point of contention in a tug of war, and it
-             * travels as someone pulls ahead.
+             * The grip sits where the two sides meet — the moving boundary, which is the point of
+             * contention. Square, not a disc: the app has no circles any more.
+             *
+             * Yellow rather than the red flag a tug-of-war would really have. Red is the destructive
+             * colour in this palette (`design-tokens.md` §2.1) and is used for reject and leave, so a
+             * red marker on the dashboard would be the one alarming thing on a screen about doing
+             * chores. Yellow is already the contested/pending colour.
              *
              * Live periods only: a settled or voided period is not an active clash.
              */}
             {isLive && (
               <span
-                className="spark absolute top-1/2 z-10 flex size-6 items-center justify-center rounded-full border-2 border-ink-accent bg-warning text-warning-fg"
+                /*
+                 * **The bolt itself, with no chip around it** (`ui-exp01`). Boxing it gave the
+                 * animation a bordered card to scale and rotate, so the eye tracked the box and the
+                 * bolt read as its contents. A bare mark spinning on the rope is the thing being
+                 * fought over; the box was a container for it.
+                 */
+                className="spark absolute top-1/2 z-10 block text-warning transition-[left] duration-500"
                 style={{ left: `${mine}%` }}
               >
-                <Zap size={12} strokeWidth={3} fill="currentColor" />
+                <Zap size={26} strokeWidth={2.5} fill="currentColor" stroke="var(--ink-accent)" />
               </span>
             )}
           </div>
@@ -180,40 +223,33 @@ export function HeadToHeadCard() {
   )
 }
 
-function Score({
+function ScoreHeader({
   name,
   points,
   align,
   avatar,
-  chores,
-  emptyLabel,
 }: {
   name: string
   points: number
   align: 'left' | 'right'
   /** Carries the player colour, so it also ties this side to its half of the bar. */
   avatar: React.ReactNode
-  chores: RecentChore[]
-  emptyLabel: string
 }) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col">
-      <div
-        className={[
-          'flex min-w-0 items-center gap-3',
-          align === 'right' ? 'flex-row-reverse text-right' : '',
-        ].join(' ')}
-      >
-        {avatar}
-        <div className="min-w-0">
-          <p className="truncate font-display text-sm font-semibold text-muted">{name}</p>
-          <p className="font-display text-3xl font-bold">
-            {points}
-            <span className="ml-1 text-sm font-semibold text-muted">pts</span>
-          </p>
-        </div>
+    <div
+      className={[
+        'flex min-w-0 items-center gap-3',
+        align === 'right' ? 'flex-row-reverse text-right' : '',
+      ].join(' ')}
+    >
+      {avatar}
+      <div className="min-w-0">
+        <p className="truncate font-display text-sm font-semibold text-muted">{name}</p>
+        <p className="font-display text-3xl font-bold">
+          {points}
+          <PointsMark className="ml-1 inline-block size-3.5 translate-y-[1px]" />
+        </p>
       </div>
-      <RecentChoresColumn chores={chores} align={align} emptyLabel={emptyLabel} />
     </div>
   )
 }
