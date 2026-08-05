@@ -36,8 +36,19 @@ export type CurrentCompetition = {
 
 export const competitionApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    currentCompetition: build.query<CurrentCompetition, { householdId: number }>({
-      query: ({ householdId }) => `/api/households/${householdId}/competitions/current`,
+    /**
+     * `periodType` defaults to `Daily` server-side and Weekly/Monthly are accepted — settlement has
+     * always covered all three, so the dashboard's week and month views needed **no backend change**.
+     * An unknown value is a 400 rather than a silent fallback to Daily.
+     */
+    currentCompetition: build.query<
+      CurrentCompetition,
+      { householdId: number; periodType?: PeriodType }
+    >({
+      query: ({ householdId, periodType }) =>
+        `/api/households/${householdId}/competitions/current${
+          periodType ? `?periodType=${periodType}` : ''
+        }`,
       /**
        * This request has a side effect on the server: it settles any period that has closed
        * (handover §4.7 — lazy settlement, no scheduler). That is why it also provides `Competition`

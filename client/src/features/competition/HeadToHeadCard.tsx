@@ -1,11 +1,11 @@
 import { Zap } from 'lucide-react'
 import { Avatar } from '../../components/ui/Avatar'
-import { PointsMark } from '../../components/ui/marks'
 import { RecentChoresColumn } from '../activity/RecentChoresColumn'
+import { choresForPeriod } from '../activity/logDisplay'
 import { useMyActivityLogsQuery, usePartnerActivityLogsQuery } from '../activity/activityApi'
 import { useMeQuery } from '../auth/authApi'
 import { useGetHouseholdQuery } from '../household/householdApi'
-import { useCurrentCompetitionQuery } from './competitionApi'
+import { useCurrentCompetitionQuery, type CurrentCompetition, type PeriodType } from './competitionApi'
 import { describeStanding, periodLabel, tugShares, type Standing } from './standing'
 import { toApiError } from '../../api/apiError'
 import { Button } from '../../components/ui/Button'
@@ -57,6 +57,22 @@ export function HeadToHeadCard() {
   const myChores = useMyActivityLogsQuery({ take: 12 })
   const partnerChores = usePartnerActivityLogsQuery({ pageSize: 12 })
 
+  /**
+   * The week and the month, alongside the day.
+   *
+   * `competitions/current` has always accepted `?periodType=` — settlement covered all three from
+   * [23] — so this needed no backend work at all. Three subscriptions rather than one query with a
+   * switch, because all three are on screen at once on a wide window.
+   */
+  const weekly = useCurrentCompetitionQuery(
+    { householdId: householdId as number, periodType: 'Weekly' },
+    { skip: householdId === undefined },
+  )
+  const monthly = useCurrentCompetitionQuery(
+    { householdId: householdId as number, periodType: 'Monthly' },
+    { skip: householdId === undefined },
+  )
+
   if (competition.isError || household.isError) {
     const message = toApiError(competition.error ?? household.error).message
     return (
@@ -96,13 +112,25 @@ export function HeadToHeadCard() {
   }
 
   const partner = household.data.members.find((member) => member.id !== me.id)
-  const standing = describeStanding(competition.data, { hasPartner: partner !== undefined })
-  const { mine, partner: theirs } = tugShares(
-    competition.data.myPoints,
-    competition.data.partnerPoints,
-  )
-  /** A settled or voided period is finished — nothing is being contested, so nothing sparks. */
-  const isLive = standing.kind !== 'voided' && !competition.data.settled
+  const hasPartner = partner !== undefined
+
+  /**
+   * The chore columns are filtered against the **daily** period, whichever period panel is on screen.
+   *
+   * They are "what each of you has done today", not "what made up the week's total" — and at a day
+   * boundary they used to keep listing yesterday's approved chores under a 0–0 score. See
+   * `choresForPeriod`, which also keeps anything still Pending however old, because that is the thing
+   * the user still has to act on.
+   */
+  const dayStart = competition.data.periodStart
+  const myVisible = choresForPeriod(myChores.data?.items ?? [], dayStart)
+  const partnerVisible = choresForPeriod(partnerChores.data?.items ?? [], dayStart)
+
+  const periods = [
+    { key: 'Daily' as const, data: competition.data },
+    { key: 'Weekly' as const, data: weekly.data },
+    { key: 'Monthly' as const, data: monthly.data },
+  ]
 
   return (
     <Shell>
@@ -110,12 +138,12 @@ export function HeadToHeadCard() {
         <h2 id="head-to-head-heading" className="text-lg">
           Head-to-head
         </h2>
-        <span className="font-display text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-          {periodLabel(competition.data.periodType)}
+        <span className="font-display text-xs font-semibold uppercase tracking-[0.08em] text-muted lg:hidden">
+          Swipe for week &amp; month
         </span>
       </div>
 
-      {standing.kind === 'noPartner' ? (
+      {!hasPartner ? (
         <p className="mt-3 text-muted">
           No one to duel yet. Share your invite code — the contest starts the moment your partner
           joins.
@@ -139,39 +167,114 @@ export function HeadToHeadCard() {
           <div className="mt-4 grid grid-cols-2 items-start gap-4">
             <ScoreHeader
               name="You"
-              points={competition.data.myPoints}
               align="left"
               avatar={<Avatar userId={me.id} name={me.name} role="self" />}
             />
             <ScoreHeader
               name={partner?.name ?? 'Partner'}
-              points={competition.data.partnerPoints}
               align="right"
               avatar={
                 partner ? <Avatar userId={partner.id} name={partner.name} role="opponent" /> : null
               }
             />
             <RecentChoresColumn
-              chores={myChores.data?.items ?? []}
+              chores={myVisible}
               align="left"
-              emptyLabel="Nothing logged yet."
+              emptyLabel="Nothing logged today."
             />
-            <RecentChoresColumn
-              chores={partnerChores.data?.items ?? []}
-              align="right"
-              emptyLabel="Nothing yet."
-            />
+            <RecentChoresColumn chores={partnerVisible} align="right" emptyLabel="Nothing today." />
           </div>
 
           {/*
-           * Decorative. Every number and every judgement it encodes is in the text above and below,
-           * so exposing it would only make a screen reader repeat itself.
+           * Three periods: today, this week, this month.
            *
-           * The centre tick is what makes this read as a tug-of-war rather than a progress bar.
-           * Without it a 100/0 lead is one solid block with nothing to compare against — found only
-           * once screenshots became available; see log `045`.
+           * **Swipe on a phone, all three at once on a wide window** — a horizontal snap-scroller
+           * that becomes a three-column grid at `lg`. Scroll snapping is the browser's own gesture,
+           * so there is no touch handler to get wrong and it keeps keyboard and trackpad scrolling
+           * for free; a JS swipe library would have been a dependency to reimplement momentum badly.
            */}
-          <div aria-hidden="true" className="relative mt-4">
+          <div className="mt-5 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 lg:grid lg:grid-cols-3 lg:overflow-visible">
+            {periods.map(({ key, data }) => (
+              <PeriodPanel
+                key={key}
+                periodType={key}
+                competition={data}
+                hasPartner={hasPartner}
+                partnerName={partner?.name}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </Shell>
+  )
+}
+
+/** One period's score, rope and verdict. Three of these sit side by side, or swipe on a phone. */
+function PeriodPanel({
+  periodType,
+  competition,
+  hasPartner,
+  partnerName,
+}: {
+  periodType: PeriodType
+  competition: CurrentCompetition | undefined
+  hasPartner: boolean
+  partnerName?: string
+}) {
+  if (!competition) {
+    return (
+      <div
+        role="group"
+        aria-label={periodLabel(periodType)}
+        className="w-full shrink-0 snap-center lg:w-auto"
+      >
+        <p className="font-display text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+          {periodLabel(periodType)}
+        </p>
+        <p role="status" className="mt-2 text-sm text-muted">
+          Loading…
+        </p>
+      </div>
+    )
+  }
+
+  const standing = describeStanding(competition, { hasPartner })
+  const { mine, partner: theirs } = tugShares(competition.myPoints, competition.partnerPoints)
+  /** A settled or voided period is finished — nothing is being contested, so nothing sparks. */
+  const isLive = standing.kind !== 'voided' && !competition.settled
+
+  return (
+    /*
+     * A labelled group, so the three periods are distinguishable to a screen reader — and so a test
+     * can scope an assertion to one of them. Without it, "you won by 25" is ambiguous across three
+     * panels that each carry their own verdict.
+     */
+    <div
+      role="group"
+      aria-label={periodLabel(periodType)}
+      className="w-full shrink-0 snap-center lg:w-auto"
+    >
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="font-display text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+          {periodLabel(periodType)}
+        </p>
+        <p className="font-display text-lg font-bold">
+          {competition.myPoints}
+          <span className="mx-1 text-muted">–</span>
+          {competition.partnerPoints}
+        </p>
+      </div>
+
+      {/*
+       * Decorative. Every number and every judgement it encodes is in the text above and below,
+       * so exposing it would only make a screen reader repeat itself.
+       *
+       * The centre tick is what makes this read as a tug-of-war rather than a progress bar.
+       * Without it a 100/0 lead is one solid block with nothing to compare against — found only
+       * once screenshots became available; see log `045`.
+       */}
+      <div aria-hidden="true" className="relative mt-2">
             {/*
              * A rope with a grip on it, rather than a progress bar (`ui-exp01`).
              *
@@ -216,21 +319,17 @@ export function HeadToHeadCard() {
             )}
           </div>
 
-          <p className="mt-3 font-display text-sm font-bold">{summarise(standing, partner?.name)}</p>
-        </>
-      )}
-    </Shell>
+      <p className="mt-2 font-display text-sm font-bold">{summarise(standing, partnerName)}</p>
+    </div>
   )
 }
 
 function ScoreHeader({
   name,
-  points,
   align,
   avatar,
 }: {
   name: string
-  points: number
   align: 'left' | 'right'
   /** Carries the player colour, so it also ties this side to its half of the bar. */
   avatar: React.ReactNode
@@ -243,13 +342,11 @@ function ScoreHeader({
       ].join(' ')}
     >
       {avatar}
-      <div className="min-w-0">
-        <p className="truncate font-display text-sm font-semibold text-muted">{name}</p>
-        <p className="font-display text-3xl font-bold">
-          {points}
-          <PointsMark className="ml-1 inline-block size-3.5 translate-y-[1px]" />
-        </p>
-      </div>
+      {/*
+       * Identity only. The scores moved into the period panels below, because there are three of
+       * them now and a single big number beside a name could only ever be one period's.
+       */}
+      <p className="min-w-0 truncate font-display text-sm font-semibold">{name}</p>
     </div>
   )
 }

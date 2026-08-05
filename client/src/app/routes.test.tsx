@@ -56,6 +56,15 @@ function renderAt(path: string, householdId: number | null = 10) {
       const requestPath = new URL(input.url).pathname
       if (requestPath === '/api/activities') return json({ items: [], total: 0 })
       if (requestPath === '/api/activity-logs/mine') return json({ items: [], total: 0 })
+      /*
+       * The approval queue, which every screen now requests: `BottomNav` reads it for the Notices
+       * badge, so it is part of the shell rather than of one page.
+       */
+      if (requestPath === '/api/activity-logs') return json({ items: [], total: 0 })
+      if (requestPath === '/api/redemptions' || requestPath === '/api/redemptions/mine') {
+        return json({ items: [], total: 0 })
+      }
+      if (requestPath === '/api/badges') return json({ items: [] })
       if (requestPath.endsWith('/competitions/current')) {
         return json({
           periodType: 'Daily',
@@ -71,15 +80,29 @@ function renderAt(path: string, householdId: number | null = 10) {
       if (requestPath.startsWith('/api/households/')) {
         return json({ id: 10, name: 'House', inviteCode: 'ABC123', members: [{ id: 7, name: 'Alex' }] })
       }
-      return json({
-        id: 7,
-        name: 'Alex',
-        email: 'alex@example.com',
-        householdId,
-        lifetimePoints: 0,
-        coins: 0,
-        currentWinStreak: 0,
-      })
+      if (requestPath === '/api/auth/me') {
+        return json({
+          id: 7,
+          name: 'Alex',
+          email: 'alex@example.com',
+          householdId,
+          lifetimePoints: 0,
+          coins: 0,
+          currentWinStreak: 0,
+        })
+      }
+      /*
+       * **A 404, not the `/me` body.** The catch-all used to answer every unknown path with the
+       * caller — the "lie with a delayed fuse" from log `048`, and the direct cause of this file
+       * flaking through [46]–[48]. Adding a query to a shared component (here `BottomNav`) is
+       * exactly how a new path arrives, so the fallback has to be honest about not knowing it.
+       */
+      return Promise.resolve(
+        new Response(JSON.stringify({ error: 'That endpoint does not exist.', errors: null }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      )
     }),
   )
 

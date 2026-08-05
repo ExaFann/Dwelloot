@@ -1,6 +1,7 @@
 import { HeadToHeadCard } from '../features/competition/HeadToHeadCard'
 import { LootBoxReveal } from '../features/competition/LootBoxReveal'
 import { QuickLogTiles } from '../features/activity/QuickLogTiles'
+import { ApprovalPrompt } from '../features/notices/ApprovalPrompt'
 
 /**
  * [45] built the head-to-head widget, [46] the quick log, [53] the loot box reveal.
@@ -18,6 +19,11 @@ export function DashboardPage() {
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl">Home</h1>
       <LootBoxReveal />
+      {/*
+       * Above the standing it is about: unapproved chores are why that standing may be understating
+       * your partner, and why the day cannot settle. Renders nothing when the queue is empty.
+       */}
+      <ApprovalPrompt />
       {/*
        * Side by side from `lg` ([58]). The duel is the hero and keeps the wider column; the tile wall
        * is the thing that most wants the extra width, since each tile is sized by its own chore name.

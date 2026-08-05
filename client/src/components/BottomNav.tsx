@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router'
 import { Bell, House, PlusSquare, Store, User } from 'lucide-react'
+import { usePendingCount } from '../features/notices/usePendingCount'
 
 /**
  * The primary navigation — the five tabs from `wireframes.md`.
@@ -31,6 +32,8 @@ const tabs = [
  * breakpoint-prefixed, so the small-screen rendering is identical by construction.
  */
 export function BottomNav() {
+  const pending = usePendingCount()
+
   return (
     <nav
       aria-label="Primary"
@@ -48,10 +51,31 @@ export function BottomNav() {
             <NavLink
               to={to}
               end={end}
-              className="focus-ring flex flex-col items-center gap-1 px-2 py-2.5 font-display text-xs font-semibold text-muted aria-[current=page]:bg-primary aria-[current=page]:text-primary-fg md:flex-row md:justify-start md:gap-3 md:rounded-base md:border-2 md:border-transparent md:px-3 md:text-sm md:aria-[current=page]:border-ink-accent"
+              className="focus-ring relative flex flex-col items-center gap-1 px-2 py-2.5 font-display text-xs font-semibold text-muted aria-[current=page]:bg-primary aria-[current=page]:text-primary-fg md:flex-row md:justify-start md:gap-3 md:rounded-base md:border-2 md:border-transparent md:px-3 md:text-sm md:aria-[current=page]:border-ink-accent"
             >
-              <Icon aria-hidden="true" size={20} strokeWidth={2.5} />
+              <span className="relative">
+                <Icon aria-hidden="true" size={20} strokeWidth={2.5} />
+                {/*
+                 * The count rides the **icon**, not the tab, so it sits in the same place whether the
+                 * nav is a bottom bar or a left rail.
+                 *
+                 * The number is inside the badge rather than announced separately: a bare red dot
+                 * says "something", and the tab's accessible name below says exactly what and how
+                 * many, so a screen reader gets the count without a second live region.
+                 */}
+                {to === '/notices' && pending > 0 && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -right-2.5 -top-1.5 grid min-w-4 place-items-center rounded-control border-2 border-ink-accent bg-danger px-1 font-display text-[0.6rem] font-bold leading-4 text-danger-fg"
+                  >
+                    {pending > 9 ? '9+' : pending}
+                  </span>
+                )}
+              </span>
               {label}
+              {to === '/notices' && pending > 0 && (
+                <span className="sr-only">, {pending} waiting on you</span>
+              )}
             </NavLink>
           </li>
         ))}

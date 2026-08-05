@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { describeLogPoints, relativeTime } from './logDisplay'
+import { choresForPeriod, describeLogPoints, relativeTime } from './logDisplay'
 
 describe('describeLogPoints', () => {
   /**
@@ -96,5 +96,63 @@ describe('relativeTime', () => {
     const nextMorningNz = new Date('2026-08-03T13:00:00Z')
     // 2.5 hours apart, and on different local days — the answer must be about elapsed time.
     expect(relativeTime(evening, nextMorningNz)).toBe('2 h ago')
+  })
+})
+
+describe('choresForPeriod', () => {
+  /**
+   * The bug: at a day boundary the scores reset to 0–0 while the chore columns still listed
+   * yesterday's approved chores. Measured live — 0–0 for the day against 120–5 for the week, with
+   * nine stale rows under the avatars.
+   *
+   * `periodStart` is a UTC instant at *local* midnight, so this compares instants. Every fixture
+   * below straddles that boundary rather than sitting a whole day either side of it, because a
+   * comparison that only works on obviously-distant dates is not testing the boundary.
+   */
+  const START = '2026-08-05T12:00:00Z'
+  const log = (id: number, status: 'Approved' | 'Pending' | 'Rejected', completedAt: string) => ({
+    id,
+    status,
+    completedAt,
+  })
+
+  it('keeps everything logged inside the period, whatever its status', () => {
+    const logs = [
+      log(1, 'Approved', '2026-08-05T20:00:00Z'),
+      log(2, 'Pending', '2026-08-05T13:00:00Z'),
+      log(3, 'Rejected', '2026-08-06T01:00:00Z'),
+    ]
+    expect(choresForPeriod(logs, START).map((l) => l.id)).toEqual([1, 2, 3])
+  })
+
+  it('clears approved and rejected chores from before it — the duel they belong to is over', () => {
+    const logs = [
+      log(1, 'Approved', '2026-08-05T09:00:00Z'),
+      log(2, 'Rejected', '2026-08-04T22:00:00Z'),
+    ]
+    expect(choresForPeriod(logs, START)).toEqual([])
+  })
+
+  /** The one exception, and the reason it exists: a pending chore is the thing still to act on. */
+  it('keeps a pending chore however old it is', () => {
+    const logs = [log(1, 'Pending', '2026-07-01T09:00:00Z')]
+    expect(choresForPeriod(logs, START).map((l) => l.id)).toEqual([1])
+  })
+
+  /** Exactly on the boundary is inside the new period, not the old one. */
+  it('treats the boundary instant as inside', () => {
+    expect(choresForPeriod([log(1, 'Approved', START)], START).map((l) => l.id)).toEqual([1])
+  })
+
+  it('shows everything when there is no period to clear against', () => {
+    const logs = [log(1, 'Approved', '2026-01-01T00:00:00Z')]
+    expect(choresForPeriod(logs, undefined)).toHaveLength(1)
+    expect(choresForPeriod(logs, 'not-a-date')).toHaveLength(1)
+  })
+
+  it('does not mutate what it was given', () => {
+    const logs = [log(1, 'Approved', '2026-08-04T09:00:00Z')]
+    choresForPeriod(logs, START)
+    expect(logs).toHaveLength(1)
   })
 })
