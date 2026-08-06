@@ -76,21 +76,120 @@ public class HouseholdServiceJoinTests
             await db.Users.CountAsync(u => u.HouseholdId == household.Id));
     }
 
+    /// <summary>
+    /// The behaviour this replaces was the bug, not the rule.
+    ///
+    /// Two people who each created a household had no way to pair afterwards: this returned
+    /// <see cref="JoinHouseholdStatus.AlreadyInHousehold"/> for every caller who had one, and the
+    /// pairing screen is only reachable before you have joined anything. Owner's report, 2026-08-07.
+    /// </summary>
     [Fact]
-    public async Task JoinAsync_rejects_a_user_who_already_has_a_household()
+    public async Task JoinAsync_lets_a_solo_user_leave_their_own_household_to_accept_an_invitation()
     {
         using var db = TestDbContextFactory.Create();
         var (first, _) = await SeedHouseholdAsync(db);
 
         var other = await AddUserAsync(db, "other@example.com");
         var second = await ServiceFor(db).CreateAsync(other.Id, "Second place");
+        var abandonedId = second.Household!.Id;
 
         var result = await ServiceFor(db).JoinAsync(other.Id, first.InviteCode);
 
+        Assert.Equal(JoinHouseholdStatus.Joined, result.Status);
+        Assert.Equal(first.Id, (await db.Users.SingleAsync(u => u.Id == other.Id)).HouseholdId);
+        // The emptied household goes, exactly as it would if they had used `POST /leave`.
+        Assert.Null(await db.Households.SingleOrDefaultAsync(h => h.Id == abandonedId));
+    }
+
+    /// <summary>
+    /// A household of **two** is not the caller's alone to abandon. Leaving evicts them from a
+    /// household someone else also lives in, which is `POST /leave`'s job and should be a decision
+    /// the user makes explicitly rather than a side effect of typing a code.
+    /// </summary>
+    [Fact]
+    public async Task JoinAsync_still_rejects_a_user_who_is_already_paired()
+    {
+        using var db = TestDbContextFactory.Create();
+        var (target, _) = await SeedHouseholdAsync(db);
+
+        // A second, fully paired household.
+        var other = await AddUserAsync(db, "other@example.com");
+        var second = await ServiceFor(db).CreateAsync(other.Id, "Second place");
+        var theirPartner = await AddUserAsync(db, "theirpartner@example.com");
+        await ServiceFor(db).JoinAsync(theirPartner.Id, second.Household!.InviteCode);
+
+        var result = await ServiceFor(db).JoinAsync(other.Id, target.InviteCode);
+
         Assert.Equal(JoinHouseholdStatus.AlreadyInHousehold, result.Status);
+        // Nothing moved, and the household they were in is untouched.
         Assert.Equal(
-            second.Household!.Id,
+            second.Household.Id,
             (await db.Users.SingleAsync(u => u.Id == other.Id)).HouseholdId);
+        Assert.NotNull(await db.Households.SingleOrDefaultAsync(h => h.Id == second.Household.Id));
+    }
+
+    /// <summary>
+    /// A bad code must cost nothing. This is the whole reason the move lives in the service rather
+    /// than being a leave-then-join from the client: two calls would delete the caller's household
+    /// and *then* discover the typo, leaving them with nothing and no way back.
+    /// </summary>
+    [Fact]
+    public async Task JoinAsync_leaves_a_solo_household_intact_when_the_code_is_wrong()
+    {
+        using var db = TestDbContextFactory.Create();
+        var other = await AddUserAsync(db, "other@example.com");
+        var mine = await ServiceFor(db).CreateAsync(other.Id, "My place");
+        var choresBefore = await db.Activities.CountAsync(a => a.HouseholdId == mine.Household!.Id);
+
+        var result = await ServiceFor(db).JoinAsync(other.Id, "ZZZ999");
+
+        Assert.Equal(JoinHouseholdStatus.InviteCodeNotFound, result.Status);
+        Assert.Equal(mine.Household!.Id, (await db.Users.SingleAsync(u => u.Id == other.Id)).HouseholdId);
+        Assert.NotNull(await db.Households.SingleOrDefaultAsync(h => h.Id == mine.Household.Id));
+        // The copied catalogue survives too — it cascades with the household, so its survival is
+        // the observable proof that nothing was deleted.
+        Assert.True(choresBefore > 0);
+        Assert.Equal(
+            choresBefore,
+            await db.Activities.CountAsync(a => a.HouseholdId == mine.Household.Id));
+    }
+
+    /// <summary>The target being full must also cost the caller nothing.</summary>
+    [Fact]
+    public async Task JoinAsync_leaves_a_solo_household_intact_when_the_target_is_full()
+    {
+        using var db = TestDbContextFactory.Create();
+        var (target, _) = await SeedHouseholdAsync(db);
+        var filler = await AddUserAsync(db, "filler@example.com");
+        await ServiceFor(db).JoinAsync(filler.Id, target.InviteCode);
+
+        var other = await AddUserAsync(db, "other@example.com");
+        var mine = await ServiceFor(db).CreateAsync(other.Id, "My place");
+
+        var result = await ServiceFor(db).JoinAsync(other.Id, target.InviteCode);
+
+        Assert.Equal(JoinHouseholdStatus.HouseholdFull, result.Status);
+        Assert.Equal(mine.Household!.Id, (await db.Users.SingleAsync(u => u.Id == other.Id)).HouseholdId);
+        Assert.NotNull(await db.Households.SingleOrDefaultAsync(h => h.Id == mine.Household.Id));
+    }
+
+    /// <summary>
+    /// Typing your own code into your own screen. Previously unreachable — the blanket guard caught
+    /// it — and now it has to be handled, because the move path would otherwise delete the
+    /// household out from under the user and then try to join them to it.
+    /// </summary>
+    [Fact]
+    public async Task JoinAsync_is_a_no_op_when_the_code_is_your_own()
+    {
+        using var db = TestDbContextFactory.Create();
+        var other = await AddUserAsync(db, "other@example.com");
+        var mine = await ServiceFor(db).CreateAsync(other.Id, "My place");
+
+        var result = await ServiceFor(db).JoinAsync(other.Id, mine.Household!.InviteCode);
+
+        Assert.Equal(JoinHouseholdStatus.Joined, result.Status);
+        Assert.Equal(mine.Household.Id, (await db.Users.SingleAsync(u => u.Id == other.Id)).HouseholdId);
+        Assert.NotNull(await db.Households.SingleOrDefaultAsync(h => h.Id == mine.Household.Id));
     }
 
     [Fact]

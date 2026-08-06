@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Zap } from 'lucide-react'
 import { Avatar } from '../../components/ui/Avatar'
 import { RecentChoresColumn } from '../activity/RecentChoresColumn'
@@ -25,6 +26,14 @@ import { SkeletonBlock, SkeletonList } from '../../components/ui/Skeleton'
  * competition payload is an ordinary `0–0` with nothing to distinguish it (log `045`).
  */
 
+/**
+ * How often a solo household asks whether anyone has joined.
+ *
+ * Long enough that it is not a live feed, short enough that a partner who joins while you are
+ * looking at the screen does not sit unnoticed. Only ever runs while you are alone.
+ */
+const SOLO_POLL_MS = 15_000
+
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <section
@@ -40,10 +49,45 @@ export function HeadToHeadCard() {
   const { data: me } = useMeQuery()
   const householdId = me?.householdId ?? undefined
 
+  /**
+   * While you are alone, this card polls for a partner. Once there is one, it stops.
+   *
+   * The partner joins in **their** browser, so nothing in this session can know it happened —
+   * `Household` is only invalidated by mutations *this* client makes. The result was that the
+   * invite panel stayed on screen after someone had already accepted it, and the only way out was
+   * a manual refresh. Reported by the owner.
+   *
+   * Polling is scoped as narrowly as it can be: one small GET, only while `members.length < 2`, and
+   * it switches itself off the moment the seat is taken — so a paired household pays nothing. The
+   * general answer to "the other person did something" is [66]/[67]'s WebSockets; this is the one
+   * place where the stale state is a dead end rather than a delay, because the card is showing an
+   * invitation that has already been accepted.
+   *
+   * `refetchOnFocus` covers the common case for free: you send the code, switch to a chat app to
+   * paste it, and come back.
+   */
+  const [pollingInterval, setPollingInterval] = useState(SOLO_POLL_MS)
   const household = useGetHouseholdQuery(
     { householdId: householdId as number },
-    { skip: householdId === undefined },
+    {
+      skip: householdId === undefined,
+      pollingInterval,
+      refetchOnFocus: true,
+      refetchOnReconnect: true,
+    },
   )
+
+  /*
+   * Adjusted **during render**, not in an effect.
+   *
+   * The obvious `useEffect(() => setPollingInterval(...), [data])` is the cascading-render pattern
+   * `react-hooks/set-state-in-effect` exists to catch, and it caught it here: an effect that sets
+   * state schedules a second render *after* commit, so the interval would always trail the data by
+   * a frame. Setting it inline re-renders before anything is committed, which is React's documented
+   * answer for state derived from a changing input.
+   */
+  const shouldPoll = (household.data?.members.length ?? 0) < 2 ? SOLO_POLL_MS : 0
+  if (shouldPoll !== pollingInterval) setPollingInterval(shouldPoll)
   const competition = useCurrentCompetitionQuery(
     { householdId: householdId as number },
     { skip: householdId === undefined },

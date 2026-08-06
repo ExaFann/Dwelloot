@@ -77,8 +77,13 @@ public class HouseholdsController(IHouseholdService households) : ControllerBase
             JoinHouseholdStatus.HouseholdFull =>
                 this.Failure(StatusCodes.Status409Conflict, "This household already has 2 members"),
 
+            // Reworded with the rule that now applies: a solo household can be swapped for an
+            // invitation, a paired one cannot. The old copy said only "you are already in a
+            // household", which is now true of callers this endpoint accepts.
             JoinHouseholdStatus.AlreadyInHousehold =>
-                this.Failure(StatusCodes.Status409Conflict, "You are already in a household."),
+                this.Failure(
+                    StatusCodes.Status409Conflict,
+                    "You are already paired with someone. Leave that household first."),
 
             JoinHouseholdStatus.InviteCodeNotFound =>
                 this.Failure(StatusCodes.Status404NotFound, "No household found with that invite code."),

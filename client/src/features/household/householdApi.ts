@@ -45,8 +45,29 @@ export const householdApi = baseApi.injectEndpoints({
       query: (body) => ({ url: '/api/households', method: 'POST', body }),
     }),
 
+    /**
+     * Join by invite code.
+     *
+     * **Invalidates everything household-scoped**, because since [70] this endpoint can *move* an
+     * already-solo user: they leave one household and enter another in a single transaction, and
+     * their old chores, rewards, competitions and logs are deleted by cascade. A cache left holding
+     * the previous household's catalogue would render rows the server would 404 on.
+     *
+     * `Me` is the important one — it carries `householdId`, and invalidating it is what lets
+     * `AuthGate` notice the change and re-route. `PairingPage` still dispatches that invalidation
+     * itself for the *create* path, which has no mutation-level tag of its own.
+     */
     joinHousehold: build.mutation<JoinHouseholdResponse, JoinHouseholdRequest>({
       query: (body) => ({ url: '/api/households/join', method: 'POST', body }),
+      invalidatesTags: [
+        'Me',
+        'Household',
+        'Activity',
+        'ActivityLog',
+        'Competition',
+        'Reward',
+        'Redemption',
+      ],
     }),
 
     /**
@@ -56,16 +77,17 @@ export const householdApi = baseApi.injectEndpoints({
      * so `Household` is invalidated rather than the reply being merged into the cache. `Me` is not
      * invalidated: the household's name is not on `/api/auth/me`.
      */
-    renameHousehold: build.mutation<{ id: number; name: string }, { householdId: number; name: string }>(
-      {
-        query: ({ householdId, name }) => ({
-          url: `/api/households/${householdId}`,
-          method: 'PATCH',
-          body: { name },
-        }),
-        invalidatesTags: ['Household'],
-      },
-    ),
+    renameHousehold: build.mutation<
+      { id: number; name: string },
+      { householdId: number; name: string }
+    >({
+      query: ({ householdId, name }) => ({
+        url: `/api/households/${householdId}`,
+        method: 'PATCH',
+        body: { name },
+      }),
+      invalidatesTags: ['Household'],
+    }),
 
     /**
      * Leave the household. Two branches server-side (log `015`), and the caller cannot choose:

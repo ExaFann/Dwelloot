@@ -7,6 +7,7 @@ import {
 import { MAX_NAME_LENGTH, validateHouseholdName } from './householdValidation'
 import { fieldError, toApiError, type ApiError } from '../../api/apiError'
 import { Button } from '../../components/ui/Button'
+import { JoinInstead } from './JoinInstead'
 import { TextInput } from '../../components/ui/TextInput'
 import { FormAlert } from '../../components/ui/FormAlert'
 import { SkeletonList } from '../../components/ui/Skeleton'
@@ -203,6 +204,12 @@ export function HouseholdSettings({
               ))}
             </ul>
           </div>
+
+          {/*
+           * Only while you are alone. A paired household is not yours alone to abandon — that is
+           * what Leave is for — and the server refuses it with a 409 either way.
+           */}
+          {data.members.length < 2 && <JoinInstead householdName={data.name} />}
 
           {notice && (
             <p

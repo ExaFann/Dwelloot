@@ -20,12 +20,48 @@ const ME = {
 
 /** Captured from the running API in [54]. Three of the six are unlocked for this account. */
 const BADGES = [
-  { id: 1, name: 'First chore', criteria: 'Get your first logged chore approved.', unlocked: true, unlockedAt: '2026-08-05T09:00:00Z' },
-  { id: 2, name: '3-day win streak', criteria: 'Win the daily duel three days in a row.', unlocked: false, unlockedAt: null },
-  { id: 3, name: 'First redemption', criteria: 'Spend Coins in the Store for the first time.', unlocked: true, unlockedAt: '2026-08-05T10:00:00Z' },
-  { id: 4, name: '7-day win streak', criteria: 'Win the daily duel seven days in a row.', unlocked: false, unlockedAt: null },
-  { id: 5, name: 'Century', criteria: 'Earn 100 lifetime Points.', unlocked: true, unlockedAt: '2026-08-05T11:00:00Z' },
-  { id: 6, name: 'Big spender', criteria: 'Redeem five rewards.', unlocked: false, unlockedAt: null },
+  {
+    id: 1,
+    name: 'First chore',
+    criteria: 'Get your first logged chore approved.',
+    unlocked: true,
+    unlockedAt: '2026-08-05T09:00:00Z',
+  },
+  {
+    id: 2,
+    name: '3-day win streak',
+    criteria: 'Win the daily duel three days in a row.',
+    unlocked: false,
+    unlockedAt: null,
+  },
+  {
+    id: 3,
+    name: 'First redemption',
+    criteria: 'Spend Coins in the Store for the first time.',
+    unlocked: true,
+    unlockedAt: '2026-08-05T10:00:00Z',
+  },
+  {
+    id: 4,
+    name: '7-day win streak',
+    criteria: 'Win the daily duel seven days in a row.',
+    unlocked: false,
+    unlockedAt: null,
+  },
+  {
+    id: 5,
+    name: 'Century',
+    criteria: 'Earn 100 lifetime Points.',
+    unlocked: true,
+    unlockedAt: '2026-08-05T11:00:00Z',
+  },
+  {
+    id: 6,
+    name: 'Big spender',
+    criteria: 'Redeem five rewards.',
+    unlocked: false,
+    unlockedAt: null,
+  },
 ]
 
 const HOUSEHOLD = {
@@ -44,13 +80,17 @@ type Overrides = {
   household?: unknown
   rename?: { status: number; body: unknown }
   leave?: { status: number; body: unknown }
+  join?: { status: number; body: unknown }
 }
 
 function stub(o: Overrides = {}) {
   const calls: { path: string; method: string; body?: string }[] = []
   const json = (body: unknown, status = 200) =>
     Promise.resolve(
-      new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }),
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+      }),
     )
 
   vi.stubGlobal(
@@ -63,6 +103,10 @@ function stub(o: Overrides = {}) {
       if (url.pathname === '/api/auth/me') return json(o.me ?? ME)
       if (url.pathname === '/api/badges') return json(o.badges ?? { items: BADGES })
 
+      if (url.pathname === '/api/households/join') {
+        const r = o.join ?? { status: 200, body: { id: 46, isFull: true } }
+        return json(r.body, r.status)
+      }
       if (url.pathname === '/api/households/45/leave') {
         const r = o.leave ?? { status: 200, body: { left: true } }
         return json(r.body, r.status)
@@ -276,7 +320,9 @@ describe('leaving', () => {
     const calls = stub()
     renderPage()
 
-    await userEvent.setup().click(await screen.findByRole('button', { name: /leave this household/i }))
+    await userEvent
+      .setup()
+      .click(await screen.findByRole('button', { name: /leave this household/i }))
 
     expect(screen.getByText(/leave duel house\?/i)).toBeInTheDocument()
     expect(calls.filter((c) => c.path.endsWith('/leave'))).toHaveLength(0)
@@ -292,7 +338,9 @@ describe('leaving', () => {
     stub()
     renderPage()
 
-    await userEvent.setup().click(await screen.findByRole('button', { name: /leave this household/i }))
+    await userEvent
+      .setup()
+      .click(await screen.findByRole('button', { name: /leave this household/i }))
 
     expect(screen.getByText(/sam stays/i)).toBeInTheDocument()
     expect(screen.queryByText(/is deleted/i)).not.toBeInTheDocument()
@@ -302,7 +350,9 @@ describe('leaving', () => {
     stub({ household: { ...HOUSEHOLD, members: [{ id: 80, name: 'Alex' }] } })
     renderPage()
 
-    await userEvent.setup().click(await screen.findByRole('button', { name: /leave this household/i }))
+    await userEvent
+      .setup()
+      .click(await screen.findByRole('button', { name: /leave this household/i }))
 
     expect(screen.getByText(/chores, rewards and history — is deleted/i)).toBeInTheDocument()
     expect(screen.queryByText(/stays/i)).not.toBeInTheDocument()
@@ -317,9 +367,9 @@ describe('leaving', () => {
     await user.click(screen.getByRole('button', { name: /^leave$/i }))
 
     await waitFor(() =>
-      expect(
-        calls.some((c) => c.path === '/api/households/45/leave' && c.method === 'POST'),
-      ).toBe(true),
+      expect(calls.some((c) => c.path === '/api/households/45/leave' && c.method === 'POST')).toBe(
+        true,
+      ),
     )
   })
 
@@ -370,5 +420,105 @@ describe('leaving', () => {
     await user.click(screen.getByRole('button', { name: /^leave$/i }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Household not found.')
+  })
+})
+
+/**
+ * The dead end this closes: `/pairing` is the only other place an invite code can be typed, and
+ * `AuthGate` makes that screen reachable only while you have **no** household. Two people who each
+ * created one could never reach each other. Owner's report, 2026-08-07.
+ */
+describe('joining a partner after you already made a household', () => {
+  it('is offered while you are the only member', async () => {
+    stub({ household: { ...HOUSEHOLD, members: [{ id: 80, name: 'Alex' }] } })
+    renderPage()
+
+    expect(
+      await screen.findByRole('button', { name: /join your partner instead/i }),
+    ).toBeInTheDocument()
+  })
+
+  /**
+   * The other direction, and the one that matters: a paired household is not yours alone to
+   * abandon. A test that only checked the solo case would pass against a component that offered
+   * this to everyone.
+   */
+  it('is not offered once there are two of you', async () => {
+    stub()
+    renderPage()
+
+    await screen.findByText('Duel House')
+    expect(
+      screen.queryByRole('button', { name: /join your partner instead/i }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('names what is destroyed before asking for the code', async () => {
+    stub({ household: { ...HOUSEHOLD, members: [{ id: 80, name: 'Alex' }] } })
+    renderPage()
+
+    await userEvent
+      .setup()
+      .click(await screen.findByRole('button', { name: /join your partner instead/i }))
+
+    expect(screen.getByText(/is deleted/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/their invite code/i)).toBeInTheDocument()
+  })
+
+  /**
+   * Asserted on the request list, not on the error text. A short code that still reached the server
+   * would be answered with the `[StringLength(6, MinimumLength = 6)]` sentence — the .NET wording
+   * `validateInviteCode` exists to keep off the screen.
+   */
+  it('sends nothing when the code is the wrong length', async () => {
+    const calls = stub({ household: { ...HOUSEHOLD, members: [{ id: 80, name: 'Alex' }] } })
+    renderPage()
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: /join your partner instead/i }))
+    await user.type(screen.getByLabelText(/their invite code/i), 'ABC')
+    await user.click(screen.getByRole('button', { name: /join and delete this one/i }))
+
+    expect(calls.some((c) => c.path === '/api/households/join')).toBe(false)
+    expect(screen.getByText(/6 characters/i)).toBeInTheDocument()
+  })
+
+  it('posts a well-formed code, uppercased', async () => {
+    const calls = stub({ household: { ...HOUSEHOLD, members: [{ id: 80, name: 'Alex' }] } })
+    renderPage()
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: /join your partner instead/i }))
+    await user.type(screen.getByLabelText(/their invite code/i), 'abc234')
+    await user.click(screen.getByRole('button', { name: /join and delete this one/i }))
+
+    const join = await waitFor(() => {
+      const found = calls.find((c) => c.path === '/api/households/join')
+      expect(found).toBeDefined()
+      return found!
+    })
+    expect(JSON.parse(join.body!)).toEqual({ inviteCode: 'ABC234' })
+  })
+
+  it('shows the server’s message when the code is unknown, and stays put', async () => {
+    stub({
+      household: { ...HOUSEHOLD, members: [{ id: 80, name: 'Alex' }] },
+      join: {
+        status: 404,
+        body: { error: 'No household found with that invite code.', errors: null },
+      },
+    })
+    renderPage()
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: /join your partner instead/i }))
+    await user.type(screen.getByLabelText(/their invite code/i), 'ZZZ999')
+    await user.click(screen.getByRole('button', { name: /join and delete this one/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No household found with that invite code.',
+    )
+    // Still on the form, so the code can be corrected rather than retyped from scratch.
+    expect(screen.getByLabelText(/their invite code/i)).toHaveValue('ZZZ999')
   })
 })

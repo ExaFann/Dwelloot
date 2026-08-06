@@ -26,8 +26,16 @@ public sealed record CreateHouseholdResult(CreateHouseholdStatus Status, Househo
 public enum JoinHouseholdStatus
 {
     Joined,
+
     UserNotFound,
+
+    /// <summary>
+    /// The caller is already **paired**, so there is no way to accept another invitation without
+    /// first abandoning a household that someone else also lives in. Distinct from the solo case,
+    /// which task [70] now allows: a household of one is the caller's alone to leave.
+    /// </summary>
     AlreadyInHousehold,
+
     InviteCodeNotFound,
     HouseholdFull
 }
@@ -159,10 +167,24 @@ public class HouseholdService(
             return JoinHouseholdResult.Failed(JoinHouseholdStatus.UserNotFound);
         }
 
-        // Also what makes "join your own household" impossible: creating one assigns you to it.
+        // Two people who each made their own household had no way to pair up afterwards: this
+        // guard used to refuse every caller who already had one, and the pairing screen is only
+        // reachable before you have joined anything. The owner found the dead end (2026-08-07).
+        //
+        // A household of one is the caller's alone to abandon, so joining out of it is allowed. A
+        // household of *two* is not - leaving would evict the caller from a household someone else
+        // also lives in, which is `POST /leave`'s job and a decision the user should make
+        // explicitly rather than as a side effect of typing a code.
+        Household? currentHousehold = null;
         if (user.HouseholdId is not null)
         {
-            return JoinHouseholdResult.Failed(JoinHouseholdStatus.AlreadyInHousehold);
+            var currentMemberCount = await db.Users.CountAsync(u => u.HouseholdId == user.HouseholdId, ct);
+            if (currentMemberCount > 1)
+            {
+                return JoinHouseholdResult.Failed(JoinHouseholdStatus.AlreadyInHousehold);
+            }
+
+            currentHousehold = await db.Households.SingleOrDefaultAsync(h => h.Id == user.HouseholdId, ct);
         }
 
         // The code is read off one screen and typed into another. The alphabet is uppercase, so
@@ -174,6 +196,14 @@ public class HouseholdService(
         if (household is null)
         {
             return JoinHouseholdResult.Failed(JoinHouseholdStatus.InviteCodeNotFound);
+        }
+
+        // Your own code, typed into your own screen. Previously unreachable - the blanket guard
+        // above caught it - and now it must be handled, because the path below would delete the
+        // household out from under the user and then try to join them to it.
+        if (currentHousehold is not null && household.Id == currentHousehold.Id)
+        {
+            return JoinHouseholdResult.Ok(household);
         }
 
         // Counting actual members rather than trusting household.IsFull. IsFull is denormalised -
@@ -188,6 +218,19 @@ public class HouseholdService(
 
         user.HouseholdId = household.Id;
         household.IsFull = memberCount + 1 >= Household.MaxMembers;
+
+        // The old household is now empty, so it goes - and its activities, rewards, competitions
+        // and claims cascade with it, exactly as `LeaveAsync` does for a last member.
+        //
+        // **One SaveChanges, so this is one transaction.** That is the whole reason this lives in
+        // the service rather than being a leave-then-join from the client: a client doing it in two
+        // calls would delete the caller's household and *then* discover the invite code was a typo,
+        // leaving them with nothing and no way back. Here a bad code returns before anything is
+        // written, and a race on the target household rolls the deletion back with it.
+        if (currentHousehold is not null)
+        {
+            db.Households.Remove(currentHousehold);
+        }
 
         try
         {
