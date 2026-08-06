@@ -57,7 +57,7 @@ public class UnknownUserTests
 
         Assert.Equal(RewardQueryStatus.UserNotFound, (await service.ListAsync(NoSuchUser, new RewardQuery())).Status);
         Assert.Equal(RewardMutationStatus.UserNotFound, (await service.CreateAsync(NoSuchUser, new CreateRewardRequest("Foot massage", 25))).Status);
-        Assert.Equal(RewardMutationStatus.UserNotFound, (await service.UpdateAsync(NoSuchUser, 1, new PatchRewardRequest("x", null, null))).Status);
+        Assert.Equal(RewardMutationStatus.UserNotFound, (await service.UpdateAsync(NoSuchUser, 1, new PatchRewardRequest("x", null))).Status);
         Assert.Equal(RewardMutationStatus.UserNotFound, (await service.DeleteAsync(NoSuchUser, 1)).Status);
 
         Assert.Empty(await db.Rewards.ToListAsync());

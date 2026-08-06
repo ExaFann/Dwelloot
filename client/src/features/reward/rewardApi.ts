@@ -32,12 +32,10 @@ export const rewardApi = baseApi.injectEndpoints({
       providesTags: ['Reward'],
     }),
 
-    createReward: build.mutation<Reward, { title: string; coinCost: number; pausesCompetition: boolean }>(
-      {
-        query: (body) => ({ url: '/api/rewards', method: 'POST', body }),
-        invalidatesTags: ['Reward'],
-      },
-    ),
+    createReward: build.mutation<Reward, { title: string; coinCost: number }>({
+      query: (body) => ({ url: '/api/rewards', method: 'POST', body }),
+      invalidatesTags: ['Reward'],
+    }),
 
     /**
      * `PATCH` accepts partial bodies and treats null as "leave alone", but the editor always has
@@ -46,10 +44,7 @@ export const rewardApi = baseApi.injectEndpoints({
      * Re-pricing is safe to expose because `redemptions.coins_spent` is a snapshot (§4.3): past
      * purchases keep what they actually cost. That column is why editing exists at all.
      */
-    updateReward: build.mutation<
-      Reward,
-      { id: number; title: string; coinCost: number; pausesCompetition: boolean }
-    >({
+    updateReward: build.mutation<Reward, { id: number; title: string; coinCost: number }>({
       query: ({ id, ...body }) => ({ url: `/api/rewards/${id}`, method: 'PATCH', body }),
       invalidatesTags: ['Reward'],
     }),
@@ -91,7 +86,13 @@ export const rewardApi = baseApi.injectEndpoints({
      * [54] has to remember.
      */
     redeemReward: build.mutation<
-      { id: number; rewardId: number; coinsSpent: number; coinsRemaining: number; redeemedAt: string },
+      {
+        id: number
+        rewardId: number
+        coinsSpent: number
+        coinsRemaining: number
+        redeemedAt: string
+      },
       { rewardId: number; pausesCompetition: boolean }
     >({
       query: ({ rewardId }) => ({ url: '/api/redemptions', method: 'POST', body: { rewardId } }),

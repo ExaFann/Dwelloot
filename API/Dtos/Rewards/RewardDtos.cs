@@ -57,21 +57,33 @@ public record RewardQuery
 /// No <c>HouseholdId</c>: the household comes from the caller's token, so a client cannot create a
 /// reward in someone else's store.
 /// <para>
-/// <c>PausesCompetition</c> <b>is</b> client-settable, which was not the first instinct. Withholding
-/// it was considered and rejected: the thing that actually gates abuse of a day-off reward is its
-/// price, and price is already editable through <see cref="PatchRewardRequest"/> — so withholding the
-/// flag would prevent nothing while breaking "every row equally editable" (the point of
-/// copy-on-creation) and making the one seeded pausing reward impossible to recreate once archived.
-/// The mitigation is disclosure instead: the store shows what a pausing reward does at the point of
-/// redemption, derived from this flag, which is why task [28] returns it per item.
+/// <c>PausesCompetition</c> is <b>not</b> settable here — reversed by the owner in task [69].
+/// </para>
+/// <para>
+/// The original reasoning is kept because the reversal is a change of goal, not a correction: task
+/// [29] argued that price already gates abuse, that withholding the flag would break "every row
+/// equally editable", and that the seeded pausing reward would become impossible to recreate. All
+/// three are still true. What changed is what the flag is <em>for</em>: the owner wants voiding a
+/// day to be a single special prize rather than a property any back rub can be given, because a
+/// checkbox labelled "pauses the duel" on every reward form is an invitation to create a second one
+/// by accident and a puzzle for the partner who then meets it.
+/// </para>
+/// <para>
+/// So the flag now belongs to the seeded catalogue alone (<see cref="Data.Defaults.DefaultRewards"/>),
+/// and the recreate-once-archived objection is answered from the other end: task [69] also refuses
+/// to archive a pausing reward at all. Its <em>price</em> stays editable, which is what preserved the
+/// abuse gate the original note relied on.
+/// </para>
+/// <para>
+/// Disclosure is unchanged and still derived from the flag rather than the title, which is why task
+/// [28] returns it per item.
 /// </para>
 /// </remarks>
 public record CreateRewardRequest(
     [Required, CleanText(Reward.TitleMaxLength)]
     string Title,
     [Range(1, int.MaxValue)]
-    int CoinCost,
-    bool PausesCompetition = false);
+    int CoinCost);
 
 /// <summary>
 /// Partial update. A null field means "leave it alone", which is what separates this from a PUT.
@@ -80,9 +92,12 @@ public record CreateRewardRequest(
 /// <c>HouseholdId</c> is absent by design, so no request can move a reward between households — a
 /// body that cannot express the change beats one that is filtered afterwards.
 /// </remarks>
+/// <remarks>
+/// No <c>PausesCompetition</c> — task [69]. A body that cannot express the change beats one that is
+/// filtered afterwards, the same argument this record already makes about <c>HouseholdId</c>.
+/// </remarks>
 public record PatchRewardRequest(
     [CleanText(Reward.TitleMaxLength)]
     string? Title,
     [Range(1, int.MaxValue)]
-    int? CoinCost,
-    bool? PausesCompetition);
+    int? CoinCost);

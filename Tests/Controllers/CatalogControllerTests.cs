@@ -172,7 +172,7 @@ public class CatalogControllerTests
         Assert.Equal(expected, (await new RewardsController(service).WithUser()
             .Create(new CreateRewardRequest("Foot massage", 25), default)).StatusOf());
         Assert.Equal(expected, (await new RewardsController(service).WithUser()
-            .Update(5, new PatchRewardRequest(null, 30, null), default)).StatusOf());
+            .Update(5, new PatchRewardRequest(null, 30), default)).StatusOf());
         Assert.Equal(expected, (await new RewardsController(service).WithUser()
             .Delete(5, default)).StatusOf());
     }
@@ -187,7 +187,7 @@ public class CatalogControllerTests
         Assert.Equal("/api/rewards/5", createdResult.Location);
 
         Assert.Equal(StatusCodes.Status200OK,
-            (await new RewardsController(service).WithUser().Update(5, new PatchRewardRequest(null, 30, null), default)).StatusOf());
+            (await new RewardsController(service).WithUser().Update(5, new PatchRewardRequest(null, 30), default)).StatusOf());
         Assert.Equal(StatusCodes.Status204NoContent,
             (await new RewardsController(service).WithUser().Delete(5, default)).StatusOf());
     }

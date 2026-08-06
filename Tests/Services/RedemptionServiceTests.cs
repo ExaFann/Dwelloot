@@ -279,7 +279,7 @@ public class RedemptionServiceTests
         var redemption = (await ServiceFor(db).CreateAsync(sam.Id, reward.Id)).Redemption!;
         Assert.Equal(30, redemption.CoinsSpent);
 
-        await new RewardService(db).UpdateAsync(alex.Id, reward.Id, new PatchRewardRequest(null, 5, null));
+        await new RewardService(db).UpdateAsync(alex.Id, reward.Id, new PatchRewardRequest(null, 5));
 
         Assert.Equal(5, (await db.Rewards.SingleAsync(r => r.Id == reward.Id)).CoinCost);
         Assert.Equal(30, (await db.Redemptions.SingleAsync(r => r.Id == redemption.Id)).CoinsSpent);

@@ -119,6 +119,11 @@ public class RewardsController(IRewardService rewards) : ControllerBase
         RewardMutationStatus.InvalidCoinCost =>
             this.Failure(StatusCodes.Status400BadRequest, "Coin cost must be greater than zero."),
 
+        RewardMutationStatus.CannotDeletePausingReward =>
+            this.Failure(
+                StatusCodes.Status409Conflict,
+                "This reward pauses the duel and cannot be removed. You can change its price instead."),
+
         RewardMutationStatus.InvalidTitle =>
             this.Failure(StatusCodes.Status400BadRequest, "Title must contain at least one visible character."),
 

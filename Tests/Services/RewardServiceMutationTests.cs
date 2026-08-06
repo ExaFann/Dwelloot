@@ -117,17 +117,84 @@ public class RewardServiceMutationTests
         Assert.DoesNotContain(await db.Rewards.ToListAsync(), r => r.Title == "Free stuff");
     }
 
+    /// <summary>
+    /// Replaces <c>CreateAsync_round_trips_PausesCompetition</c>, which asserted the behaviour task
+    /// [69] removes.
+    ///
+    /// Voiding a day is now a property of the seeded catalogue alone. A checkbox labelled "pauses the
+    /// duel" on every reward form invites a second one by accident and puzzles the partner who later
+    /// meets it — owner's decision, 2026-08-07.
+    /// </summary>
     [Fact]
-    public async Task CreateAsync_round_trips_PausesCompetition()
+    public async Task CreateAsync_never_produces_a_pausing_reward()
     {
         using var db = TestDbContextFactory.Create();
         var (user, _) = await StockedHouseholdAsync(db);
 
         var result = await new RewardService(db).CreateAsync(
-            user.Id, new CreateRewardRequest("Duvet day", 75, PausesCompetition: true));
+            user.Id, new CreateRewardRequest("Duvet day", 75));
 
-        Assert.True(result.Reward!.PausesCompetition);
-        Assert.True((await db.Rewards.SingleAsync(r => r.Id == result.Reward.Id)).PausesCompetition);
+        Assert.False(result.Reward!.PausesCompetition);
+        Assert.False((await db.Rewards.SingleAsync(r => r.Id == result.Reward.Id)).PausesCompetition);
+    }
+
+    /// <summary>
+    /// Archiving it would be a one-way door: <see cref="CreateRewardRequest"/> no longer carries the
+    /// flag, so nothing in the API could make another one. Refused rather than warned about.
+    /// </summary>
+    [Fact]
+    public async Task DeleteAsync_refuses_to_archive_a_pausing_reward()
+    {
+        using var db = TestDbContextFactory.Create();
+        var (user, household) = await StockedHouseholdAsync(db);
+        var pausing = await db.Rewards.FirstAsync(
+            r => r.HouseholdId == household.Id && r.PausesCompetition);
+
+        var result = await new RewardService(db).DeleteAsync(user.Id, pausing.Id);
+
+        Assert.Equal(RewardMutationStatus.CannotDeletePausingReward, result.Status);
+        // The refusal must leave it usable, not merely unreported.
+        Assert.Null((await db.Rewards.SingleAsync(r => r.Id == pausing.Id)).ArchivedAt);
+    }
+
+    /// <summary>
+    /// The other direction. A rule that refused *every* delete would pass the test above, and the
+    /// store would quietly become read-only.
+    /// </summary>
+    [Fact]
+    public async Task DeleteAsync_still_archives_an_ordinary_reward()
+    {
+        using var db = TestDbContextFactory.Create();
+        var (user, household) = await StockedHouseholdAsync(db);
+        var ordinary = await db.Rewards.FirstAsync(
+            r => r.HouseholdId == household.Id && !r.PausesCompetition);
+
+        var result = await new RewardService(db).DeleteAsync(user.Id, ordinary.Id);
+
+        Assert.Equal(RewardMutationStatus.Ok, result.Status);
+        Assert.NotNull((await db.Rewards.SingleAsync(r => r.Id == ordinary.Id)).ArchivedAt);
+    }
+
+    /// <summary>
+    /// Price stays editable, and that is load-bearing rather than an oversight: task [29]'s argument
+    /// was that price is what actually gates abuse of a day-off reward. Removing the flag while also
+    /// freezing the price would have taken that gate away.
+    /// </summary>
+    [Fact]
+    public async Task UpdateAsync_can_still_reprice_a_pausing_reward()
+    {
+        using var db = TestDbContextFactory.Create();
+        var (user, household) = await StockedHouseholdAsync(db);
+        var pausing = await db.Rewards.FirstAsync(
+            r => r.HouseholdId == household.Id && r.PausesCompetition);
+
+        var result = await new RewardService(db).UpdateAsync(
+            user.Id, pausing.Id, new PatchRewardRequest(null, 250));
+
+        Assert.Equal(RewardMutationStatus.Ok, result.Status);
+        Assert.Equal(250, result.Reward!.CoinCost);
+        // And it is still the pausing reward afterwards — a patch must not clear the flag either.
+        Assert.True((await db.Rewards.SingleAsync(r => r.Id == pausing.Id)).PausesCompetition);
     }
 
     [Fact]
@@ -152,7 +219,7 @@ public class RewardServiceMutationTests
         var reward = await AnyRewardAsync(db, household.Id);
 
         var result = await new RewardService(db).UpdateAsync(
-            user.Id, reward.Id, new PatchRewardRequest("Renamed", 99, null));
+            user.Id, reward.Id, new PatchRewardRequest("Renamed", 99));
 
         Assert.Equal(RewardMutationStatus.Ok, result.Status);
         Assert.Equal("Renamed", result.Reward!.Title);
@@ -171,7 +238,7 @@ public class RewardServiceMutationTests
         var originalCost = reward.CoinCost;
 
         var result = await new RewardService(db).UpdateAsync(
-            user.Id, reward.Id, new PatchRewardRequest(null, null, null));
+            user.Id, reward.Id, new PatchRewardRequest(null, null));
 
         Assert.Equal(RewardMutationStatus.Ok, result.Status);
         Assert.Equal(originalTitle, result.Reward!.Title);
@@ -189,7 +256,7 @@ public class RewardServiceMutationTests
         var originalTitle = theirs.Title;
 
         var result = await new RewardService(db).UpdateAsync(
-            mine.Id, theirs.Id, new PatchRewardRequest("Hijacked", 1, null));
+            mine.Id, theirs.Id, new PatchRewardRequest("Hijacked", 1));
 
         Assert.Equal(RewardMutationStatus.NotFound, result.Status);
         Assert.Equal(originalTitle, (await db.Rewards.SingleAsync(r => r.Id == theirs.Id)).Title);
@@ -204,7 +271,7 @@ public class RewardServiceMutationTests
         var originalCost = reward.CoinCost;
 
         var result = await new RewardService(db).UpdateAsync(
-            user.Id, reward.Id, new PatchRewardRequest("Renamed anyway", 0, null));
+            user.Id, reward.Id, new PatchRewardRequest("Renamed anyway", 0));
 
         Assert.Equal(RewardMutationStatus.InvalidCoinCost, result.Status);
 
@@ -215,8 +282,18 @@ public class RewardServiceMutationTests
         Assert.NotEqual("Renamed anyway", unchanged.Title);
     }
 
+    /// <summary>
+    /// Inverted by task [69]. This used to assert that a patch could both set and clear the flag;
+    /// the flag is no longer expressible in the request at all, so the property under test is that
+    /// **an ordinary reward can never become a pausing one and vice versa**.
+    ///
+    /// Asserted in both directions on purpose. Removing the field from the DTO makes the *set* case
+    /// unreachable by construction, but nothing stops a future patch handler from clearing the flag
+    /// as a side effect of an unrelated write — which would silently turn the seeded day-off reward
+    /// into an ordinary one, and no error would ever be raised.
+    /// </summary>
     [Fact]
-    public async Task UpdateAsync_can_both_set_and_clear_PausesCompetition()
+    public async Task UpdateAsync_cannot_change_PausesCompetition_in_either_direction()
     {
         using var db = TestDbContextFactory.Create();
         var (user, household) = await StockedHouseholdAsync(db);
@@ -224,12 +301,14 @@ public class RewardServiceMutationTests
 
         var ordinary = await AnyRewardAsync(db, household.Id);
         Assert.False(ordinary.PausesCompetition);
-        var set = await service.UpdateAsync(user.Id, ordinary.Id, new PatchRewardRequest(null, null, true));
-        Assert.True(set.Reward!.PausesCompetition);
+        var renamed = await service.UpdateAsync(
+            user.Id, ordinary.Id, new PatchRewardRequest("Renamed", 42));
+        Assert.False(renamed.Reward!.PausesCompetition);
 
         var dayOff = await DayOffAsync(db, household.Id);
-        var cleared = await service.UpdateAsync(user.Id, dayOff.Id, new PatchRewardRequest(null, null, false));
-        Assert.False(cleared.Reward!.PausesCompetition);
+        var repriced = await service.UpdateAsync(user.Id, dayOff.Id, new PatchRewardRequest(null, 99));
+        Assert.True(repriced.Reward!.PausesCompetition);
+        Assert.Equal(99, repriced.Reward.CoinCost);
     }
 
     // ------------------------------------------------------------------ archive
@@ -309,7 +388,18 @@ public class RewardServiceMutationTests
         });
         await db.SaveChangesAsync();
 
-        await new RewardService(db).DeleteAsync(alex.Id, dayOff.Id);
+        /*
+         * Archived directly rather than through `DeleteAsync`, which task [69] now refuses for a
+         * pausing reward.
+         *
+         * The property under test is unchanged and still matters: `HasPausingRedemptionAsync` must
+         * not filter `ArchivedAt` (handover §4.2). Households that archived their day-off reward
+         * before [69] still exist in the database, and their closed periods must keep settling the
+         * way they did — so this row is reachable state even though the API can no longer produce
+         * it. Setting it up through the service would now be testing the refusal instead.
+         */
+        dayOff.ArchivedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
         Assert.NotNull((await db.Rewards.SingleAsync(r => r.Id == dayOff.Id)).ArchivedAt);
 
         var standing = await settlement.GetStandingAsync(householdId, yesterday);
@@ -327,7 +417,7 @@ public class RewardServiceMutationTests
 
         await service.DeleteAsync(user.Id, reward.Id);
 
-        var edit = await service.UpdateAsync(user.Id, reward.Id, new PatchRewardRequest("Back again", null, null));
+        var edit = await service.UpdateAsync(user.Id, reward.Id, new PatchRewardRequest("Back again", null));
         var reArchive = await service.DeleteAsync(user.Id, reward.Id);
 
         Assert.Equal(RewardMutationStatus.NotFound, edit.Status);
@@ -430,8 +520,8 @@ public class RewardServiceMutationTests
         var copied = await AnyRewardAsync(db, household.Id);
         var custom = (await service.CreateAsync(user.Id, new CreateRewardRequest("Custom treat", 60))).Reward!;
 
-        Assert.Equal(RewardMutationStatus.Ok, (await service.UpdateAsync(user.Id, copied.Id, new PatchRewardRequest("A", 11, null))).Status);
-        Assert.Equal(RewardMutationStatus.Ok, (await service.UpdateAsync(user.Id, custom.Id, new PatchRewardRequest("B", 12, null))).Status);
+        Assert.Equal(RewardMutationStatus.Ok, (await service.UpdateAsync(user.Id, copied.Id, new PatchRewardRequest("A", 11))).Status);
+        Assert.Equal(RewardMutationStatus.Ok, (await service.UpdateAsync(user.Id, custom.Id, new PatchRewardRequest("B", 12))).Status);
         Assert.Equal(RewardMutationStatus.Ok, (await service.DeleteAsync(user.Id, copied.Id)).Status);
         Assert.Equal(RewardMutationStatus.Ok, (await service.DeleteAsync(user.Id, custom.Id)).Status);
 

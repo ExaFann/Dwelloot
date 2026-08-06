@@ -100,7 +100,7 @@ public class InputValidationTests
         var original = reward.Title;
 
         var result = await new RewardService(db).UpdateAsync(
-            user.Id, reward.Id, new PatchRewardRequest("\t\n ", null, null));
+            user.Id, reward.Id, new PatchRewardRequest("\t\n ", null));
 
         Assert.Equal(RewardMutationStatus.InvalidTitle, result.Status);
         Assert.Equal(original, (await db.Rewards.SingleAsync(r => r.Id == reward.Id)).Title);
@@ -146,7 +146,7 @@ public class InputValidationTests
         var reward = await db.Rewards.FirstAsync(r => r.HouseholdId == household.Id);
 
         await new RewardService(db).UpdateAsync(
-            user.Id, reward.Id, new PatchRewardRequest("  Movie\tnight   pick ", null, null));
+            user.Id, reward.Id, new PatchRewardRequest("  Movie\tnight   pick ", null));
 
         Assert.Equal("Movie night pick", (await db.Rewards.SingleAsync(r => r.Id == reward.Id)).Title);
     }
@@ -229,7 +229,7 @@ public class InputValidationTests
         Assert.Contains("Title", Validate(new CreateActivityRequest(blank, 10, null)));
         Assert.Contains("Title", Validate(new PatchActivityRequest(blank, null, null)));
         Assert.Contains("Title", Validate(new CreateRewardRequest(blank, 10)));
-        Assert.Contains("Title", Validate(new PatchRewardRequest(blank, null, null)));
+        Assert.Contains("Title", Validate(new PatchRewardRequest(blank, null)));
         Assert.Contains("Name", Validate(new CreateHouseholdRequest(blank)));
         Assert.Contains("Name", Validate(new RenameHouseholdRequest(blank)));
         Assert.Contains("Name", Validate(new RegisterRequest(blank, "a@example.com", "Dwelloot2026")));
@@ -241,7 +241,7 @@ public class InputValidationTests
     {
         // CleanText must pass on null, or PATCH would lose its whole point.
         Assert.DoesNotContain("Title", Validate(new PatchActivityRequest(null, 5, null)));
-        Assert.DoesNotContain("Title", Validate(new PatchRewardRequest(null, 5, null)));
+        Assert.DoesNotContain("Title", Validate(new PatchRewardRequest(null, 5)));
     }
 
     [Fact]
@@ -274,7 +274,7 @@ public class InputValidationTests
         Assert.Contains("Points", Validate(new CreateActivityRequest("Wash dishes", value, null)));
         Assert.Contains("Points", Validate(new PatchActivityRequest(null, value, null)));
         Assert.Contains("CoinCost", Validate(new CreateRewardRequest("Foot massage", value)));
-        Assert.Contains("CoinCost", Validate(new PatchRewardRequest(null, value, null)));
+        Assert.Contains("CoinCost", Validate(new PatchRewardRequest(null, value)));
         Assert.Contains("ActivityId", Validate(new CreateActivityLogRequest(value)));
         Assert.Contains("RewardId", Validate(new CreateRedemptionRequest(value)));
     }
@@ -303,7 +303,7 @@ public class InputValidationTests
             (await new RewardService(db).CreateAsync(user.Id, new CreateRewardRequest("Foot massage", value))).Status);
         Assert.Equal(
             RewardMutationStatus.InvalidCoinCost,
-            (await new RewardService(db).UpdateAsync(user.Id, reward.Id, new PatchRewardRequest(null, value, null))).Status);
+            (await new RewardService(db).UpdateAsync(user.Id, reward.Id, new PatchRewardRequest(null, value))).Status);
 
         Assert.Equal(originalPoints, (await db.Activities.SingleAsync(a => a.Id == chore.Id)).Points);
     }

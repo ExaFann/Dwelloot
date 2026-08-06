@@ -240,7 +240,7 @@ public class RedemptionHistoryTests
         await SetBalanceAsync(db, sam, 100);
 
         await ServiceFor(db).CreateAsync(sam.Id, reward.Id);
-        await new RewardService(db).UpdateAsync(alex.Id, reward.Id, new PatchRewardRequest(null, 5, null));
+        await new RewardService(db).UpdateAsync(alex.Id, reward.Id, new PatchRewardRequest(null, 5));
 
         Assert.Equal(5, (await db.Rewards.SingleAsync(r => r.Id == reward.Id)).CoinCost);
         Assert.Equal(30, Assert.Single(await HistoryOf(db, sam.Id)).CoinsSpent);

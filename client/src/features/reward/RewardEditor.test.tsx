@@ -7,7 +7,11 @@ import { makeStore } from '../../app/store'
 import { signedIn } from '../auth/authSlice'
 import { RewardEditor } from './RewardEditor'
 
+/** The seeded special prize. Since [69] it is re-priceable but **not** removable. */
 const EXISTING = { id: 366, title: 'Full chore day off', coinCost: 80, pausesCompetition: true }
+
+/** An ordinary reward, which is still fully editable and removable. */
+const ORDINARY = { id: 367, title: 'Foot massage', coinCost: 25, pausesCompetition: false }
 
 type Recorded = { path: string; method: string; body?: string }
 
@@ -158,29 +162,36 @@ describe('creating', () => {
     await waitFor(() => {
       const post = sent(calls, 'POST')[0]
       expect(post.path).toBe('/api/rewards')
-      expect(JSON.parse(post.body!)).toEqual({
-        title: 'Breakfast in bed',
-        coinCost: 30,
-        pausesCompetition: false,
-      })
+      // No `pausesCompetition`: [69] removed it from the request entirely, so a body that still
+      // carried it would mean the client is sending a field the server no longer binds.
+      expect(JSON.parse(post.body!)).toEqual({ title: 'Breakfast in bed', coinCost: 30 })
     })
   })
 
-  it('carries the pausing flag when it is ticked', async () => {
+  /**
+   * Inverted by [69]. This used to tick a checkbox and assert the flag reached the wire.
+   *
+   * Voiding a day is now one seeded special prize, not a property any reward can be given: a tickbox
+   * labelled "pauses the duel" on every form invites a second one by accident and leaves the partner
+   * meeting an unexplained voided day. The control is gone and the server no longer binds the field.
+   */
+  it('offers no way to make a new reward pause the duel', async () => {
     const calls = stub({
       status: 201,
-      body: { id: 400, title: 'Day off', coinCost: 80, pausesCompetition: true },
+      body: { id: 400, title: 'Day off', coinCost: 80, pausesCompetition: false },
     })
     renderEditor()
     const user = userEvent.setup()
 
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+    expect(screen.queryByText(/pauses the duel/i)).not.toBeInTheDocument()
+
     await user.type(screen.getByLabelText('Reward'), 'Day off')
     await user.type(screen.getByLabelText('Cost in Coins'), '80')
-    await user.click(screen.getByRole('checkbox', { name: /pauses the duel/i }))
     await user.click(screen.getByRole('button', { name: /add reward/i }))
 
     await waitFor(() =>
-      expect(JSON.parse(sent(calls, 'POST')[0].body!).pausesCompetition).toBe(true),
+      expect(JSON.parse(sent(calls, 'POST')[0].body!)).not.toHaveProperty('pausesCompetition'),
     )
   })
 
@@ -225,13 +236,34 @@ describe('creating', () => {
 // ─── Editing ─────────────────────────────────────────────────────────────────
 
 describe('editing', () => {
-  it('opens pre-filled, flag included', () => {
+  it('opens pre-filled', () => {
     stub()
     renderEditor({ reward: EXISTING })
 
     expect(screen.getByLabelText('Reward')).toHaveValue('Full chore day off')
     expect(screen.getByLabelText('Cost in Coins')).toHaveValue(80)
-    expect(screen.getByRole('checkbox', { name: /pauses the duel/i })).toBeChecked()
+  })
+
+  /**
+   * The special prize explains itself instead of offering a control. Derived from the flag, never
+   * from the title — the rule [28] put the field on the list response for.
+   */
+  it('states what the special prize does, and says the price is still editable', () => {
+    stub()
+    renderEditor({ reward: EXISTING })
+
+    expect(screen.getByText(/special prize/i)).toBeInTheDocument()
+    expect(screen.getByText(/cannot be removed/i)).toBeInTheDocument()
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+  })
+
+  /** The other direction: an ordinary reward says nothing about pausing at all. */
+  it('says nothing about pausing on an ordinary reward', () => {
+    stub()
+    renderEditor({ reward: ORDINARY })
+
+    expect(screen.queryByText(/special prize/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/voids that day/i)).not.toBeInTheDocument()
   })
 
   it('patches every field, because it always has every field', async () => {
@@ -246,47 +278,61 @@ describe('editing', () => {
     await waitFor(() => {
       const patch = sent(calls, 'PATCH')[0]
       expect(patch.path).toBe('/api/rewards/366')
-      expect(JSON.parse(patch.body!)).toEqual({
-        title: 'Full chore day off',
-        coinCost: 65,
-        pausesCompetition: true,
-      })
+      expect(JSON.parse(patch.body!)).toEqual({ title: 'Full chore day off', coinCost: 65 })
     })
   })
 
-  /** Both directions: a flag that could only ever be set would pass a set-only test. */
-  it('can clear the pausing flag', async () => {
+  /**
+   * Re-pricing the special prize is the one thing that must keep working.
+   *
+   * [29]'s argument for making the flag settable was that **price** is what actually gates abuse of
+   * a day off. [69] took the flag away; freezing the price as well would have removed that gate too.
+   */
+  it('can still re-price the special prize', async () => {
     const calls = stub()
     renderEditor({ reward: EXISTING })
     const user = userEvent.setup()
 
-    await user.click(screen.getByRole('checkbox', { name: /pauses the duel/i }))
+    await user.clear(screen.getByLabelText('Cost in Coins'))
+    await user.type(screen.getByLabelText('Cost in Coins'), '250')
     await user.click(screen.getByRole('button', { name: /^save$/i }))
 
-    await waitFor(() =>
-      expect(JSON.parse(sent(calls, 'PATCH')[0].body!).pausesCompetition).toBe(false),
-    )
+    await waitFor(() => expect(JSON.parse(sent(calls, 'PATCH')[0].body!).coinCost).toBe(250))
   })
 })
 
 // ─── Removing ────────────────────────────────────────────────────────────────
 
 describe('removing', () => {
+  /**
+   * The special prize offers no Remove at all — [69].
+   *
+   * The server answers `DELETE` with a 409, so a visible control whose only outcome is an error
+   * would be the "never show raw server internals" problem one step earlier: at the affordance
+   * rather than at the message.
+   */
+  it('is not offered for the special prize', () => {
+    stub()
+    renderEditor({ reward: EXISTING })
+
+    expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument()
+  })
+
   it('asks first, and sends nothing until it is confirmed', async () => {
     const calls = stub()
-    renderEditor({ reward: EXISTING })
+    renderEditor({ reward: ORDINARY })
     const user = userEvent.setup()
 
     await user.click(screen.getByRole('button', { name: /remove this reward/i }))
 
-    expect(screen.getByText(/remove full chore day off\?/i)).toBeInTheDocument()
+    expect(screen.getByText(/remove foot massage\?/i)).toBeInTheDocument()
     expect(sent(calls, 'DELETE')).toHaveLength(0)
   })
 
   /** The user cannot see archiving; they can see that their history survived. Say only that. */
   it('promises what actually survives', async () => {
     stub()
-    renderEditor({ reward: EXISTING })
+    renderEditor({ reward: ORDINARY })
 
     await userEvent.setup().click(screen.getByRole('button', { name: /remove this reward/i }))
 
@@ -296,27 +342,27 @@ describe('removing', () => {
 
   it('deletes once confirmed', async () => {
     const calls = stub({ status: 204, body: null })
-    const { onDone } = renderEditor({ reward: EXISTING })
+    const { onDone } = renderEditor({ reward: ORDINARY })
     const user = userEvent.setup()
 
     await user.click(screen.getByRole('button', { name: /remove this reward/i }))
     await user.click(screen.getByRole('button', { name: /^remove$/i }))
 
     await waitFor(() => {
-      expect(sent(calls, 'DELETE')[0].path).toBe('/api/rewards/366')
-      expect(onDone).toHaveBeenCalledWith('Full chore day off removed.')
+      expect(sent(calls, 'DELETE')[0].path).toBe('/api/rewards/367')
+      expect(onDone).toHaveBeenCalledWith('Foot massage removed.')
     })
   })
 
   it('can be backed out of', async () => {
     const calls = stub()
-    renderEditor({ reward: EXISTING })
+    renderEditor({ reward: ORDINARY })
     const user = userEvent.setup()
 
     await user.click(screen.getByRole('button', { name: /remove this reward/i }))
     await user.click(screen.getByRole('button', { name: /keep/i }))
 
-    expect(screen.queryByText(/remove full chore day off\?/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/remove foot massage\?/i)).not.toBeInTheDocument()
     expect(sent(calls, 'DELETE')).toHaveLength(0)
   })
 })

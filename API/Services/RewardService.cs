@@ -40,7 +40,17 @@ public enum RewardMutationStatus
     InvalidCoinCost,
 
     /// <summary>The title is blank once normalised - see the note on the activity equivalent.</summary>
-    InvalidTitle
+    InvalidTitle,
+
+    /// <summary>
+    /// The reward voids a day's duel, and those are not deletable — task [69].
+    /// </summary>
+    /// <remarks>
+    /// A household that archived it would have no way back: the flag is no longer settable through
+    /// <see cref="Dtos.Rewards.CreateRewardRequest"/>, so nothing could recreate one. Its price stays
+    /// editable, which is what keeps the abuse gate task [29] relied on.
+    /// </remarks>
+    CannotDeletePausingReward
 }
 
 public sealed record RewardMutationResult(RewardMutationStatus Status, RewardResponse? Reward)
@@ -161,7 +171,6 @@ public class RewardService(AppDbContext db) : IRewardService
             HouseholdId = household.HouseholdId,
             Title = title,
             CoinCost = request.CoinCost,
-            PausesCompetition = request.PausesCompetition
         };
 
         db.Rewards.Add(reward);
@@ -209,11 +218,6 @@ public class RewardService(AppDbContext db) : IRewardService
 
         // Settable and clearable, symmetrically. See CreateRewardRequest for why withholding this
         // from clients was considered and rejected.
-        if (request.PausesCompetition is not null)
-        {
-            reward.PausesCompetition = request.PausesCompetition.Value;
-        }
-
         await db.SaveChangesAsync(ct);
 
         return RewardMutationResult.Ok(Describe(reward));
@@ -242,6 +246,15 @@ public class RewardService(AppDbContext db) : IRewardService
         }
 
         var reward = found.Reward!;
+
+        // Task [69]. Archiving this one is a one-way door: `CreateRewardRequest` no longer carries
+        // the flag, so nothing in the API could make another. Refused rather than warned about,
+        // because the loss is silent and total.
+        if (reward.PausesCompetition)
+        {
+            return RewardMutationResult.Failed(RewardMutationStatus.CannotDeletePausingReward);
+        }
+
         reward.ArchivedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync(ct);

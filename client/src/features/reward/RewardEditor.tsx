@@ -34,7 +34,6 @@ export function RewardEditor({ reward, onDone, onCancel }: Props) {
 
   const [title, setTitle] = useState(reward?.title ?? '')
   const [coinCost, setCoinCost] = useState(reward ? String(reward.coinCost) : '')
-  const [pauses, setPauses] = useState(reward?.pausesCompetition ?? false)
   const [clientErrors, setClientErrors] = useState<RewardErrors>({})
   const [serverError, setServerError] = useState<ApiError | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -61,7 +60,6 @@ export function RewardEditor({ reward, onDone, onCancel }: Props) {
     const payload = {
       title: title.trim(),
       coinCost: Number(coinCost.trim()),
-      pausesCompetition: pauses,
     }
 
     try {
@@ -74,7 +72,6 @@ export function RewardEditor({ reward, onDone, onCancel }: Props) {
         // Cleared for the next one — adding a reward predicts adding another.
         setTitle('')
         setCoinCost('')
-        setPauses(false)
         titleRef.current?.focus()
       }
     } catch (caught) {
@@ -95,7 +92,8 @@ export function RewardEditor({ reward, onDone, onCancel }: Props) {
   }
 
   /** Client-side first: it is the more specific complaint, and the server never saw this value. */
-  const titleError = clientErrors.title ?? (serverError ? fieldError(serverError, 'title') : undefined)
+  const titleError =
+    clientErrors.title ?? (serverError ? fieldError(serverError, 'title') : undefined)
   const costError =
     clientErrors.coinCost ?? (serverError ? fieldError(serverError, 'coinCost') : undefined)
 
@@ -135,26 +133,27 @@ export function RewardEditor({ reward, onDone, onCancel }: Props) {
       />
 
       {/*
-       * The flag is client-settable, which [29] decided after considering withholding it: price is
-       * what actually gates abuse of a day off and price is editable regardless, so withholding
-       * would prevent nothing while making the seeded day-off reward impossible to recreate once
-       * removed. The mitigation is disclosure — here, and again at the point of redemption.
+       * **A statement, not a checkbox** — task [69], reversing [29].
+       *
+       * [29] made the flag client-settable and its reasoning still holds on its own terms: price is
+       * what gates abuse of a day off, and price stays editable. What changed is what the flag is
+       * *for*. A tickbox labelled "pauses the duel" on every reward form invites a second one by
+       * accident, and leaves the partner meeting an unexplained voided day. Voiding a day is now one
+       * special prize from the seeded catalogue, and the server no longer accepts the field at all.
+       *
+       * Shown only when it is true, and derived from the flag rather than the title — the same rule
+       * [28] put the field on the list response for. An ordinary reward says nothing here rather
+       * than saying "does not pause the duel", which would be an answer to a question nobody asked.
        */}
-      <label className="flex items-start gap-2.5 rounded-base border-2 border-ink bg-page p-3">
-        <input
-          type="checkbox"
-          name="pausesCompetition"
-          checked={pauses}
-          onChange={(event) => setPauses(event.target.checked)}
-          className="focus-ring mt-0.5 size-4 shrink-0 accent-[var(--brand-primary)]"
-        />
-        <span>
-          <span className="block font-display text-sm font-semibold">Pauses the duel for a day</span>
-          <span className="block text-sm text-muted">
-            Redeeming it voids that day for both of you — no winner, and no loot box for either side.
-          </span>
-        </span>
-      </label>
+      {reward?.pausesCompetition && (
+        <p className="rounded-base border-2 border-ink bg-page p-3 text-sm text-muted">
+          <strong className="block font-display font-semibold text-body">
+            This is a special prize
+          </strong>
+          Redeeming it voids that day for both of you — no winner, and no loot box for either side.
+          You can change its price, but it cannot be removed.
+        </p>
+      )}
 
       <div className="flex gap-2">
         <Button
@@ -198,13 +197,20 @@ export function RewardEditor({ reward, onDone, onCancel }: Props) {
             </div>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setConfirmingDelete(true)}
-            className="focus-ring self-start font-display text-sm font-semibold text-danger underline"
-          >
-            Remove this reward
-          </button>
+          /*
+           * Absent for a pausing reward. The server answers `DELETE` with a 409 ([69]), so a visible
+           * Remove would be a control whose only outcome is an error — the "never show raw server
+           * internals" rule one step earlier, at the affordance rather than at the message.
+           */
+          !reward.pausesCompetition && (
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(true)}
+              className="focus-ring self-start font-display text-sm font-semibold text-danger underline"
+            >
+              Remove this reward
+            </button>
+          )
         ))}
     </form>
   )
