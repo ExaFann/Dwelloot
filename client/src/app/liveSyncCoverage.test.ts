@@ -47,6 +47,7 @@ const EXEMPT: Record<string, string> = {
   'pages/MePage.tsx:useMeQuery': 'rides AuthGate’s app-wide subscription',
   'pages/StorePage.tsx:useMeQuery': 'rides AuthGate’s app-wide subscription',
   'features/competition/LootBoxReveal.tsx:useMeQuery': 'rides AuthGate’s app-wide subscription',
+  'features/notices/useOverdueApprovals.ts:useMeQuery': 'rides AuthGate’s app-wide subscription',
 
   // The reveal is a one-shot modal over an already-settled period. Polling it would re-open a
   // question the user has just answered by opening the box.

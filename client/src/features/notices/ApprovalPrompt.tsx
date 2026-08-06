@@ -1,19 +1,24 @@
 import { Link } from 'react-router'
 import { Bell } from 'lucide-react'
-import { usePendingCount } from './usePendingCount'
+import { useOverdueApprovals } from './useOverdueApprovals'
 
 /**
  * The dashboard's nudge to clear the approval queue.
  *
- * ### Why this exists at all
+ * ### It fires only when something is genuinely stuck
  *
- * A pending chore is worth nothing. Points are credited **on approval** (log `048`, measured:
- * `partnerPoints` went 0 → 10 the moment a log was approved), so while your partner's chores sit
- * unapproved the standing on this very screen is understating them — and the day settles from
- * whatever was approved when it closed.
+ * **Overdue chores only** — ones logged before the current day began. Owner's correction: it used to
+ * appear for *every* pending chore, which meant it popped up the moment the partner logged anything
+ * and duplicated two things that already say so, the nav badge and the Notices tab. A card that
+ * appears constantly is a card people learn to look past.
  *
- * So the queue is not an inbox to get to eventually; it is the thing standing between the two of you
- * and a decided duel.
+ * Yesterday's undecided chore is different in kind, not degree: settlement refuses to close a period
+ * while a pending log sits inside it, so that one really is holding a duel open that should already
+ * have been won or lost. That is what deserves the top of the screen.
+ *
+ * It also used to count **store changes**, because it read `usePendingCount` — which sums both since
+ * [68] — while rendering the number with the word "chore". Re-pricing a reward announced itself as
+ * "1 chore is waiting on you". `useOverdueApprovals` counts chores and nothing else.
  *
  * ### Why it is a card and not a modal
  *
@@ -26,9 +31,9 @@ import { usePendingCount } from './usePendingCount'
  * else's work, so it stays on the Notices tab where the reject-with-a-reason path lives too.
  */
 export function ApprovalPrompt() {
-  const pending = usePendingCount()
+  const overdue = useOverdueApprovals()
 
-  if (pending === 0) return null
+  if (overdue === 0) return null
 
   return (
     <section
@@ -39,17 +44,18 @@ export function ApprovalPrompt() {
         <Bell aria-hidden="true" size={20} strokeWidth={3} className="mt-0.5 shrink-0" />
         <div className="min-w-0">
           <h2 id="approval-prompt-heading" className="font-display text-base font-bold">
-            {pending === 1
-              ? '1 chore is waiting on you'
-              : `${pending} chores are waiting on you`}
+            {overdue === 1
+              ? '1 chore from before today is still waiting'
+              : `${overdue} chores from before today are still waiting`}
           </h2>
           {/*
-           * States the consequence rather than nagging: the reason to do this is that the duel
-           * cannot be decided — and the loot box cannot be won — until it is done.
+           * States the consequence rather than nagging — and now names a consequence that has
+           * actually happened, rather than one that might: the period these belong to has already
+           * ended and cannot be settled until they are decided.
            */}
           <p className="mt-1 text-sm">
-            Points only count once you approve them, so the duel can’t be settled — and no loot box
-            can be won — while these are outstanding.
+            That day is over but can’t be settled until you decide — so nobody has won it, and no
+            loot box has been handed out for it.
           </p>
           <Link
             to="/notices"
