@@ -317,3 +317,54 @@ describe('an unopened loot box', () => {
     expect(screen.queryByText(/loot|box|open/i)).not.toBeInTheDocument()
   })
 })
+
+/**
+ * Task [71] — removing your own pending chore, asserted **at this level** rather than only on
+ * `RecentChoresColumn`.
+ *
+ * This is where the bug was. The card renders that column in two places — a solo branch and a
+ * paired one — and only the solo branch was given the `onRemove` callback. So the control appeared
+ * exactly where nobody would ever look for it, and was missing from the ordinary case. The owner
+ * found it by using the app.
+ *
+ * `RecentChoresColumn.test.tsx` could not have caught it: it renders the column directly and passes
+ * the callback itself, so it tests what the column does **given** a callback and never that anybody
+ * hands it one. An assertion positioned where the difference cannot appear — §7.1's catalogue, in a
+ * new place.
+ */
+describe('removing your own pending chore', () => {
+  const pendingMine = {
+    id: 77,
+    activityTitle: 'Dishes',
+    pointsAwarded: 10,
+    status: 'Pending',
+    completedAt: '2026-08-02T20:00:00Z',
+  }
+
+  it('offers the control on your own column while paired', async () => {
+    stub({ competition: { myPoints: 0, partnerPoints: 0 }, myLogs: [pendingMine] })
+    renderCard()
+
+    expect(await screen.findByRole('button', { name: /remove dishes/i })).toBeInTheDocument()
+  })
+
+  /** The other direction: your partner's pending chore is theirs — approve or reject, not delete. */
+  it('offers none on the partner’s column', async () => {
+    stub({
+      competition: { myPoints: 0, partnerPoints: 0 },
+      partnerLogs: [{ ...pendingMine, id: 88, activityTitle: 'Vacuum' }],
+    })
+    renderCard()
+
+    await screen.findByText('Vacuum')
+    expect(screen.queryByRole('button', { name: /remove vacuum/i })).not.toBeInTheDocument()
+  })
+
+  /** And in the solo layout, which is the branch that already worked. */
+  it('offers the control while solo too', async () => {
+    stub({ members: SOLO, competition: { myPoints: 0, partnerPoints: 0 }, myLogs: [pendingMine] })
+    renderCard()
+
+    expect(await screen.findByRole('button', { name: /remove dishes/i })).toBeInTheDocument()
+  })
+})

@@ -265,6 +265,8 @@ export function HeadToHeadCard() {
               chores={myVisible}
               align="left"
               emptyLabel="Nothing logged today."
+              onRemove={(id) => void removeLog({ id })}
+              isRemoving={isRemoving}
             />
             <RecentChoresColumn chores={partnerVisible} align="right" emptyLabel="Nothing today." />
           </div>
