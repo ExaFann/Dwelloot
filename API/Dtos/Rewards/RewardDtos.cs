@@ -101,3 +101,43 @@ public record PatchRewardRequest(
     string? Title,
     [Range(1, int.MaxValue)]
     int? CoinCost);
+
+/// <summary>
+/// One pending store change, as the partner deciding on it sees it — task [68].
+/// </summary>
+/// <remarks>
+/// Carries the reward's <b>current</b> title and cost alongside the proposed ones, because the
+/// decision is "from what, to what" and the client would otherwise have to join the two itself
+/// against a catalogue it may hold a stale copy of. Both are null for a <c>Create</c>, which has no
+/// existing row.
+/// <para>
+/// <c>Kind</c> is a string rather than an int: the same reasoning as storing the enum as text, and
+/// the client switches on it to choose its copy.
+/// </para>
+/// </remarks>
+public record RewardChangeResponse(
+    int Id,
+    string Kind,
+    int? RewardId,
+    string? CurrentTitle,
+    int? CurrentCoinCost,
+    string? ProposedTitle,
+    int? ProposedCoinCost,
+    string RequestedByName,
+    DateTime RequestedAt);
+
+/// <summary>Body of <c>POST /api/reward-changes/{id}/reject</c>.</summary>
+public record RejectRewardChangeRequest(
+    [Required, CleanText(RewardChangeRequest.RejectReasonMaxLength)]
+    string Reason);
+
+/// <summary>
+/// What a store mutation returns when the household has two members and the change is waiting —
+/// task [68].
+/// </summary>
+/// <remarks>
+/// Sent with <b>202 Accepted</b>, which is the one status that means "understood, not done yet".
+/// A 200 or 201 would tell a client that has not read the body that the store changed, and the
+/// obvious rendering of that is "Saved" over a store that is unchanged.
+/// </remarks>
+public record RewardChangeQueuedResponse(int ChangeRequestId, string Message);

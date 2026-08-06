@@ -350,7 +350,17 @@ public class RewardServiceMutationTests
         db.Redemptions.Add(new Redemption { UserId = user.Id, RewardId = reward.Id, RedeemedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
 
-        await new RewardService(db).DeleteAsync(user.Id, reward.Id);
+        /*
+         * Archived directly, not through `RewardService.DeleteAsync`.
+         *
+         * Task [68] routes store changes in a **paired** household through the partner's approval
+         * queue, so calling the service here would queue a request and leave the reward untouched —
+         * the setup would silently stop setting anything up. The subject of this test is what
+         * happens to an *already archived* reward, which is downstream of that gate; going through
+         * the queue would be testing [68] instead.
+         */
+        reward.ArchivedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
 
         Assert.Single(await db.Redemptions.Where(r => r.RewardId == reward.Id).ToListAsync());
     }
@@ -480,7 +490,17 @@ public class RewardServiceMutationTests
             .OrderBy(r => r.Id)
             .FirstAsync(r => r.HouseholdId == householdId && !r.PausesCompetition);
 
-        await new RewardService(db).DeleteAsync(alex.Id, archived.Id);
+        /*
+         * Archived directly, not through `RewardService.DeleteAsync`.
+         *
+         * Task [68] routes store changes in a **paired** household through the partner's approval
+         * queue, so calling the service here would queue a request and leave the reward untouched —
+         * the setup would silently stop setting anything up. The subject of this test is what
+         * happens to an *already archived* reward, which is downstream of that gate; going through
+         * the queue would be testing [68] instead.
+         */
+        archived.ArchivedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
 
         var competition = new Competition
         {

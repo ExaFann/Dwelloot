@@ -198,7 +198,17 @@ public class RedemptionServiceTests
         var reward = await RewardCosting(db, household.Id, 30);
         await SetBalanceAsync(db, sam, 100);
 
-        await new RewardService(db).DeleteAsync(alex.Id, reward.Id);
+        /*
+         * Archived directly, not through `RewardService.DeleteAsync`.
+         *
+         * Task [68] routes store changes in a **paired** household through the partner's approval
+         * queue, so calling the service here would queue a request and leave the reward untouched —
+         * the setup would silently stop setting anything up. The subject of this test is what
+         * happens to an *already archived* reward, which is downstream of that gate; going through
+         * the queue would be testing [68] instead.
+         */
+        reward.ArchivedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
 
         var result = await ServiceFor(db).CreateAsync(sam.Id, reward.Id);
 
@@ -279,7 +289,16 @@ public class RedemptionServiceTests
         var redemption = (await ServiceFor(db).CreateAsync(sam.Id, reward.Id)).Redemption!;
         Assert.Equal(30, redemption.CoinsSpent);
 
-        await new RewardService(db).UpdateAsync(alex.Id, reward.Id, new PatchRewardRequest(null, 5));
+        /*
+         * Re-priced directly, not through `RewardService.UpdateAsync`.
+         *
+         * Task [68] routes store changes in a paired household through the partner's approval queue,
+         * so the service call would queue a request and leave the price alone — and this test would
+         * then pass for the wrong reason, comparing a snapshot against a price that never moved.
+         * The subject here is that `coins_spent` is a snapshot; the gate is [68]'s business.
+         */
+        reward.CoinCost = 5;
+        await db.SaveChangesAsync();
 
         Assert.Equal(5, (await db.Rewards.SingleAsync(r => r.Id == reward.Id)).CoinCost);
         Assert.Equal(30, (await db.Redemptions.SingleAsync(r => r.Id == redemption.Id)).CoinsSpent);

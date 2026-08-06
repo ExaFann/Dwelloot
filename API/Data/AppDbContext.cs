@@ -24,6 +24,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<Reward> Rewards => Set<Reward>();
     public DbSet<Redemption> Redemptions => Set<Redemption>();
+
+    /// <summary>Proposed store changes waiting on the other partner — task [68].</summary>
+    public DbSet<RewardChangeRequest> RewardChangeRequests => Set<RewardChangeRequest>();
     public DbSet<Badge> Badges => Set<Badge>();
     public DbSet<UserBadge> UserBadges => Set<UserBadge>();
     public DbSet<Competition> Competitions => Set<Competition>();

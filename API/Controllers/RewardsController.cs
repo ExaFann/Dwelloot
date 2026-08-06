@@ -59,9 +59,10 @@ public class RewardsController(IRewardService rewards) : ControllerBase
 
         var result = await rewards.CreateAsync(userId.Value, request, ct);
 
-        return result.Status == RewardMutationStatus.Ok
-            ? Created($"/api/rewards/{result.Reward!.Id}", result.Reward)
-            : MapMutationFailure(result.Status);
+        if (result.Status != RewardMutationStatus.Ok) return MapMutationFailure(result.Status);
+        if (result.Outcome == RewardMutationOutcome.AwaitingApproval) return Queued(result);
+
+        return Created($"/api/rewards/{result.Reward!.Id}", result.Reward);
     }
 
     [HttpPatch("{id:int}")]
@@ -78,9 +79,10 @@ public class RewardsController(IRewardService rewards) : ControllerBase
 
         var result = await rewards.UpdateAsync(userId.Value, id, request, ct);
 
-        return result.Status == RewardMutationStatus.Ok
-            ? Ok(result.Reward)
-            : MapMutationFailure(result.Status);
+        if (result.Status != RewardMutationStatus.Ok) return MapMutationFailure(result.Status);
+        if (result.Outcome == RewardMutationOutcome.AwaitingApproval) return Queued(result);
+
+        return Ok(result.Reward);
     }
 
     /// <summary>
@@ -98,10 +100,23 @@ public class RewardsController(IRewardService rewards) : ControllerBase
 
         var result = await rewards.DeleteAsync(userId.Value, id, ct);
 
-        return result.Status == RewardMutationStatus.Ok
-            ? NoContent()
-            : MapMutationFailure(result.Status);
+        if (result.Status != RewardMutationStatus.Ok) return MapMutationFailure(result.Status);
+        if (result.Outcome == RewardMutationOutcome.AwaitingApproval) return Queued(result);
+
+        return NoContent();
     }
+
+    /// <summary>
+    /// 202 for a change that is waiting on the partner — task [68].
+    /// </summary>
+    /// <remarks>
+    /// All three mutations answer this way rather than each inventing their own shape, so a client
+    /// can check one status code and read one field whatever it was trying to do.
+    /// </remarks>
+    private ActionResult Queued(RewardMutationResult result) =>
+        Accepted(new RewardChangeQueuedResponse(
+            result.ChangeRequestId!.Value,
+            "Sent to your partner. The store changes once they agree."));
 
     /// <remarks>
     /// <see cref="RewardMutationStatus.NotFound"/> covers "no such reward", "someone else's reward"
@@ -123,6 +138,11 @@ public class RewardsController(IRewardService rewards) : ControllerBase
             this.Failure(
                 StatusCodes.Status409Conflict,
                 "This reward pauses the duel and cannot be removed. You can change its price instead."),
+
+        RewardMutationStatus.ChangeAlreadyPending =>
+            this.Failure(
+                StatusCodes.Status409Conflict,
+                "Another change to this reward is already waiting on your partner."),
 
         RewardMutationStatus.InvalidTitle =>
             this.Failure(StatusCodes.Status400BadRequest, "Title must contain at least one visible character."),

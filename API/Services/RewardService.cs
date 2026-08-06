@@ -50,11 +50,40 @@ public enum RewardMutationStatus
     /// <see cref="Dtos.Rewards.CreateRewardRequest"/>, so nothing could recreate one. Its price stays
     /// editable, which is what keeps the abuse gate task [29] relied on.
     /// </remarks>
-    CannotDeletePausingReward
+    CannotDeletePausingReward,
+
+    /// <summary>
+    /// Another change to this reward is already waiting on the partner — task [68].
+    /// </summary>
+    /// <remarks>
+    /// Refused rather than queued behind it, because two pending changes to one reward make
+    /// "approve" mean "approve which one", and the queue has no way to ask.
+    /// </remarks>
+    ChangeAlreadyPending
 }
 
-public sealed record RewardMutationResult(RewardMutationStatus Status, RewardResponse? Reward)
+/// <summary>Whether a mutation took effect, or is waiting on the other partner — task [68].</summary>
+/// <remarks>
+/// The caller cannot work this out for itself. It would have to know the household's member count,
+/// which it may hold a stale copy of, and getting it wrong means telling the user "Saved" about a
+/// change that has not happened.
+/// </remarks>
+public enum RewardMutationOutcome
 {
+    Applied,
+    AwaitingApproval
+}
+
+public sealed record RewardMutationResult(
+    RewardMutationStatus Status,
+    RewardResponse? Reward,
+    RewardMutationOutcome Outcome = RewardMutationOutcome.Applied,
+    int? ChangeRequestId = null)
+{
+    /// <summary>A change that was queued rather than applied. The store is unchanged.</summary>
+    public static RewardMutationResult Queued(int changeRequestId) =>
+        new(RewardMutationStatus.Ok, null, RewardMutationOutcome.AwaitingApproval, changeRequestId);
+
     public static RewardMutationResult Ok(RewardResponse reward) =>
         new(RewardMutationStatus.Ok, reward);
 
@@ -166,6 +195,16 @@ public class RewardService(AppDbContext db) : IRewardService
             return RewardMutationResult.Failed(RewardMutationStatus.InvalidTitle);
         }
 
+        // Task [68]. Validation runs first on purpose: a proposal the server would reject anyway
+        // must not reach the partner's queue, or approving it would fail at the far end where
+        // nobody can fix it.
+        if (await NeedsApprovalAsync(household.HouseholdId, ct))
+        {
+            return await QueueAsync(
+                household.HouseholdId, userId, RewardChangeKind.Create,
+                rewardId: null, title, request.CoinCost, ct);
+        }
+
         var reward = new Reward
         {
             HouseholdId = household.HouseholdId,
@@ -204,11 +243,22 @@ public class RewardService(AppDbContext db) : IRewardService
 
         var reward = found.Reward!;
 
+        // Task [68]. The proposed values are snapshotted here rather than re-read at approval
+        // time, so approving applies exactly what the partner was shown. Normalised first, for the
+        // same reason the create path validates first.
+        var proposedTitle = request.Title is null ? null : TextInput.Normalize(request.Title);
+        if (await NeedsApprovalAsync(reward.HouseholdId, ct))
+        {
+            return await QueueAsync(
+                reward.HouseholdId, userId, RewardChangeKind.Update,
+                reward.Id, proposedTitle, request.CoinCost, ct);
+        }
+
         // Null means "leave alone" - the whole point of PATCH. Writing every field unconditionally
         // would blank out anything the client did not send.
-        if (request.Title is not null)
+        if (proposedTitle is not null)
         {
-            reward.Title = TextInput.Normalize(request.Title);
+            reward.Title = proposedTitle;
         }
 
         if (request.CoinCost is not null)
@@ -216,8 +266,6 @@ public class RewardService(AppDbContext db) : IRewardService
             reward.CoinCost = request.CoinCost.Value;
         }
 
-        // Settable and clearable, symmetrically. See CreateRewardRequest for why withholding this
-        // from clients was considered and rejected.
         await db.SaveChangesAsync(ct);
 
         return RewardMutationResult.Ok(Describe(reward));
@@ -255,11 +303,96 @@ public class RewardService(AppDbContext db) : IRewardService
             return RewardMutationResult.Failed(RewardMutationStatus.CannotDeletePausingReward);
         }
 
+        // Task [68].
+        if (await NeedsApprovalAsync(reward.HouseholdId, ct))
+        {
+            return await QueueAsync(
+                reward.HouseholdId, userId, RewardChangeKind.Delete,
+                reward.Id, proposedTitle: null, proposedCoinCost: null, ct);
+        }
+
         reward.ArchivedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync(ct);
 
         return RewardMutationResult.Ok(Describe(reward));
+    }
+
+    /// <summary>
+    /// Whether a store change has to be agreed by the other partner before it takes effect.
+    /// </summary>
+    /// <remarks>
+    /// Task [68]. A household of one applies changes immediately — there is nobody to ask, and
+    /// freezing the store before pairing would make the app unusable for its first user. From two
+    /// members, <em>every</em> change needs approval: the owner declined an exemption for "add",
+    /// because a rule that covers some changes and not others is one nobody can predict.
+    /// <para>
+    /// Counts real members rather than reading <c>households.is_full</c>, the same reasoning as
+    /// <see cref="HouseholdService"/>'s join guard: that flag is denormalised, and a drift in it
+    /// should stay cosmetic rather than quietly switching the whole gate off.
+    /// </para>
+    /// </remarks>
+    private async Task<bool> NeedsApprovalAsync(int householdId, CancellationToken ct) =>
+        await db.Users.CountAsync(u => u.HouseholdId == householdId, ct) > 1;
+
+    /// <summary>Records a proposal and leaves the store untouched.</summary>
+    private async Task<RewardMutationResult> QueueAsync(
+        int householdId,
+        int userId,
+        RewardChangeKind kind,
+        int? rewardId,
+        string? proposedTitle,
+        int? proposedCoinCost,
+        CancellationToken ct)
+    {
+        /*
+         * Two layers, the same shape as every other rule in this project.
+         *
+         * This guard answers the ordinary case cleanly. The filtered unique index behind it is what
+         * closes the race two quick taps can win — and it is the only one of the pair that a real
+         * PostgreSQL database enforces, because the in-memory provider ignores unique indexes
+         * entirely (see `TestDbContextFactory`). Relying on the index alone would have meant this
+         * rule was untestable anywhere but end-to-end; relying on the guard alone would have left
+         * the race open.
+         */
+        if (rewardId is not null && await db.RewardChangeRequests.AnyAsync(
+                r => r.RewardId == rewardId && r.Status == RewardChangeStatus.Pending, ct))
+        {
+            return RewardMutationResult.Failed(RewardMutationStatus.ChangeAlreadyPending);
+        }
+
+        var request = new RewardChangeRequest
+        {
+            HouseholdId = householdId,
+            RequestedByUserId = userId,
+            Kind = kind,
+            RewardId = rewardId,
+            ProposedTitle = proposedTitle,
+            ProposedCoinCost = proposedCoinCost,
+            RequestedAt = DateTime.UtcNow
+        };
+
+        db.RewardChangeRequests.Add(request);
+
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            /*
+             * `ux_reward_change_requests_one_open_per_reward`. Caught rather than pre-checked: a
+             * check-then-insert loses to two taps, and the result would be two pending changes to
+             * one reward — at which point "approve" has to answer "approve which one".
+             *
+             * The insert is the only write in this unit of work, so nothing else is rolled back
+             * with it, and the caller gets a clean 409.
+             */
+            db.Entry(request).State = EntityState.Detached;
+            return RewardMutationResult.Failed(RewardMutationStatus.ChangeAlreadyPending);
+        }
+
+        return RewardMutationResult.Queued(request.Id);
     }
 
     private static RewardResponse Describe(Reward reward) =>
