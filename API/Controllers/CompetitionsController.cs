@@ -1,3 +1,4 @@
+using API.Dtos;
 using API.Dtos.Competitions;
 using API.Entities;
 using API.Errors;
@@ -12,6 +13,7 @@ namespace API.Controllers;
 [Authorize]
 [Route("api/households/{householdId:int}/competitions")]
 public class CompetitionsController(
+    ICompetitionHistoryService history,
     ICompetitionQueryService competitions,
     ILootBoxService lootBoxes) : ControllerBase
 {
@@ -82,6 +84,46 @@ public class CompetitionsController(
             // it would confuse rather than protect. Same reasoning as self-approval in task [21].
             LootBoxStatus.NotYours =>
                 this.Failure(StatusCodes.Status403Forbidden, "You did not win that period."),
+
+            _ => Unauthorized()
+        };
+    }
+
+    /// <summary>
+    /// What this household has won — task [36a].
+    /// </summary>
+    /// <remarks>
+    /// The endpoint `api-design.md` has listed since the design phase and struck through as
+    /// "NOT IMPLEMENTED — returns 404". The Notices tab's "Prizes &amp; rewards" section was named
+    /// for prizes and showed only Coins *leaving*.
+    /// <para>
+    /// Lists **opened** boxes, one row per person per competition, so a win-win yields two rows.
+    /// An unopened box is not a prize yet and does not appear.
+    /// </para>
+    /// </remarks>
+    [HttpGet("history")]
+    public async Task<ActionResult<PagedResponse<HouseholdPrizeResponse>>> History(
+        int householdId,
+        CancellationToken ct,
+        [FromQuery] HouseholdPrizeQuery? query = null)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await history.ListPrizesAsync(
+            userId.Value, householdId, query ?? new HouseholdPrizeQuery(), ct);
+
+        return result.Status switch
+        {
+            CompetitionQueryStatus.Ok => Ok(result.Page),
+
+            // 404 for both "no such household" and "not yours", byte-identically — the rule this
+            // controller already follows, so ids cannot be enumerated.
+            CompetitionQueryStatus.NotAMember =>
+                this.Failure(StatusCodes.Status404NotFound, "Household not found."),
 
             _ => Unauthorized()
         };

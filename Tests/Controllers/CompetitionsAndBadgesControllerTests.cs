@@ -1,3 +1,4 @@
+using API.Dtos;
 using API.Controllers;
 using API.Dtos.Badges;
 using API.Dtos.Competitions;
@@ -28,6 +29,16 @@ public class CompetitionsAndBadgesControllerTests
         }
     }
 
+    private sealed class StubCompetitionHistoryService(CompetitionQueryStatus status)
+        : ICompetitionHistoryService
+    {
+        public Task<PrizeHistoryResult> ListPrizesAsync(
+            int userId, int householdId, HouseholdPrizeQuery query, CancellationToken ct = default) =>
+            Task.FromResult(status == CompetitionQueryStatus.Ok
+                ? PrizeHistoryResult.Ok(new PagedResponse<HouseholdPrizeResponse>([], 0))
+                : PrizeHistoryResult.Failed(status));
+    }
+
     private sealed class StubLootBoxService(LootBoxStatus status) : ILootBoxService
     {
         public bool WasCalled { get; private set; }
@@ -45,7 +56,10 @@ public class CompetitionsAndBadgesControllerTests
         CompetitionQueryStatus query = CompetitionQueryStatus.Ok,
         LootBoxStatus box = LootBoxStatus.Ok,
         int? userId = ControllerTestHarness.UserId) =>
-        new CompetitionsController(new StubCompetitionQueryService(query), new StubLootBoxService(box)).WithUser(userId);
+        new CompetitionsController(
+            new StubCompetitionHistoryService(query),
+            new StubCompetitionQueryService(query),
+            new StubLootBoxService(box)).WithUser(userId);
 
     [Theory]
     [InlineData(CompetitionQueryStatus.Ok, StatusCodes.Status200OK)]
@@ -100,10 +114,13 @@ public class CompetitionsAndBadgesControllerTests
     {
         var query = new StubCompetitionQueryService(CompetitionQueryStatus.Ok);
         var boxes = new StubLootBoxService(LootBoxStatus.Ok);
-        var controller = new CompetitionsController(query, boxes).WithUser(userId: null);
+        var controller = new CompetitionsController(
+            new StubCompetitionHistoryService(CompetitionQueryStatus.Ok), query, boxes)
+            .WithUser(userId: null);
 
         Assert.Equal(StatusCodes.Status401Unauthorized, (await controller.Current(10, default)).StatusOf());
         Assert.Equal(StatusCodes.Status401Unauthorized, (await controller.OpenBox(10, 55, default)).StatusOf());
+        Assert.Equal(StatusCodes.Status401Unauthorized, (await controller.History(10, default)).StatusOf());
         Assert.False(query.WasCalled);
         Assert.False(boxes.WasCalled);
     }

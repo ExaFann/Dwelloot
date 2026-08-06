@@ -29,8 +29,13 @@ export const lootBoxApi = baseApi.injectEndpoints({
      *   queued box, since the server hands them back oldest-first.
      * - **`Me`** is the Coin balance.
      * - **`Reward`** because `?affordable=` is computed server-side from that balance ([51]).
-     * - **`Redemption`** and **`Badge`** because a bonus prize is written as a zero-cost redemption,
-     *   which is what the Notices feed lists and what the First-redemption badge counts.
+     * - **`Competition`** is *also* what refreshes the prize feed: since [36a] a won box is listed
+     *   by `GET .../competitions/history`, which provides the same tag.
+     *
+     * `Redemption` and `Badge` were dropped in [36a]. They were here because a bonus prize used to
+     * be written as a zero-cost redemption — a row that could not actually be inserted
+     * (`ck_redemptions_coins_spent_positive`) and that wrongly counted towards the
+     * First-redemption and Big-spender badges. Opening a box now moves neither.
      *
      * Unlike [51]'s redeem this is unconditional. There the `Competition` refetch was avoidable work
      * against an endpoint that settles lazily on every call; here it is the whole point.
@@ -40,7 +45,7 @@ export const lootBoxApi = baseApi.injectEndpoints({
         url: `/api/households/${householdId}/competitions/${competitionId}/open-box`,
         method: 'POST',
       }),
-      invalidatesTags: ['Competition', 'Me', 'Reward', 'Redemption', 'Badge'],
+      invalidatesTags: ['Competition', 'Me', 'Reward'],
     }),
   }),
 })

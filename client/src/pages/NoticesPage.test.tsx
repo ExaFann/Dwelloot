@@ -39,6 +39,7 @@ const PENDING = [
 
 type Overrides = {
   rewardChanges?: unknown
+  prizes?: unknown
   pending?: unknown
   bulk?: { status: number; body: unknown }
   reject?: { status: number; body: unknown }
@@ -97,6 +98,16 @@ function stub(o: Overrides = {}) {
        * correctly refuses unknown paths. Adding a query to a shared screen is how both happen.
        */
       if (p === '/api/reward-changes') return json(o.rewardChanges ?? [])
+
+      /*
+       * Task [36a] gave the Prizes section a third source. **Third time this exact thing has
+       * happened**: a new query on a shared screen falls through the catch-all 404 and breaks
+       * unrelated tests on the same page. The catch-all is right to refuse unknown paths — the
+       * lesson is that adding a query to a shared screen is a change to that screen's stub.
+       */
+      if (p === '/api/households/42/competitions/history') {
+        return json(o.prizes ?? { items: [], total: 0 })
+      }
       if (p === '/api/redemptions/mine') return json(o.myRedemptions ?? { items: [], total: 0 })
       if (p === '/api/redemptions') return json(o.redemptions ?? { items: [], total: 0 })
       if (p === '/api/activity-logs/bulk-approve') {
@@ -407,7 +418,154 @@ describe('the prize & redeem feed', () => {
   it('has an empty state that explains how prizes happen', async () => {
     stub()
     renderPage()
-    expect(await screen.findByText(/nothing claimed yet/i)).toBeInTheDocument()
+    // Copy widened in [36a]: the section now shows prizes *won* as well as Coins spent, so
+    // "nothing claimed" was describing only half of what can appear here.
+    expect(await screen.findByText(/win a period, open the box/i)).toBeInTheDocument()
+  })
+
+  /**
+   * Task [36a] — the section is called "Prizes & rewards" and until now every row read
+   * "<someone> redeemed <something>" with a **−N** figure. A section named for prizes showed only
+   * Coins *leaving*.
+   */
+  it('shows a won Coin prize with a plus, beside spending with a minus', async () => {
+    stub({
+      myRedemptions: {
+        items: [
+          {
+            id: 1,
+            userId: 7,
+            rewardId: 5,
+            rewardTitle: 'Takeaway night',
+            coinsSpent: 30,
+            redeemedAt: '2026-08-06T10:00:00Z',
+          },
+        ],
+        total: 1,
+      },
+      prizes: {
+        items: [
+          {
+            competitionId: 9,
+            userId: 7, // the signed-in user, so the row reads "You won …"
+            periodType: 'Daily',
+            result: 'coins',
+            coinsAwarded: 25,
+            reward: null,
+            openedAt: '2026-08-06T11:00:00Z',
+          },
+        ],
+        total: 1,
+      },
+    })
+    renderPage()
+
+    expect(await screen.findByText(/you won/i)).toBeInTheDocument()
+    expect(screen.getByText('+25')).toBeInTheDocument()
+    expect(screen.getByText('−30')).toBeInTheDocument()
+  })
+
+  /**
+   * **The owner's actual requirement, pinned in one render:** anything a person *obtains* shows up
+   * here, however they got it. There are exactly four ways, and all four are on screen at once.
+   *
+   * Worth one test rather than four, because the risk is not that a row type renders — each is
+   * covered elsewhere — it is that the three sources stop *merging*. They are three separate
+   * queries concatenated and re-sorted, so a mistake there drops a whole category silently while
+   * every individual row type still passes its own test.
+   */
+  it('shows everything either partner obtained, however they got it', async () => {
+    stub({
+      myRedemptions: {
+        items: [
+          {
+            id: 1,
+            userId: 7,
+            rewardId: 5,
+            rewardTitle: 'Takeaway night',
+            coinsSpent: 30,
+            redeemedAt: '2026-08-06T09:00:00Z',
+          },
+        ],
+        total: 1,
+      },
+      redemptions: {
+        items: [
+          {
+            id: 2,
+            userId: 39,
+            rewardId: 6,
+            rewardTitle: 'Foot massage',
+            coinsSpent: 40,
+            redeemedAt: '2026-08-06T10:00:00Z',
+          },
+        ],
+        total: 1,
+      },
+      prizes: {
+        items: [
+          {
+            competitionId: 9,
+            userId: 7,
+            periodType: 'Daily',
+            result: 'coins',
+            coinsAwarded: 25,
+            reward: null,
+            openedAt: '2026-08-06T11:00:00Z',
+          },
+          {
+            competitionId: 10,
+            userId: 39,
+            periodType: 'Weekly',
+            result: 'bonusReward',
+            coinsAwarded: null,
+            reward: { id: 7, title: 'Breakfast in bed' },
+            openedAt: '2026-08-06T12:00:00Z',
+          },
+        ],
+        total: 2,
+      },
+    })
+    renderPage()
+
+    // 1. bought by me   2. bought by the partner
+    expect(await screen.findByText(/you redeemed takeaway night/i)).toBeInTheDocument()
+    expect(screen.getByText(/sam redeemed foot massage/i)).toBeInTheDocument()
+    // 3. Coins won from a box   4. a reward won from a box
+    expect(screen.getByText(/you won/i)).toBeInTheDocument()
+    expect(screen.getByText(/sam won breakfast in bed/i)).toBeInTheDocument()
+
+    // And the direction is legible at a glance, which is the point of the section.
+    expect(screen.getByText('−30')).toBeInTheDocument()
+    expect(screen.getByText('−40')).toBeInTheDocument()
+    expect(screen.getByText('+25')).toBeInTheDocument()
+  })
+
+  /**
+   * A won reward carries **no number at all**. A prize has no price — the reward's identity is what
+   * was won — and inventing a figure would imply one.
+   */
+  it('shows a won reward by name, with no Coin figure', async () => {
+    stub({
+      prizes: {
+        items: [
+          {
+            competitionId: 9,
+            userId: 39, // the partner
+            periodType: 'Weekly',
+            result: 'bonusReward',
+            coinsAwarded: null,
+            reward: { id: 7, title: 'Breakfast in bed' },
+            openedAt: '2026-08-06T11:00:00Z',
+          },
+        ],
+        total: 1,
+      },
+    })
+    renderPage()
+
+    expect(await screen.findByText(/won breakfast in bed/i)).toBeInTheDocument()
+    expect(screen.queryByText(/^[+−]\d/)).not.toBeInTheDocument()
   })
 })
 

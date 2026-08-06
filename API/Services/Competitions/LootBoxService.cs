@@ -111,19 +111,27 @@ public class LootBoxService(AppDbContext db, ILootBoxRoller roller) : ILootBoxSe
             competition.BonusRewardId = roll.BonusRewardId;
         }
 
-        if (competition.BonusRewardId is not null)
-        {
-            // Storing the id alone would leave the user holding a label with nothing to claim, so
-            // the prize becomes a real redemption at zero cost. It then appears in the partner's
-            // Notices feed alongside ordinary redemptions.
-            db.Redemptions.Add(new Redemption
-            {
-                UserId = userId,
-                RewardId = competition.BonusRewardId.Value,
-                RedeemedAt = DateTime.UtcNow
-            });
-        }
-        else
+        /*
+         * A bonus prize writes **no redemption row** — task [36a] removed the one that used to be
+         * written here, for three reasons of which the first is a live defect.
+         *
+         * 1. **It could not be inserted.** The row was built without `CoinsSpent`, so it defaulted
+         *    to 0, and `ck_redemptions_coins_spent_positive` requires `coins_spent > 0`. On
+         *    PostgreSQL the insert throws, and the throw lands in the `DbUpdateException` handler
+         *    below — which is written for a *different* cause (a double-submitted open) and
+         *    responds by reloading every tracked entry. That reverts the roll to
+         *    `CoinsAwarded = 0, BonusRewardId = null`, loses the `CompetitionClaim` in the same
+         *    unit of work, and still returns 200 — describing a prize of zero Coins for a box that
+         *    is then left unopened and re-rollable. No test caught it because the in-memory
+         *    provider ignores check constraints.
+         * 2. **A prize is not spending.** `ProgressionService` counts `db.Redemptions` for the
+         *    First-redemption and Big-spender badges. A won reward was inflating both.
+         * 3. **It would now show twice.** `GET .../competitions/history` is the record of what was
+         *    won, and the Notices feed reads it alongside redemptions.
+         *
+         * The Coins branch is unchanged: those really are credited to the balance.
+         */
+        if (competition.BonusRewardId is null)
         {
             user.Coins += competition.CoinsAwarded;
         }

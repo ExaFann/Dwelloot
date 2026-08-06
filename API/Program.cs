@@ -71,6 +71,7 @@ builder.Services.AddSingleton<IPeriodCalculator>(
     new PeriodCalculator(TimeZoneInfo.FindSystemTimeZoneById(competitionTimeZoneId)));
 
 builder.Services.AddScoped<ICompetitionSettlementService, CompetitionSettlementService>();
+builder.Services.AddScoped<ICompetitionHistoryService, CompetitionHistoryService>();
 builder.Services.AddScoped<ICompetitionQueryService, CompetitionQueryService>();
 
 // Random.Shared is thread-safe; the roller takes a Random so tests can seed it and assert the

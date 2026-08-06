@@ -1,4 +1,5 @@
 import { baseApi } from '../../api/baseApi'
+import type { Paged } from '../activity/activityApi'
 
 /**
  * The current competition period. Shape confirmed against the running API in task [45].
@@ -34,6 +35,22 @@ export type CurrentCompetition = {
   unopenedLootBox: UnopenedLootBox | null
 }
 
+/**
+ * One opened loot box in the household's prize feed — task [36a].
+ *
+ * Same union as `OpenLootBoxResult`: `result` is the discriminator and both payloads are nullable,
+ * so the prize kind is answerable two ways and only one is the contract (log `053`).
+ */
+export type HouseholdPrize = {
+  competitionId: number
+  userId: number
+  periodType: PeriodType
+  result: 'coins' | 'bonusReward'
+  coinsAwarded: number | null
+  reward: { id: number; title: string } | null
+  openedAt: string
+}
+
 export const competitionApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     /**
@@ -57,7 +74,23 @@ export const competitionApi = baseApi.injectEndpoints({
        */
       providesTags: ['Competition'],
     }),
+
+    /**
+     * What this household has **won** — task [36a], the endpoint `api-design.md` listed from the
+     * design phase and struck through as "NOT IMPLEMENTED — returns 404".
+     *
+     * One row per *opened* box, so a win-win gives two. An unopened box is not a prize yet.
+     *
+     * Tagged `Competition`, not a tag of its own: opening a box already invalidates that tag, so
+     * the feed refreshes on the one action that can add to it, with no new cache entity to reason
+     * about.
+     */
+    householdPrizes: build.query<Paged<HouseholdPrize>, { householdId: number; take?: number }>({
+      query: ({ householdId, take = 6 }) =>
+        `/api/households/${householdId}/competitions/history?take=${take}`,
+      providesTags: ['Competition'],
+    }),
   }),
 })
 
-export const { useCurrentCompetitionQuery } = competitionApi
+export const { useCurrentCompetitionQuery, useHouseholdPrizesQuery } = competitionApi
