@@ -9,6 +9,7 @@ import { fieldError, toApiError, type ApiError } from '../../api/apiError'
 import { Button } from '../../components/ui/Button'
 import { TextInput } from '../../components/ui/TextInput'
 import { FormAlert } from '../../components/ui/FormAlert'
+import { SkeletonList } from '../../components/ui/Skeleton'
 
 /**
  * Household settings — `wireframes.md` §5: invite code, rename, leave.
@@ -111,9 +112,9 @@ export function HouseholdSettings({
           {toApiError(error).message}
         </p>
       ) : isLoading || !data ? (
-        <p role="status" className="mt-3 text-muted">
-          Loading…
-        </p>
+        <div className="mt-3">
+          <SkeletonList label="Loading your household settings" rows={2} />
+        </div>
       ) : (
         <>
           {isEditing ? (
@@ -129,7 +130,12 @@ export function HouseholdSettings({
                 error={nameError ?? (serverError ? fieldError(serverError, 'name') : undefined)}
               />
               <div className="flex gap-2">
-                <Button type="submit" className="flex-1" pending={isRenaming} pendingLabel="Saving…">
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  pending={isRenaming}
+                  pendingLabel="Saving…"
+                >
                   Save
                 </Button>
                 <Button
@@ -169,7 +175,9 @@ export function HouseholdSettings({
              * and can be refused. The generator already drops I, L, O, 0 and 1 because this gets
              * read out loud and typed by hand, and cramped text would give that back.
              */}
-            <p className="mt-1 font-display text-2xl font-bold tracking-[0.15em]">{data.inviteCode}</p>
+            <p className="mt-1 font-display text-2xl font-bold tracking-[0.15em]">
+              {data.inviteCode}
+            </p>
             <div className="mt-2 flex items-center gap-3">
               <Button variant="neutral" onClick={() => void copyCode()}>
                 {copied ? 'Copied' : 'Copy code'}

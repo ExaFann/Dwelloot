@@ -88,7 +88,8 @@ function stub({
         return json({ id: 42, name: 'Duel House', inviteCode: 'ABC123', members })
       }
       if (path === '/api/activity-logs/mine') return json({ items: myLogs, total: myLogs.length })
-      if (path === '/api/activity-logs') return json({ items: partnerLogs, total: partnerLogs.length })
+      if (path === '/api/activity-logs')
+        return json({ items: partnerLogs, total: partnerLogs.length })
       if (path === '/api/households/42/competitions/current') {
         if (competitionStatus !== 200) {
           return json({ error: 'An unexpected error occurred.', errors: null }, competitionStatus)
@@ -156,14 +157,61 @@ describe('a household of one', () => {
    * The reason this component fetches the household at all: a solo household's competition payload
    * is an ordinary 0–0 with no field distinguishing it from a quiet two-person day.
    */
-  it('invites a partner rather than showing a duel against nobody', async () => {
+  /**
+   * The card **keeps its shape** solo. It used to collapse to a single sentence, so a user who had
+   * logged chores before their partner arrived saw no trace of them on the one screen whose job is
+   * to show what they have done. The owner reported it; this is the assertion that it stays fixed.
+   */
+  it('still shows your own side — avatar and the chores you logged today', async () => {
+    stub({
+      members: SOLO,
+      competition: { myPoints: 0, partnerPoints: 0 },
+      myLogs: [
+        {
+          id: 1,
+          activityTitle: 'Vacuum the lounge',
+          pointsAwarded: 15,
+          status: 'Approved',
+          completedAt: '2026-08-02T20:00:00Z',
+        },
+      ],
+    })
+    renderCard()
+
+    expect(await screen.findByText('You')).toBeInTheDocument()
+    expect(screen.getByText('Vacuum the lounge')).toBeInTheDocument()
+  })
+
+  it('offers the invite code, because it is the only useful action left', async () => {
     stub({ members: SOLO, competition: { myPoints: 0, partnerPoints: 0 } })
     renderCard()
 
-    expect(await screen.findByText(/no one to duel yet/i)).toBeInTheDocument()
-    // Both directions: the scoreboard must be absent, not merely zeroed.
+    expect(await screen.findByText('ABC123')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /copy code/i })).toBeInTheDocument()
+  })
+
+  /**
+   * Both directions. The scoreboard must be **absent**, not merely zeroed — a card that rendered
+   * three 0–0 panels beside the invite would pass any check that only looked for the invite.
+   */
+  it('renders no duel at all', async () => {
+    stub({ members: SOLO, competition: { myPoints: 0, partnerPoints: 0 } })
+    renderCard()
+
+    await screen.findByText('You')
     expect(screen.queryByText(/ahead by/i)).not.toBeInTheDocument()
-    expect(screen.queryByText(/nothing logged yet/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^today$/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/this week/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/this month/i)).not.toBeInTheDocument()
+  })
+
+  /** Green means "your opponent" everywhere else, so nothing on the empty seat may wear it. */
+  it('does not dress the empty seat as a real partner', async () => {
+    stub({ members: SOLO, competition: { myPoints: 0, partnerPoints: 0 } })
+    renderCard()
+
+    expect(await screen.findByText(/no partner yet/i)).toBeInTheDocument()
+    expect(document.querySelector('.bg-success')).toBeNull()
   })
 })
 

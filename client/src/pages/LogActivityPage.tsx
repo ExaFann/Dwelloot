@@ -7,6 +7,8 @@ import { useDeferredLog } from '../features/activity/useDeferredLog'
 import { useLongPress } from '../features/activity/useLongPress'
 import { toApiError } from '../api/apiError'
 import { Button } from '../components/ui/Button'
+import { useTransientMessage } from '../app/useTransientMessage'
+import { SkeletonList } from '../components/ui/Skeleton'
 
 /**
  * The Log tab: a household's whole chore catalogue, plus logging one or several.
@@ -31,7 +33,8 @@ export function LogActivityPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [editingId, setEditingId] = useState<number | null>(null)
   const [isCreating, setIsCreating] = useState(false)
-  const [notice, setNotice] = useState<string | null>(null)
+  /* The shared mechanism, not a private copy — see `useTransientMessage`. */
+  const { message: notice, show: setNotice } = useTransientMessage()
 
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(search), 250)
@@ -48,13 +51,6 @@ export function LogActivityPage() {
 
   /** Same undo window as the dashboard — nothing is sent until it closes. */
   const { queued, queue, undo, failure } = useDeferredLog()
-
-  /** A plain notice with no undo (create/edit/remove) fades; queued logs manage their own life. */
-  useEffect(() => {
-    if (!notice) return
-    const timer = setTimeout(() => setNotice(null), 4000)
-    return () => clearTimeout(timer)
-  }, [notice])
 
   const selected = data?.items.filter((item) => selectedIds.includes(item.id)) ?? []
   const onlySelected = selected.length === 1 ? selected[0] : null
@@ -104,9 +100,7 @@ export function LogActivityPage() {
           </Button>
         </div>
       ) : isLoading || !data ? (
-        <p role="status" className="text-muted">
-          Loading chores…
-        </p>
+        <SkeletonList label="Loading your chores" rows={6} />
       ) : data.items.length === 0 ? (
         <p className="rounded-base border-2 border-ink bg-card p-5 text-muted">
           {debounced ? `No chores match “${debounced}”.` : 'No chores in your household yet.'}
@@ -227,11 +221,7 @@ export function LogActivityPage() {
          * where "edit" has no single subject.
          */}
         <div className="flex gap-2">
-          <Button
-            className="flex-1"
-            disabled={selected.length === 0}
-            onClick={logSelected}
-          >
+          <Button className="flex-1" disabled={selected.length === 0} onClick={logSelected}>
             {selected.length > 1 ? `Log ${selected.length} chores` : 'Log this chore'}
           </Button>
 

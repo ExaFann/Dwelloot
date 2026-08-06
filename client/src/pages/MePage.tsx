@@ -6,6 +6,7 @@ import { BadgeShelf } from '../features/progression/BadgeShelf'
 import { HouseholdSettings } from '../features/household/HouseholdSettings'
 import { ThemeToggle } from '../features/theme/ThemeToggle'
 import { toApiError } from '../api/apiError'
+import { SkeletonList } from '../components/ui/Skeleton'
 
 /**
  * The Me screen — `wireframes.md` §5: *"Profile: Coins, lifetime Points, win streak, badge grid.
@@ -44,9 +45,7 @@ export function MePage() {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl">Me</h1>
-        <p role="status" className="text-muted">
-          Loading your profile…
-        </p>
+        <SkeletonList label="Loading your profile" rows={3} />
       </div>
     )
   }

@@ -13,6 +13,7 @@ import {
 import { useMeQuery } from '../features/auth/authApi'
 import { toApiError } from '../api/apiError'
 import { Button } from '../components/ui/Button'
+import { SkeletonList } from '../components/ui/Skeleton'
 
 /**
  * The Store tab: the household's reward catalogue, spending Coins on it, and managing it.
@@ -89,7 +90,10 @@ export function StorePage() {
         className="rounded-base border-2 border-ink bg-card p-4"
       >
         <div className="flex items-center justify-between gap-3">
-          <h2 id="balance-heading" className="font-display text-sm font-bold uppercase tracking-[0.02em]">
+          <h2
+            id="balance-heading"
+            className="font-display text-sm font-bold uppercase tracking-[0.02em]"
+          >
             Your Coins
           </h2>
           <span className="rounded-base border-2 border-ink-accent bg-warning px-3 py-1 font-display text-2xl font-bold text-warning-fg">
@@ -202,9 +206,7 @@ export function StorePage() {
           </Button>
         </div>
       ) : isLoading || !data ? (
-        <p role="status" className="text-muted">
-          Loading rewards…
-        </p>
+        <SkeletonList label="Loading the rewards" rows={4} />
       ) : items.length === 0 ? (
         <p className="rounded-base border-2 border-ink bg-card p-5 text-muted">
           <EmptyMessage search={debounced} affordability={affordability} />
@@ -297,8 +299,8 @@ export function StorePage() {
       )}
 
       <p className="rounded-base border-2 border-ink bg-card px-3 py-2.5 text-sm text-muted">
-        Rewards cost <strong className="text-body">Coins</strong>, not Points. Points decide who wins
-        the duel; Coins are what winning pays out.
+        Rewards cost <strong className="text-body">Coins</strong>, not Points. Points decide who
+        wins the duel; Coins are what winning pays out.
       </p>
     </div>
   )

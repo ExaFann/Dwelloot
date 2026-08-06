@@ -4,6 +4,7 @@ import { useActivitiesQuery } from './activityApi'
 import { useDeferredLog } from './useDeferredLog'
 import { interleaveBySize } from './tileOrder'
 import { toApiError } from '../../api/apiError'
+import { SkeletonList } from '../../components/ui/Skeleton'
 
 /**
  * One-tap logging, as a wall of bricks rather than a list.
@@ -60,9 +61,9 @@ export function QuickLogTiles() {
           </button>
         </>
       ) : isLoading || !data ? (
-        <p role="status" className="mt-3 text-muted">
-          Loading chores…
-        </p>
+        <div className="mt-3">
+          <SkeletonList label="Loading your chores" rows={3} />
+        </div>
       ) : data.items.length === 0 ? (
         <p className="mt-3 text-muted">No chores in your household yet.</p>
       ) : (

@@ -3,6 +3,7 @@ import { BadgeMark } from '../../components/ui/marks'
 import { useBadgesQuery } from './badgeApi'
 import { describeBadge, describeProgress } from './badgeDisplay'
 import { toApiError } from '../../api/apiError'
+import { SkeletonList } from '../../components/ui/Skeleton'
 
 /**
  * The badge grid — `wireframes.md` §5.
@@ -40,9 +41,9 @@ export function BadgeShelf() {
           {toApiError(error).message}
         </p>
       ) : isLoading || !data ? (
-        <p role="status" className="mt-3 text-muted">
-          Loading badges…
-        </p>
+        <div className="mt-3">
+          <SkeletonList label="Loading your badges" rows={3} />
+        </div>
       ) : (
         <ul className="mt-3 grid grid-cols-2 gap-2">
           {badges.map((badge) => {
