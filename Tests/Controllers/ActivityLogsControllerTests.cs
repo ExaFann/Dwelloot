@@ -44,6 +44,9 @@ public class ActivityLogsControllerTests
             Task.FromResult(Ok
                 ? MyActivityLogResult.Ok(new PagedResponse<MyActivityLogResponse>([], 0))
                 : MyActivityLogResult.Failed(Status));
+
+        public Task<ActivityLogStatusCode> DeleteMineAsync(int userId, int logId, CancellationToken ct = default) =>
+            Task.FromResult(Status);
     }
 
     private static ActivityLogsController For(ActivityLogStatusCode status, int? userId = ControllerTestHarness.UserId) =>

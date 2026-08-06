@@ -97,7 +97,10 @@ export const activityApi = baseApi.injectEndpoints({
       providesTags: ['ActivityLog'],
     }),
 
-    myActivityLogs: build.query<Paged<MyActivityLog>, { take?: number; status?: ActivityLogStatus }>({
+    myActivityLogs: build.query<
+      Paged<MyActivityLog>,
+      { take?: number; status?: ActivityLogStatus }
+    >({
       query: ({ take = 5, status }) => {
         const params = new URLSearchParams({ take: String(take) })
         if (status) params.set('status', status)
@@ -214,6 +217,25 @@ export const activityApi = baseApi.injectEndpoints({
        */
       invalidatesTags: ['ActivityLog'],
     }),
+
+    /**
+     * Remove one of your own **pending** chores — task [71].
+     *
+     * The endpoint whose absence shaped [46]: with no way to unsend a log, undo had to mean "not
+     * sent yet", which is what `useDeferredLog`'s five-second window is. That window stays — it
+     * still costs no request at all and still stops a double tap becoming two logs — but after it
+     * closes there is now a way back that does not involve asking the partner to reject you.
+     *
+     * **`Competition` is invalidated here, unlike on create.** A pending log earns nothing, so
+     * creating one cannot move the standing; but settlement *refuses to close a period* while
+     * something is still waiting in it, so removing the last pending log can let a closed period
+     * settle. The standing this client is showing may therefore be out of date the moment this
+     * succeeds. Measured, not assumed — `SettlementOutcome.AwaitingApprovals` becomes `Settled`.
+     */
+    deleteActivityLog: build.mutation<void, { id: number }>({
+      query: ({ id }) => ({ url: `/api/activity-logs/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['ActivityLog', 'Competition'],
+    }),
   }),
 })
 
@@ -229,4 +251,5 @@ export const {
   useUpdateActivityMutation,
   useDeleteActivityMutation,
   useCreateActivityLogMutation,
+  useDeleteActivityLogMutation,
 } = activityApi

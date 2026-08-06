@@ -73,6 +73,16 @@ public interface IActivityLogService
     Task<BulkApproveResult> BulkApproveAsync(int userId, IReadOnlyList<int> ids, CancellationToken ct = default);
 
     Task<MyActivityLogResult> ListMineAsync(int userId, MyActivityLogQuery query, CancellationToken ct = default);
+
+    /// <summary>
+    /// Removes one of the caller's own **pending** logs — task [71].
+    /// </summary>
+    /// <remarks>
+    /// Mis-tapping a chore was previously unrecoverable once the request had gone: task [46] built
+    /// `useDeferredLog`'s five-second undo window precisely because this endpoint did not exist, and
+    /// after that window the only way back was asking the partner to reject it.
+    /// </remarks>
+    Task<ActivityLogStatusCode> DeleteMineAsync(int userId, int logId, CancellationToken ct = default);
 }
 
 public sealed record MyActivityLogResult(
@@ -278,6 +288,57 @@ public class ActivityLogService(AppDbContext db, IProgressionService progression
     /// not from what already happened.
     /// </para>
     /// </remarks>
+    /// <summary>
+    /// Removes one of the caller's own pending logs. Task [71].
+    /// </summary>
+    /// <remarks>
+    /// <b>A hard delete, and that needed checking rather than assuming.</b> Rewards and activities
+    /// are archived instead of deleted because rows elsewhere point at them; a pending log has no
+    /// such dependants. Everything downstream reads <see cref="ActivityLogStatus.Approved"/> only —
+    /// competition totals, the two badge counts — so removing a pending row moves no score and
+    /// costs no history. There is nothing to preserve, and an archived-log state would be a second
+    /// invisible status for every reader to learn.
+    /// <para>
+    /// <b>One reader does see pending logs</b>, and it is the reason this is safe rather than a
+    /// problem: settlement's "is anything still waiting" check blocks a period from closing while a
+    /// pending log sits in it. Deleting a mis-tapped chore therefore lets that period settle — which
+    /// is exactly what the user asking for the deletion wants, and the alternative is a duel that
+    /// cannot be decided because of a tap nobody meant.
+    /// </para>
+    /// <para>
+    /// <b>Pending only.</b> An approved log has already moved the score and may sit inside a settled
+    /// period; unwinding that would mean reversing points across a closed competition, which is the
+    /// invariant task [23] is built on. Removing an approved chore stays the partner's job, through
+    /// rejection. A rejected log is left alone too — it is the record of a decision the partner
+    /// made, and the person it went against should not be able to erase it.
+    /// </para>
+    /// </remarks>
+    public async Task<ActivityLogStatusCode> DeleteMineAsync(
+        int userId,
+        int logId,
+        CancellationToken ct = default)
+    {
+        var log = await db.ActivityLogs.SingleOrDefaultAsync(
+            l => l.Id == logId && l.LoggedByUserId == userId, ct);
+
+        // Same 404 for "no such log" and "not yours", byte-identically — the rule the rest of the
+        // API follows, so the endpoint cannot be used to discover which ids exist.
+        if (log is null)
+        {
+            return ActivityLogStatusCode.LogNotFound;
+        }
+
+        if (log.Status != ActivityLogStatus.Pending)
+        {
+            return ActivityLogStatusCode.NotPending;
+        }
+
+        db.ActivityLogs.Remove(log);
+        await db.SaveChangesAsync(ct);
+
+        return ActivityLogStatusCode.Ok;
+    }
+
     public async Task<MyActivityLogResult> ListMineAsync(
         int userId,
         MyActivityLogQuery query,

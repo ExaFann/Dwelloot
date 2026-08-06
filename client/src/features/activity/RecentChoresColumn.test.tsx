@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { RecentChoresColumn, type RecentChore } from './RecentChoresColumn'
 
 /**
@@ -41,12 +41,24 @@ describe('how points are rendered', () => {
    * reports 5 — so the number alone is a lie on two of them.
    */
   it('credits an approved chore', () => {
-    render(<RecentChoresColumn chores={[chore({ status: 'Approved', pointsAwarded: 15 })]} align="left" emptyLabel="—" />)
+    render(
+      <RecentChoresColumn
+        chores={[chore({ status: 'Approved', pointsAwarded: 15 })]}
+        align="left"
+        emptyLabel="—"
+      />,
+    )
     expect(within(list()).getByText('+15')).toBeInTheDocument()
   })
 
   it('brackets a pending chore rather than crediting it', () => {
-    render(<RecentChoresColumn chores={[chore({ status: 'Pending', pointsAwarded: 15 })]} align="left" emptyLabel="—" />)
+    render(
+      <RecentChoresColumn
+        chores={[chore({ status: 'Pending', pointsAwarded: 15 })]}
+        align="left"
+        emptyLabel="—"
+      />,
+    )
 
     expect(within(list()).getByText('(15)')).toBeInTheDocument()
     // Both directions: the credited form must be absent, not merely different.
@@ -54,7 +66,13 @@ describe('how points are rendered', () => {
   })
 
   it('shows no number at all for a rejected chore', () => {
-    render(<RecentChoresColumn chores={[chore({ status: 'Rejected', pointsAwarded: 15 })]} align="left" emptyLabel="—" />)
+    render(
+      <RecentChoresColumn
+        chores={[chore({ status: 'Rejected', pointsAwarded: 15 })]}
+        align="left"
+        emptyLabel="—"
+      />,
+    )
 
     expect(within(list()).getByText('—')).toBeInTheDocument()
     expect(within(list()).queryByText('+15')).not.toBeInTheDocument()
@@ -110,5 +128,62 @@ describe('the list', () => {
       <RecentChoresColumn chores={[chore()]} align="right" emptyLabel="—" />,
     )
     expect(container.querySelector('li')?.className).toMatch(/flex-row-reverse/)
+  })
+})
+
+/**
+ * Task [71] — removing one of your own pending chores.
+ *
+ * The rule is narrow and its edges are the whole point: **your own column, and pending only.** An
+ * approved chore has already moved the score and may sit in a settled period; taking it back stays
+ * the partner's job, through rejection. Offering a control that can only fail would be the "never
+ * show raw server internals" rule applied one step too late — at the message instead of the
+ * affordance.
+ */
+describe('removing a pending chore', () => {
+  const chores = [
+    { id: 1, activityTitle: 'Dishes', pointsAwarded: 10, status: 'Pending' as const },
+    { id: 2, activityTitle: 'Vacuum', pointsAwarded: 15, status: 'Approved' as const },
+    { id: 3, activityTitle: 'Bins', pointsAwarded: 5, status: 'Rejected' as const },
+  ]
+
+  it('offers a control for a pending chore', () => {
+    render(<RecentChoresColumn chores={chores} align="left" emptyLabel="—" onRemove={() => {}} />)
+    expect(screen.getByRole('button', { name: /remove dishes/i })).toBeInTheDocument()
+  })
+
+  it('offers none for approved or rejected chores', () => {
+    render(<RecentChoresColumn chores={chores} align="left" emptyLabel="—" onRemove={() => {}} />)
+    expect(screen.queryByRole('button', { name: /remove vacuum/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /remove bins/i })).not.toBeInTheDocument()
+  })
+
+  /** The partner's column passes no callback, so nothing there is removable. */
+  it('offers none at all without a callback', () => {
+    render(<RecentChoresColumn chores={chores} align="right" emptyLabel="—" />)
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('reports the chore id, not its index', () => {
+    const onRemove = vi.fn()
+    render(<RecentChoresColumn chores={chores} align="left" emptyLabel="—" onRemove={onRemove} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /remove dishes/i }))
+
+    expect(onRemove).toHaveBeenCalledWith(1)
+  })
+
+  /** A second tap while the first is in flight would send the same delete twice. */
+  it('is disabled while a removal is in flight', () => {
+    render(
+      <RecentChoresColumn
+        chores={chores}
+        align="left"
+        emptyLabel="—"
+        onRemove={() => {}}
+        isRemoving
+      />,
+    )
+    expect(screen.getByRole('button', { name: /remove dishes/i })).toBeDisabled()
   })
 })

@@ -4,7 +4,11 @@ import { Avatar } from '../../components/ui/Avatar'
 import { RecentChoresColumn } from '../activity/RecentChoresColumn'
 import { EmptyAvatar, PartnerSlot } from './PartnerSlot'
 import { choresForPeriod } from '../activity/logDisplay'
-import { useMyActivityLogsQuery, usePartnerActivityLogsQuery } from '../activity/activityApi'
+import {
+  useDeleteActivityLogMutation,
+  useMyActivityLogsQuery,
+  usePartnerActivityLogsQuery,
+} from '../activity/activityApi'
 import { useMeQuery } from '../auth/authApi'
 import { useGetHouseholdQuery } from '../household/householdApi'
 import {
@@ -107,6 +111,9 @@ export function HeadToHeadCard() {
    * looked scrollable and had nothing to scroll to. Reported as a bug, and it was one: the ceiling
    * was in the request, not in the styling. Four is what fits the card; the rest are reachable.
    */
+  /** Task [71]. Owned here rather than in the column, which stays presentational. */
+  const [removeLog, { isLoading: isRemoving }] = useDeleteActivityLogMutation()
+
   const myChores = useMyActivityLogsQuery({ take: 12 }, liveQueryOptions)
   const partnerChores = usePartnerActivityLogsQuery({ pageSize: 12 }, liveQueryOptions)
 
@@ -216,7 +223,13 @@ export function HeadToHeadCard() {
             avatar={<Avatar userId={me.id} name={me.name} role="self" />}
           />
           <ScoreHeader name="No partner yet" align="right" avatar={<EmptyAvatar />} />
-          <RecentChoresColumn chores={myVisible} align="left" emptyLabel="Nothing logged today." />
+          <RecentChoresColumn
+            chores={myVisible}
+            align="left"
+            emptyLabel="Nothing logged today."
+            onRemove={(id) => void removeLog({ id })}
+            isRemoving={isRemoving}
+          />
           <PartnerSlot inviteCode={household.data.inviteCode} />
         </div>
       ) : (

@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { describeLogPoints } from './logDisplay'
 import type { ActivityLogStatus } from './activityApi'
 
@@ -29,10 +30,24 @@ export function RecentChoresColumn({
   chores,
   align,
   emptyLabel,
+  onRemove,
+  isRemoving = false,
 }: {
   chores: RecentChore[]
   align: 'left' | 'right'
   emptyLabel: string
+  /**
+   * Removes one of the caller's own pending chores — task [71]. Omit it and no control is drawn.
+   *
+   * **A callback, not a mutation hook in here.** Calling `useDeleteActivityLogMutation` directly
+   * turned this from a presentational component into one that cannot render without a Redux
+   * Provider — which broke six existing tests that had every right to render it bare, and would
+   * have made it unusable anywhere outside the store. The card above already owns every query on
+   * this screen; owning one more mutation costs it nothing.
+   */
+  onRemove?: (choreId: number) => void
+  /** Disables the controls while a removal is in flight, so a double tap cannot send twice. */
+  isRemoving?: boolean
 }) {
   if (chores.length === 0) {
     return <p className="mt-3 text-xs text-muted">{emptyLabel}</p>
@@ -64,8 +79,31 @@ export function RecentChoresColumn({
             />
             <span className="truncate font-display font-semibold">{chore.activityTitle}</span>
             {/* `describeLogPoints` keeps a pending or rejected chore from reading as earned. */}
-            <span className="shrink-0 text-muted">{points.tone === 'approved' ? `+${chore.pointsAwarded}` : points.tone === 'pending' ? `(${chore.pointsAwarded})` : '—'}</span>
+            <span className="shrink-0 text-muted">
+              {points.tone === 'approved'
+                ? `+${chore.pointsAwarded}`
+                : points.tone === 'pending'
+                  ? `(${chore.pointsAwarded})`
+                  : '—'}
+            </span>
             <span className="sr-only">{points.label}</span>
+            {/*
+             * Pending only, and only on your own column. An approved chore has already moved the
+             * score and may sit in a settled period; taking it back is the partner's job, through
+             * rejection. Showing a control that can only fail would be the "no raw server
+             * internals" rule one step too late — at the message rather than the affordance.
+             */}
+            {onRemove && chore.status === 'Pending' && (
+              <button
+                type="button"
+                disabled={isRemoving}
+                onClick={() => onRemove(chore.id)}
+                aria-label={`Remove ${chore.activityTitle}`}
+                className="focus-ring ml-auto shrink-0 rounded-control p-0.5 text-muted hover:text-danger disabled:opacity-50"
+              >
+                <X size={12} strokeWidth={3} aria-hidden="true" />
+              </button>
+            )}
           </li>
         )
       })}
