@@ -1,6 +1,7 @@
 import { usePendingApprovalsQuery } from '../activity/activityApi'
 import { selectIsSignedIn } from '../auth/authSlice'
 import { useAppSelector } from '../../app/hooks'
+import { liveQueryOptions } from '../../app/liveSync'
 
 /**
  * How many of your partner's chores are waiting on you.
@@ -15,6 +16,6 @@ import { useAppSelector } from '../../app/hooks'
  */
 export function usePendingCount(): number {
   const isSignedIn = useAppSelector(selectIsSignedIn)
-  const { data } = usePendingApprovalsQuery(undefined, { skip: !isSignedIn })
+  const { data } = usePendingApprovalsQuery(undefined, { skip: !isSignedIn, ...liveQueryOptions })
   return data?.items?.length ?? 0
 }

@@ -16,6 +16,7 @@ import { describeStanding, periodLabel, tugShares, type Standing } from './stand
 import { toApiError } from '../../api/apiError'
 import { Button } from '../../components/ui/Button'
 import { SkeletonBlock, SkeletonList } from '../../components/ui/Skeleton'
+import { liveQueryOptions } from '../../app/liveSync'
 
 /**
  * The head-to-head "tug" widget — `wireframes.md` §1: *both partners' current-period Points side by
@@ -70,10 +71,10 @@ export function HeadToHeadCard() {
   const household = useGetHouseholdQuery(
     { householdId: householdId as number },
     {
+      ...liveQueryOptions,
       skip: householdId === undefined,
+      // Overrides the shared 20s: this one asks a different question and stops once answered.
       pollingInterval,
-      refetchOnFocus: true,
-      refetchOnReconnect: true,
     },
   )
 
@@ -88,9 +89,11 @@ export function HeadToHeadCard() {
    */
   const shouldPoll = (household.data?.members.length ?? 0) < 2 ? SOLO_POLL_MS : 0
   if (shouldPoll !== pollingInterval) setPollingInterval(shouldPoll)
+
+  /** Today's score — the one that moves the moment the partner approves anything. */
   const competition = useCurrentCompetitionQuery(
     { householdId: householdId as number },
-    { skip: householdId === undefined },
+    { ...liveQueryOptions, skip: householdId === undefined },
   )
 
   /**
@@ -104,8 +107,8 @@ export function HeadToHeadCard() {
    * looked scrollable and had nothing to scroll to. Reported as a bug, and it was one: the ceiling
    * was in the request, not in the styling. Four is what fits the card; the rest are reachable.
    */
-  const myChores = useMyActivityLogsQuery({ take: 12 })
-  const partnerChores = usePartnerActivityLogsQuery({ pageSize: 12 })
+  const myChores = useMyActivityLogsQuery({ take: 12 }, liveQueryOptions)
+  const partnerChores = usePartnerActivityLogsQuery({ pageSize: 12 }, liveQueryOptions)
 
   /**
    * The week and the month, alongside the day.
@@ -116,11 +119,11 @@ export function HeadToHeadCard() {
    */
   const weekly = useCurrentCompetitionQuery(
     { householdId: householdId as number, periodType: 'Weekly' },
-    { skip: householdId === undefined },
+    { ...liveQueryOptions, skip: householdId === undefined },
   )
   const monthly = useCurrentCompetitionQuery(
     { householdId: householdId as number, periodType: 'Monthly' },
-    { skip: householdId === undefined },
+    { ...liveQueryOptions, skip: householdId === undefined },
   )
 
   if (competition.isError || household.isError) {

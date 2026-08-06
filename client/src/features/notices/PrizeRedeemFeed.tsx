@@ -6,6 +6,7 @@ import { useGetHouseholdQuery } from '../household/householdApi'
 import { toApiError } from '../../api/apiError'
 import { SkeletonList } from '../../components/ui/Skeleton'
 import { SECTION_BODY, SECTION_SHELL } from './sectionLayout'
+import { liveQueryOptions } from '../../app/liveSync'
 
 /**
  * **Prizes and redemptions — both partners, newest first, and deliberately the loud section.**
@@ -45,7 +46,7 @@ export function PrizeRedeemFeed() {
   )
 
   const mine = useMyRedemptionsQuery({ take: 6 })
-  const theirs = usePartnerRedemptionsQuery({ take: 6 })
+  const theirs = usePartnerRedemptionsQuery({ take: 6 }, liveQueryOptions)
 
   const partner = household.data?.members.find((member) => member.id !== me?.id) ?? null
 

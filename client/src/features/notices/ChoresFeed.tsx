@@ -9,6 +9,7 @@ import { useGetHouseholdQuery } from '../household/householdApi'
 import { toApiError } from '../../api/apiError'
 import { SkeletonList } from '../../components/ui/Skeleton'
 import { SECTION_BODY, SECTION_SHELL } from './sectionLayout'
+import { liveQueryOptions } from '../../app/liveSync'
 
 /**
  * **Every chore either partner has logged recently, newest first — and whether it counted yet.**
@@ -49,8 +50,8 @@ export function ChoresFeed() {
     { skip: householdId === undefined },
   )
 
-  const mine = useMyActivityLogsQuery({ take: 8 })
-  const theirs = usePartnerActivityLogsQuery({ pageSize: 8 })
+  const mine = useMyActivityLogsQuery({ take: 8 }, liveQueryOptions)
+  const theirs = usePartnerActivityLogsQuery({ pageSize: 8 }, liveQueryOptions)
 
   const partner = household.data?.members.find((member) => member.id !== me?.id)
 

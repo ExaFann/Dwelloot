@@ -14,6 +14,7 @@ import { Button } from '../../components/ui/Button'
 import { TextInput } from '../../components/ui/TextInput'
 import { SkeletonList } from '../../components/ui/Skeleton'
 import { SECTION_BODY, SECTION_SHELL } from './sectionLayout'
+import { liveQueryOptions } from '../../app/liveSync'
 
 /**
  * Section one of the Notices tab: the partner's chores waiting on you.
@@ -29,7 +30,7 @@ import { SECTION_BODY, SECTION_SHELL } from './sectionLayout'
 const MAX_REASON = 200
 
 export function PendingApprovals() {
-  const { data, isLoading, isError, error } = usePendingApprovalsQuery()
+  const { data, isLoading, isError, error } = usePendingApprovalsQuery(undefined, liveQueryOptions)
   const [bulkApprove, { isLoading: isApproving }] = useBulkApproveMutation()
   const [rejectLog, { isLoading: isRejecting }] = useRejectLogMutation()
 

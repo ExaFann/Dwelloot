@@ -4,6 +4,7 @@ import { selectIsSignedIn } from './authSlice'
 import { useMeQuery } from './authApi'
 import { toApiError } from '../../api/apiError'
 import { Button } from '../../components/ui/Button'
+import { liveQueryOptions } from '../../app/liveSync'
 
 /**
  * The one place routing decisions about identity are made.
@@ -31,7 +32,10 @@ export function AuthGate({ access }: { access: Access }) {
    * Skipped when signed out: the request is guaranteed to 401, and that 401 would fire `baseApi`'s
    * auto-logout on someone who is already logged out.
    */
-  const { data, isLoading, isError, error, refetch } = useMeQuery(undefined, { skip: !isSignedIn })
+  const { data, isLoading, isError, error, refetch } = useMeQuery(undefined, {
+    ...liveQueryOptions,
+    skip: !isSignedIn,
+  })
 
   if (!isSignedIn) {
     if (access === 'anonymous') return <Outlet />
