@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useMeQuery } from '../features/auth/authApi'
 import { SignOutButton } from '../features/auth/SignOutButton'
 import { Avatar } from '../components/ui/Avatar'
+import { AvatarPicker } from '../features/auth/AvatarPicker'
 import { CoinMark, PointsMark, StreakMark } from '../components/ui/marks'
 import { BadgeShelf } from '../features/progression/BadgeShelf'
 import { HouseholdSettings } from '../features/household/HouseholdSettings'
@@ -19,6 +21,7 @@ import { SkeletonList } from '../components/ui/Skeleton'
  * head-to-head widget, which is the whole standing in a two-person household.
  */
 export function MePage() {
+  const [isPickingAvatar, setIsPickingAvatar] = useState(false)
   const { data: me, isLoading, isError, error, refetch } = useMeQuery()
 
   if (isError) {
@@ -59,8 +62,21 @@ export function MePage() {
         className="rounded-base border-2 border-ink bg-card p-4 sm:p-5"
       >
         <div className="flex items-center gap-3">
-          {/* Purple: this is always you. `design-tokens.md` §2.1. */}
-          <Avatar userId={me.id} name={me.name} role="self" />
+          {/*
+           * The avatar is the control — task [72], owner's request. Tapping your own picture to
+           * change it is where people look first, and a separate "Change avatar" button would sit
+           * beside the thing it acts on saying what the thing already implies.
+           */}
+          <button
+            type="button"
+            aria-expanded={isPickingAvatar}
+            aria-label="Change your avatar"
+            onClick={() => setIsPickingAvatar((open) => !open)}
+            className="focus-ring shrink-0 rounded-control"
+          >
+            {/* Purple: this is always you. `design-tokens.md` §2.1. */}
+            <Avatar userId={me.id} name={me.name} role="self" avatarKey={me.avatarKey} />
+          </button>
           <div className="min-w-0">
             <h2 id="profile-heading" className="truncate text-lg">
               {me.name}
@@ -68,6 +84,16 @@ export function MePage() {
             <p className="truncate text-sm text-muted">{me.email}</p>
           </div>
         </div>
+
+        {isPickingAvatar && (
+          <div className="mt-4 rounded-base border-2 border-ink bg-page p-3">
+            <p className="mb-2 font-display text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+              Pick an avatar
+            </p>
+            {/* Stays open after a choice, so several can be tried without reopening it. */}
+            <AvatarPicker />
+          </div>
+        )}
 
         <dl className="mt-4 grid grid-cols-3 gap-2">
           {/*

@@ -5,9 +5,14 @@
  * props: the fill comes from the player role, the initials from the name, and a geometric motif from
  * the id. Nothing is stored, nothing is uploaded, and it renders offline.
  *
- * The signature is the point. `[64a]` adds real uploads as a backend-first change; because callers
- * pass only `userId` and `name`, that lands inside this file and touches no call site, with the
- * generated mark staying as the fallback for anyone who has not uploaded one.
+ * **Since [72] a user may pick one of eight presets**, and that is the only thing that overrides the
+ * generated mark. `avatarKey` is optional: a caller with no opinion passes nothing and gets exactly
+ * the old behaviour, which is why adding it changed no existing call site. A key nobody drew falls
+ * back to the identicon too — see `avatarPresets.tsx` for why that degradation is deliberate.
+ *
+ * The signature is still the point. `[64a]` adds real uploads as a backend-first change; because
+ * callers pass identity rather than an image, that lands inside this file, with the preset and then
+ * the generated mark staying as the fallbacks.
  *
  * Colour is by **role, not identity** — purple is you, green is your opponent (`design-tokens.md`
  * §2.1). Identity comes from the initials and the motif, which is why a motif is needed at all: two
@@ -15,6 +20,8 @@
  */
 
 import { MOTIFS, initialsOf, motifOf } from './avatarIdentity'
+import { AvatarPresetMark } from './avatarPresets'
+import { hasPreset } from './avatarPresetKeys'
 
 export type AvatarRole = 'self' | 'opponent'
 
@@ -34,13 +41,17 @@ export function Avatar({
   name,
   role,
   size = 'md',
+  avatarKey,
 }: {
   userId: number
   name: string
   role: AvatarRole
   size?: keyof typeof SIZE_CLASS
+  /** The user's chosen preset, from `GET /api/auth/me` or the household's members — task [72]. */
+  avatarKey?: string | null
 }) {
   const initials = initialsOf(name)
+  const preset = hasPreset(avatarKey)
 
   return (
     <span
@@ -51,14 +62,22 @@ export function Avatar({
       aria-hidden="true"
       className={[
         'relative inline-grid shrink-0 place-items-center overflow-hidden rounded-base border-2 border-ink-accent font-display font-bold',
-        // A flat motif block, sized as a quarter and shaped by the class above. No gradient.
-        "before:absolute before:size-1/2 before:bg-ink-accent/15 before:content-['']",
-        MOTIFS[motifOf(userId)],
+        /*
+         * The corner motif is the *generated* identity mark, so it is dropped when a preset is
+         * shown: two identity marks on one avatar is one too many, and the preset is the one the
+         * user chose.
+         */
+        preset ? '' : "before:absolute before:size-1/2 before:bg-ink-accent/15 before:content-['']",
+        preset ? '' : MOTIFS[motifOf(userId)],
         ROLE_CLASS[role],
         SIZE_CLASS[size],
       ].join(' ')}
     >
-      <span className="relative">{initials}</span>
+      {preset ? (
+        <AvatarPresetMark avatarKey={avatarKey} />
+      ) : (
+        <span className="relative">{initials}</span>
+      )}
     </span>
   )
 }

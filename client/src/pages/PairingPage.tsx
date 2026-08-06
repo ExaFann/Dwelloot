@@ -6,6 +6,7 @@ import {
   useJoinHouseholdMutation,
 } from '../features/household/householdApi'
 import { InviteCodeCard } from '../features/household/InviteCodeCard'
+import { AvatarPicker } from '../features/auth/AvatarPicker'
 import {
   INVITE_CODE_LENGTH,
   validateHouseholdName,
@@ -110,6 +111,23 @@ export function PairingPage() {
       <p className="mt-2 text-muted">
         Dwelloot is for two people. Start one, or join your partner&apos;s.
       </p>
+
+      {/*
+       * Task [72], owner's request: pick an avatar after signing up and **before** the invite code.
+       *
+       * Here rather than on a step of its own, because a whole screen for something entirely
+       * optional is a screen most people would tap past. It sits above the two forms so it is seen,
+       * and skipping it costs nothing — the generated identicon is already a real avatar.
+       */}
+      <section className="mt-6 rounded-base border-2 border-ink bg-card p-5">
+        <h2 className="text-lg">Pick an avatar</h2>
+        <p className="mt-1 text-sm text-muted">
+          Optional — the one you already have works fine. You can change it later from Me.
+        </p>
+        <div className="mt-3">
+          <AvatarPicker />
+        </div>
+      </section>
 
       <section className="mt-8 rounded-base border-2 border-ink bg-card p-5">
         <h2 className="text-lg">Create a household</h2>

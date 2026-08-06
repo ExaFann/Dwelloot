@@ -21,7 +21,12 @@ export type CreateHouseholdResponse = {
 export type JoinHouseholdRequest = { inviteCode: string }
 export type JoinHouseholdResponse = { id: number; isFull: boolean }
 
-export type HouseholdMember = { id: number; name: string }
+export type HouseholdMember = {
+  id: number
+  name: string
+  /** Chosen preset avatar, or null for the generated identicon — task [72]. */
+  avatarKey: string | null
+}
 export type HouseholdResponse = {
   id: number
   name: string

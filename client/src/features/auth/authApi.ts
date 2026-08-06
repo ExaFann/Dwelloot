@@ -22,6 +22,8 @@ export type MeResponse = {
   lifetimePoints: number
   coins: number
   currentWinStreak: number
+  /** Chosen preset avatar, or null for the generated identicon — task [72]. */
+  avatarKey: string | null
 }
 
 export const authApi = baseApi.injectEndpoints({
@@ -47,7 +49,20 @@ export const authApi = baseApi.injectEndpoints({
       query: () => '/api/auth/me',
       providesTags: ['Me'],
     }),
+
+    /**
+     * Pick a preset avatar, or clear it — task [72].
+     *
+     * **`Household` is invalidated as well as `Me`.** Your avatar is drawn twice: from `/me` on your
+     * own side, and from the household's `members` on the head-to-head card. Invalidating only `Me`
+     * would leave the card showing your old avatar until something else happened to refetch the
+     * household — which is exactly the kind of half-updated screen that reads as a bug.
+     */
+    setAvatar: build.mutation<MeResponse, { avatarKey: string | null }>({
+      query: (body) => ({ url: '/api/auth/me/avatar', method: 'PUT', body }),
+      invalidatesTags: ['Me', 'Household'],
+    }),
   }),
 })
 
-export const { useRegisterMutation, useLoginMutation, useMeQuery } = authApi
+export const { useRegisterMutation, useLoginMutation, useMeQuery, useSetAvatarMutation } = authApi

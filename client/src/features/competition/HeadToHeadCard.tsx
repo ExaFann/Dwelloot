@@ -220,7 +220,7 @@ export function HeadToHeadCard() {
           <ScoreHeader
             name="You"
             align="left"
-            avatar={<Avatar userId={me.id} name={me.name} role="self" />}
+            avatar={<Avatar userId={me.id} name={me.name} role="self" avatarKey={me.avatarKey} />}
           />
           <ScoreHeader name="No partner yet" align="right" avatar={<EmptyAvatar />} />
           <RecentChoresColumn
@@ -252,13 +252,20 @@ export function HeadToHeadCard() {
             <ScoreHeader
               name="You"
               align="left"
-              avatar={<Avatar userId={me.id} name={me.name} role="self" />}
+              avatar={<Avatar userId={me.id} name={me.name} role="self" avatarKey={me.avatarKey} />}
             />
             <ScoreHeader
               name={partner?.name ?? 'Partner'}
               align="right"
               avatar={
-                partner ? <Avatar userId={partner.id} name={partner.name} role="opponent" /> : null
+                partner ? (
+                  <Avatar
+                    userId={partner.id}
+                    name={partner.name}
+                    role="opponent"
+                    avatarKey={partner.avatarKey}
+                  />
+                ) : null
               }
             />
             <RecentChoresColumn
