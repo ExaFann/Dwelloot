@@ -47,7 +47,7 @@ export function ChoresFeed() {
   const householdId = me?.householdId ?? undefined
   const household = useGetHouseholdQuery(
     { householdId: householdId as number },
-    { skip: householdId === undefined },
+    { ...liveQueryOptions, skip: householdId === undefined },
   )
 
   const mine = useMyActivityLogsQuery({ take: 8 }, liveQueryOptions)

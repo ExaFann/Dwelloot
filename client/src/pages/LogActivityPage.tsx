@@ -7,6 +7,7 @@ import { useDeferredLog } from '../features/activity/useDeferredLog'
 import { useLongPress } from '../features/activity/useLongPress'
 import { toApiError } from '../api/apiError'
 import { Button } from '../components/ui/Button'
+import { liveQueryOptions } from '../app/liveSync'
 import { useTransientMessage } from '../app/useTransientMessage'
 import { SkeletonList } from '../components/ui/Skeleton'
 
@@ -47,7 +48,7 @@ export function LogActivityPage() {
     isError,
     error: loadError,
     refetch,
-  } = useActivitiesQuery({ search: debounced })
+  } = useActivitiesQuery({ search: debounced }, liveQueryOptions)
 
   /** Same undo window as the dashboard — nothing is sent until it closes. */
   const { queued, queue, undo, failure } = useDeferredLog()

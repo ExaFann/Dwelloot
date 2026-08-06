@@ -24,6 +24,27 @@ public class Activity
 
     public ActivityCategory Category { get; set; } = ActivityCategory.Chore;
 
+    /// <summary>
+    /// Whether this chore appears on the dashboard's one-tap quick-log wall — task [73].
+    /// </summary>
+    /// <remarks>
+    /// The wall was never a shortlist. `QuickLogTiles` asked for the whole catalogue and rendered
+    /// whatever came back, capped only by <c>ActivityService.DefaultPageSize</c> — so a household
+    /// with thirty chores got thirty tiles and no way to thin them. Owner's report.
+    /// <para>
+    /// <b>A household-shared column, not a per-device preference.</b> Both partners see one wall;
+    /// keeping the choice in each browser's storage would let them disagree about what the household
+    /// considers routine, and lose it on a new phone.
+    /// </para>
+    /// <para>
+    /// <b>Defaults to true, including for the seeded catalogue.</b> The alternative — start empty and
+    /// make everyone opt in — would empty the dashboard of every existing household on deploy. The
+    /// migration therefore backfills true, which is exactly the behaviour that shipped before this
+    /// flag existed; what is new is the ability to take a chore off the wall.
+    /// </para>
+    /// </remarks>
+    public bool IsQuick { get; set; } = true;
+
     public int HouseholdId { get; set; }
 
     public Household Household { get; set; } = null!;

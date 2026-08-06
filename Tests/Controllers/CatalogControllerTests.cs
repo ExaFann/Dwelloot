@@ -19,7 +19,7 @@ public class CatalogControllerTests
         public ActivityMutationStatus MutationStatus { get; init; } = ActivityMutationStatus.Ok;
         public bool WasCalled { get; private set; }
 
-        private static readonly ActivityResponse Sample = new(3, "Wash dishes", 10);
+        private static readonly ActivityResponse Sample = new(3, "Wash dishes", 10, true);
 
         public Task<ActivityListResult> ListAsync(int userId, ActivityQuery query, CancellationToken ct = default)
         {

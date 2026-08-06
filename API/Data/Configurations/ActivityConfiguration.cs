@@ -33,6 +33,11 @@ public class ActivityConfiguration : IEntityTypeConfiguration<Activity>
         // Enforced in the database, not only in the task [32] validation layer. Rejecting
         // negative point values is in project plan as part of the Security advanced
         // requirement, and a zero-point chore cannot influence a competition anyway.
+        // Defaults true so the migration backfills every existing row, and so a chore created by
+        // any path lands on the wall rather than silently missing from it — task [73].
+        builder.Property(a => a.IsQuick)
+            .HasDefaultValue(true);
+
         builder.ToTable(t => t.HasCheckConstraint("ck_activities_points_positive", "points > 0"));
 
         // A blank title is a single-row rule, so it belongs here - the same boundary that puts

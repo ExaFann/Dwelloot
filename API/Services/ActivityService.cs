@@ -97,6 +97,12 @@ public class ActivityService(AppDbContext db) : IActivityService
         var activities = db.Activities
             .Where(a => a.HouseholdId == user.HouseholdId && a.ArchivedAt == null);
 
+        // Task [73]. All three states honoured — see the note on `ActivityQuery.IsQuick`.
+        if (query.IsQuick is not null)
+        {
+            activities = activities.Where(a => a.IsQuick == query.IsQuick.Value);
+        }
+
         if (query.Category is not null)
         {
             activities = activities.Where(a => a.Category == query.Category);
@@ -127,7 +133,7 @@ public class ActivityService(AppDbContext db) : IActivityService
         var items = await sorted
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(a => new ActivityResponse(a.Id, a.Title, a.Points))
+            .Select(a => new ActivityResponse(a.Id, a.Title, a.Points, a.IsQuick))
             .ToListAsync(ct);
 
         return ActivityListResult.Ok(new PagedResponse<ActivityResponse>(items, total));
@@ -160,13 +166,14 @@ public class ActivityService(AppDbContext db) : IActivityService
             HouseholdId = householdId.HouseholdId,
             Title = title,
             Points = request.Points,
-            Category = request.Category ?? ActivityCategory.Chore
+            Category = request.Category ?? ActivityCategory.Chore,
+            IsQuick = request.IsQuick
         };
 
         db.Activities.Add(activity);
         await db.SaveChangesAsync(ct);
 
-        return ActivityMutationResult.Ok(new ActivityResponse(activity.Id, activity.Title, activity.Points));
+        return ActivityMutationResult.Ok(new ActivityResponse(activity.Id, activity.Title, activity.Points, activity.IsQuick));
     }
 
     public async Task<ActivityMutationResult> UpdateAsync(
@@ -213,9 +220,16 @@ public class ActivityService(AppDbContext db) : IActivityService
             activity.Category = request.Category.Value;
         }
 
+        // Task [73]. Settable both ways: taking a chore off the wall is the whole point, and a
+        // one-way flag would leave no way back.
+        if (request.IsQuick is not null)
+        {
+            activity.IsQuick = request.IsQuick.Value;
+        }
+
         await db.SaveChangesAsync(ct);
 
-        return ActivityMutationResult.Ok(new ActivityResponse(activity.Id, activity.Title, activity.Points));
+        return ActivityMutationResult.Ok(new ActivityResponse(activity.Id, activity.Title, activity.Points, activity.IsQuick));
     }
 
     /// <summary>
@@ -244,7 +258,7 @@ public class ActivityService(AppDbContext db) : IActivityService
 
         await db.SaveChangesAsync(ct);
 
-        return ActivityMutationResult.Ok(new ActivityResponse(activity.Id, activity.Title, activity.Points));
+        return ActivityMutationResult.Ok(new ActivityResponse(activity.Id, activity.Title, activity.Points, activity.IsQuick));
     }
 
     private async Task<(ActivityMutationStatus Status, int HouseholdId)> ResolveHouseholdAsync(

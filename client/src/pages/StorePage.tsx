@@ -13,6 +13,7 @@ import {
 import { useMeQuery } from '../features/auth/authApi'
 import { toApiError } from '../api/apiError'
 import { Button } from '../components/ui/Button'
+import { liveQueryOptions } from '../app/liveSync'
 import { SkeletonList } from '../components/ui/Skeleton'
 
 /**
@@ -59,12 +60,25 @@ export function StorePage() {
   const { data: me } = useMeQuery()
   const balance = me?.coins ?? 0
 
-  const { data, isLoading, isError, error, refetch } = useRewardsQuery({
-    search: debounced,
-    sort,
-    affordability,
-    page,
-  })
+  /*
+   * Live-synced. Under [68] a paired household's edits are *queued*, and the partner **approving**
+   * one is what writes the store — in their browser, so no tag of ours ever fires.
+   *
+   * There is a second, nastier half: `createReward`/`updateReward`/`deleteReward` invalidate
+   * `Reward` unconditionally, including on the 202 "queued" path. So proposing a change refetches a
+   * catalogue that deliberately did **not** change, and that pre-approval response is what stays
+   * cached. Without polling, the person who proposed the change is the one guaranteed never to see
+   * it applied.
+   */
+  const { data, isLoading, isError, error, refetch } = useRewardsQuery(
+    {
+      search: debounced,
+      sort,
+      affordability,
+      page,
+    },
+    liveQueryOptions,
+  )
 
   useEffect(() => {
     if (!notice) return

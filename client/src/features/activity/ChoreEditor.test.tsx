@@ -7,7 +7,7 @@ import { makeStore } from '../../app/store'
 import { signedIn } from '../auth/authSlice'
 import { ChoreEditor } from './ChoreEditor'
 
-const EXISTING = { id: 544, title: 'Change the bed sheets', points: 10 }
+const EXISTING = { id: 544, title: 'Change the bed sheets', points: 10, isQuick: true }
 
 type Recorded = { path: string; method: string; body?: string }
 
@@ -142,6 +142,8 @@ describe('client-side validation stops the unpresentable payloads', () => {
       title: 'Water the plants',
       points: 8,
       category: 'Chore',
+      // Task [73]: a chore you just bothered to add starts on the dashboard wall.
+      isQuick: true,
     })
   })
 
@@ -218,7 +220,11 @@ describe('editing', () => {
     await waitFor(() => {
       const patch = calls.find((c) => c.method === 'PATCH')
       expect(patch?.path).toBe('/api/activities/544')
-      expect(JSON.parse(patch!.body!)).toEqual({ title: 'Strip the bed', points: 12 })
+      expect(JSON.parse(patch!.body!)).toEqual({
+        title: 'Strip the bed',
+        points: 12,
+        isQuick: true,
+      })
     })
   })
 
@@ -359,5 +365,72 @@ describe('server-side rejections', () => {
 
     await screen.findByRole('alert')
     expect(screen.getByLabelText('Chore')).toHaveValue('Kept text')
+  })
+})
+
+/**
+ * Task [73] — which chores make up the dashboard's one-tap wall.
+ *
+ * The wall was never a shortlist: it asked for the whole catalogue and rendered whatever came back,
+ * so a household with thirty chores got thirty tiles and no way to thin them. The flag lives on the
+ * chore, and this is where a chore is managed.
+ */
+describe('the dashboard toggle', () => {
+  const box = () => screen.getByRole('checkbox', { name: /show on the dashboard/i })
+
+  it('is ticked by default on a new chore', () => {
+    stub()
+    renderEditor()
+    expect(box()).toBeChecked()
+  })
+
+  it('reflects the chore being edited', () => {
+    stub()
+    renderEditor({ activity: { ...EXISTING, isQuick: false } })
+    expect(box()).not.toBeChecked()
+  })
+
+  /**
+   * The claim is that unticking it **reaches the server**. Asserted on the request body, because a
+   * checkbox that changes its own appearance and sends nothing is exactly the shape of a control
+   * that looks like it works.
+   */
+  it('sends false when unticked on a new chore', async () => {
+    const calls = stub({ status: 201, body: { id: 900, title: 'Descale the kettle', points: 8 } })
+    renderEditor()
+
+    const user = userEvent.setup()
+    await user.type(screen.getByLabelText('Chore'), 'Descale the kettle')
+    await user.type(screen.getByLabelText('Points'), '8')
+    await user.click(box())
+    await user.click(screen.getByRole('button', { name: /add chore/i }))
+
+    await waitFor(() => expect(calls.filter((c) => c.method === 'POST')).toHaveLength(1))
+    expect(JSON.parse(calls.find((c) => c.method === 'POST')!.body!).isQuick).toBe(false)
+  })
+
+  it('sends true when re-ticked on an existing chore', async () => {
+    const calls = stub({
+      status: 200,
+      body: { id: 544, title: 'Change the bed sheets', points: 10 },
+    })
+    renderEditor({ activity: { ...EXISTING, isQuick: false } })
+
+    const user = userEvent.setup()
+    await user.click(box())
+    await user.click(screen.getByRole('button', { name: /^save$/i }))
+
+    await waitFor(() => {
+      const patch = calls.find((c) => c.method === 'PATCH')
+      expect(patch).toBeDefined()
+      expect(JSON.parse(patch!.body!).isQuick).toBe(true)
+    })
+  })
+
+  /** Both partners see one wall, and the copy has to say so — it is not a personal preference. */
+  it('says the choice is shared', () => {
+    stub()
+    renderEditor()
+    expect(screen.getByText(/both of you/i)).toBeInTheDocument()
   })
 })

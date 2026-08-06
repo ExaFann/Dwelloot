@@ -5,7 +5,13 @@ import { baseApi } from '../../api/baseApi'
  * running API in task [46].
  */
 
-export type Activity = { id: number; title: string; points: number }
+export type Activity = {
+  id: number
+  title: string
+  points: number
+  /** Whether it appears on the dashboard's one-tap quick-log wall — task [73]. */
+  isQuick: boolean
+}
 export type Paged<T> = { items: T[]; total: number }
 
 export type ActivityLogStatus = 'Pending' | 'Approved' | 'Rejected'
@@ -74,11 +80,26 @@ export const activityApi = baseApi.injectEndpoints({
      * value is `points` — confirmed from the API's own 400, which names them
      * ("Unknown sort field. Valid values: title, points."). Sorting is the Store's job ([51]).
      */
-    activities: build.query<Paged<Activity>, { search?: string }>({
-      query: ({ search }) => {
+    /**
+     * The household's chore catalogue — **shared, and both partners write to it.**
+     *
+     * Live-synced at the call sites since the owner found that one partner taking a chore off the
+     * dashboard wall left the other partner's wall unchanged. See `liveSync.ts` for why the earlier
+     * "only this user can change it" reasoning was wrong.
+     */
+    activities: build.query<Paged<Activity>, { search?: string; isQuick?: boolean }>({
+      query: ({ search, isQuick }) => {
         const params = new URLSearchParams({ category: 'Chore', sort: 'title' })
         // Only sent when non-empty: `search=` would be a filter for the empty string.
         if (search?.trim()) params.set('search', search.trim())
+        /*
+         * Task [73]. Sent only when the caller has an opinion — `isQuick` absent means the whole
+         * catalogue, which is what the Log tab wants; the dashboard wall asks for `true`.
+         *
+         * `!== undefined` rather than a truthy check, because `false` is a meaningful value here
+         * (the complement) and a truthy test would silently drop it.
+         */
+        if (isQuick !== undefined) params.set('isQuick', String(isQuick))
         return `/api/activities?${params.toString()}`
       },
       providesTags: ['Activity'],
@@ -165,7 +186,7 @@ export const activityApi = baseApi.injectEndpoints({
      * Invalidates `Activity`, which refreshes both this screen's list and the dashboard's quick-add
      * row — the new chore is eligible for one-tap logging immediately.
      */
-    createActivity: build.mutation<Activity, { title: string; points: number }>({
+    createActivity: build.mutation<Activity, { title: string; points: number; isQuick?: boolean }>({
       query: (body) => ({
         url: '/api/activities',
         method: 'POST',
@@ -182,7 +203,10 @@ export const activityApi = baseApi.injectEndpoints({
      * Points are a **snapshot** on each log (handover §4.3), so re-pricing changes what future logs
      * are worth and leaves history alone. That is why editing is safe to expose at all.
      */
-    updateActivity: build.mutation<Activity, { id: number; title: string; points: number }>({
+    updateActivity: build.mutation<
+      Activity,
+      { id: number; title?: string; points?: number; isQuick?: boolean }
+    >({
       query: ({ id, ...body }) => ({ url: `/api/activities/${id}`, method: 'PATCH', body }),
       invalidatesTags: ['Activity'],
     }),

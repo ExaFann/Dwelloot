@@ -7,6 +7,7 @@ import {
 import { MAX_NAME_LENGTH, validateHouseholdName } from './householdValidation'
 import { fieldError, toApiError, type ApiError } from '../../api/apiError'
 import { Button } from '../../components/ui/Button'
+import { liveQueryOptions } from '../../app/liveSync'
 import { JoinInstead } from './JoinInstead'
 import { TextInput } from '../../components/ui/TextInput'
 import { FormAlert } from '../../components/ui/FormAlert'
@@ -29,7 +30,10 @@ export function HouseholdSettings({
   /** So the leave warning can name the partner who stays, rather than saying "your partner". */
   selfId: number
 }) {
-  const { data, isLoading, isError, error } = useGetHouseholdQuery({ householdId })
+  const { data, isLoading, isError, error } = useGetHouseholdQuery(
+    { householdId },
+    liveQueryOptions,
+  )
 
   const [renameHousehold, { isLoading: isRenaming }] = useRenameHouseholdMutation()
   const [leaveHousehold, { isLoading: isLeaving }] = useLeaveHouseholdMutation()

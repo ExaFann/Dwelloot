@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
-import { Undo2 } from 'lucide-react'
+import { SlidersHorizontal, Undo2 } from 'lucide-react'
 import { useActivitiesQuery } from './activityApi'
+import { liveQueryOptions } from '../../app/liveSync'
 import { useDeferredLog } from './useDeferredLog'
 import { interleaveBySize } from './tileOrder'
 import { toApiError } from '../../api/apiError'
 import { SkeletonList } from '../../components/ui/Skeleton'
+import { QuickLogManager } from './QuickLogManager'
 
 /**
  * One-tap logging, as a wall of bricks rather than a list.
@@ -27,8 +30,20 @@ function tiltOf(id: number): string {
 }
 
 export function QuickLogTiles() {
-  const { data, isLoading, isError, error, refetch } = useActivitiesQuery({})
+  const { data, isLoading, isError, error, refetch } = useActivitiesQuery(
+    {
+      /*
+       * Task [73]. The wall was never a shortlist — it asked for the whole catalogue and rendered
+       * whatever came back, capped only by the server's default page size, so a household with thirty
+       * chores got thirty tiles. It now asks for the ones marked for it; the Log tab still lists
+       * everything, which is where the marking is done.
+       */
+      isQuick: true,
+    },
+    liveQueryOptions,
+  )
   const { queued, queue, undo, isQueued, failure } = useDeferredLog()
+  const [isManaging, setIsManaging] = useState(false)
 
   return (
     <section
@@ -39,13 +54,32 @@ export function QuickLogTiles() {
         <h2 id="quick-log-heading" className="text-lg">
           Quick log
         </h2>
-        <Link
-          to="/log"
-          className="focus-ring font-display text-sm font-semibold text-primary underline"
-        >
-          All chores
-        </Link>
+        {/*
+         * Task [73], owner's note. The wall became curatable and nothing on this screen said so —
+         * the only way in was to open a chore's editor on a different tab, which you would have to
+         * already know about in order to go looking for it. A list you can curate needs a visible
+         * way to curate it, beside the list.
+         */}
+        <div className="flex shrink-0 items-center gap-3">
+          <button
+            type="button"
+            aria-expanded={isManaging}
+            onClick={() => setIsManaging((open) => !open)}
+            className="focus-ring inline-flex items-center gap-1.5 font-display text-sm font-semibold text-primary"
+          >
+            <SlidersHorizontal size={14} strokeWidth={3} aria-hidden="true" />
+            Choose
+          </button>
+          <Link
+            to="/log"
+            className="focus-ring font-display text-sm font-semibold text-primary underline"
+          >
+            All chores
+          </Link>
+        </div>
       </div>
+
+      {isManaging && <QuickLogManager onClose={() => setIsManaging(false)} />}
 
       {isError ? (
         <>

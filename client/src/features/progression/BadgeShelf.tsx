@@ -1,6 +1,7 @@
 import { Lock } from 'lucide-react'
 import { BadgeMark } from '../../components/ui/marks'
 import { useBadgesQuery } from './badgeApi'
+import { liveQueryOptions } from '../../app/liveSync'
 import { describeBadge, describeProgress } from './badgeDisplay'
 import { toApiError } from '../../api/apiError'
 import { SkeletonList } from '../../components/ui/Skeleton'
@@ -17,7 +18,7 @@ import { SkeletonList } from '../../components/ui/Skeleton'
  * grid that reshuffles itself when you unlock something is a worse grid. Nothing here re-sorts.
  */
 export function BadgeShelf() {
-  const { data, isLoading, isError, error } = useBadgesQuery()
+  const { data, isLoading, isError, error } = useBadgesQuery(undefined, liveQueryOptions)
   const badges = data?.items ?? []
 
   return (

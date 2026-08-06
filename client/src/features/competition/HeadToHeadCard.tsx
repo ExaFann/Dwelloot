@@ -20,7 +20,7 @@ import { describeStanding, periodLabel, tugShares, type Standing } from './stand
 import { toApiError } from '../../api/apiError'
 import { Button } from '../../components/ui/Button'
 import { SkeletonBlock, SkeletonList } from '../../components/ui/Skeleton'
-import { liveQueryOptions } from '../../app/liveSync'
+import { LIVE_POLL_MS, liveQueryOptions } from '../../app/liveSync'
 
 /**
  * The head-to-head "tug" widget — `wireframes.md` §1: *both partners' current-period Points side by
@@ -77,7 +77,7 @@ export function HeadToHeadCard() {
     {
       ...liveQueryOptions,
       skip: householdId === undefined,
-      // Overrides the shared 20s: this one asks a different question and stops once answered.
+      // Overrides the shared 20s while solo — a faster question with a definite answer.
       pollingInterval,
     },
   )
@@ -91,7 +91,16 @@ export function HeadToHeadCard() {
    * a frame. Setting it inline re-renders before anything is committed, which is React's documented
    * answer for state derived from a changing input.
    */
-  const shouldPoll = (household.data?.members.length ?? 0) < 2 ? SOLO_POLL_MS : 0
+  /*
+   * Once paired this falls back to the shared 20s, **not to zero**.
+   *
+   * It used to switch polling off entirely the moment someone joined, on the reasoning that the
+   * question "has anyone accepted my invitation" had been answered. But this payload also carries
+   * the partner's **name and avatar**, and either of them can change at any time — so a paired
+   * household was left with only `refetchOnFocus` while the solo one polled. Backwards: the case
+   * with two people writing to it is the one that needs syncing more.
+   */
+  const shouldPoll = (household.data?.members.length ?? 0) < 2 ? SOLO_POLL_MS : LIVE_POLL_MS
   if (shouldPoll !== pollingInterval) setPollingInterval(shouldPoll)
 
   /** Today's score — the one that moves the moment the partner approves anything. */

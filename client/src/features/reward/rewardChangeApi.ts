@@ -38,7 +38,12 @@ export const rewardChangeApi = baseApi.injectEndpoints({
      */
     approveRewardChange: build.mutation<RewardChange, { id: number }>({
       query: ({ id }) => ({ url: `/api/reward-changes/${id}/approve`, method: 'POST' }),
-      invalidatesTags: ['RewardChange', 'Reward'],
+      /*
+       * `Redemption` too — the doc above always claimed it and the array did not. An approved
+       * rename changes the title the redemption feed renders, because `ListMineAsync` projects
+       * `Reward.Title` live rather than snapshotting it (only `CoinsSpent` is a snapshot).
+       */
+      invalidatesTags: ['RewardChange', 'Reward', 'Redemption'],
     }),
 
     /** Rejecting changes nothing in the store, so only the queue is invalidated. */

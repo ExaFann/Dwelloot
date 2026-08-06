@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { MemoryRouter } from 'react-router'
 import { makeStore } from '../../app/store'
@@ -21,7 +21,7 @@ const CHORES = [
   { id: 3, title: 'Vacuum', points: 15 },
 ]
 
-type Recorded = { path: string; method: string; body?: string }
+type Recorded = { path: string; search: string; method: string; body?: string }
 
 function stub({ chores = CHORES, status = 200 }: { chores?: unknown[]; status?: number } = {}) {
   const calls: Recorded[] = []
@@ -30,17 +30,24 @@ function stub({ chores = CHORES, status = 200 }: { chores?: unknown[]; status?: 
     vi.fn(async (input: Request) => {
       const url = new URL(input.url)
       const body = input.method === 'GET' ? undefined : await input.clone().text()
-      calls.push({ path: url.pathname, method: input.method, body })
+      calls.push({ path: url.pathname, search: url.search, method: input.method, body })
 
       const json = (b: unknown, s = 200) =>
-        new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } })
+        new Response(JSON.stringify(b), {
+          status: s,
+          headers: { 'Content-Type': 'application/json' },
+        })
 
       if (url.pathname === '/api/activities') {
-        if (status !== 200) return json({ error: 'An unexpected error occurred.', errors: null }, status)
+        if (status !== 200)
+          return json({ error: 'An unexpected error occurred.', errors: null }, status)
         return json({ items: chores, total: chores.length })
       }
       if (url.pathname === '/api/activity-logs' && input.method === 'POST') {
-        return json({ id: 99, activityId: 1, status: 'Pending', completedAt: '2026-08-06T00:00:00Z' }, 201)
+        return json(
+          { id: 99, activityId: 1, status: 'Pending', completedAt: '2026-08-06T00:00:00Z' },
+          201,
+        )
       }
       // Routed by path; anything unknown is a 404 rather than a convenient body.
       return json({ error: 'That endpoint does not exist.', errors: null }, 404)
@@ -210,7 +217,11 @@ describe('the undo window', () => {
 
     await vi.advanceTimersByTimeAsync(6000)
     expect(posts(calls)).toHaveLength(2)
-    expect(posts(calls).map((c) => JSON.parse(c.body!).activityId).sort()).toEqual([1, 3])
+    expect(
+      posts(calls)
+        .map((c) => JSON.parse(c.body!).activityId)
+        .sort(),
+    ).toEqual([1, 3])
   })
 
   /** A queued tile is marked, so the state is not carried by the notice alone. */
@@ -220,5 +231,101 @@ describe('the undo window', () => {
     expect(tile(/wash dishes/i)).toHaveAttribute('aria-pressed', 'false')
     fireEvent.click(tile(/wash dishes/i))
     expect(tile(/wash dishes/i)).toHaveAttribute('aria-pressed', 'true')
+  })
+})
+
+/**
+ * Task [73] — the wall is a shortlist now.
+ *
+ * It used to ask for the whole catalogue and render whatever came back, capped only by the server's
+ * default page size, so a household with thirty chores got thirty tiles and no way to thin them.
+ * The filter is the entire fix, and it is invisible on screen — the tiles look identical whether or
+ * not it was sent — so only an assertion on the **request** can hold it.
+ */
+describe('the wall asks for the shortlist', () => {
+  it('sends isQuick=true', async () => {
+    const calls = stub()
+    renderTiles()
+
+    await screen.findByRole('button', { name: /dishes/i })
+
+    const list = calls.find((c) => c.path === '/api/activities')
+    expect(list).toBeDefined()
+    expect(new URLSearchParams(list!.search).get('isQuick')).toBe('true')
+  })
+
+  /** Still chores, still sorted — the new filter must not have displaced the old parameters. */
+  it('keeps the category and sort it already sent', async () => {
+    const calls = stub()
+    renderTiles()
+
+    await screen.findByRole('button', { name: /dishes/i })
+
+    const params = new URLSearchParams(calls.find((c) => c.path === '/api/activities')!.search)
+    expect(params.get('category')).toBe('Chore')
+    expect(params.get('sort')).toBe('title')
+  })
+})
+
+/**
+ * Task [73], second pass — curating the wall **from the wall**.
+ *
+ * The flag shipped with only one way in: select a chore on the Log tab, open its editor, untick.
+ * The owner's objection was that nothing on the dashboard suggested the wall was editable at all,
+ * so you would have to already know the setting existed in order to go looking for it on another
+ * screen. Discoverability is the feature here, so the assertions are about what is *visible*.
+ */
+describe('choosing what is on the wall', () => {
+  const chooser = () => screen.getByRole('button', { name: /choose/i })
+
+  it('offers a control beside the wall', async () => {
+    stub()
+    renderTiles()
+    await screen.findByRole('button', { name: /dishes/i })
+
+    expect(chooser()).toBeInTheDocument()
+    expect(chooser()).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  /**
+   * The manager lists the **whole** catalogue, not just what is already on the wall — a manager that
+   * showed only the current members could remove but never add, which is half a control.
+   */
+  it('lists every chore, including ones already off the wall', async () => {
+    const calls = stub()
+    renderTiles()
+    await screen.findByRole('button', { name: /dishes/i })
+
+    fireEvent.click(chooser())
+
+    await waitFor(() => {
+      const unfiltered = calls.filter(
+        (c) => c.path === '/api/activities' && !new URLSearchParams(c.search).has('isQuick'),
+      )
+      expect(unfiltered.length).toBeGreaterThan(0)
+    })
+  })
+
+  it('closes again', async () => {
+    stub()
+    renderTiles()
+    await screen.findByRole('button', { name: /dishes/i })
+
+    fireEvent.click(chooser())
+    expect(chooser()).toHaveAttribute('aria-expanded', 'true')
+
+    fireEvent.click(chooser())
+    expect(chooser()).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  /** The change is household-wide, and the heading has to say so — it is not a personal setting. */
+  it('says the choice is shared', async () => {
+    stub()
+    renderTiles()
+    await screen.findByRole('button', { name: /dishes/i })
+
+    fireEvent.click(chooser())
+
+    expect(await screen.findByText(/for both of you/i)).toBeInTheDocument()
   })
 })

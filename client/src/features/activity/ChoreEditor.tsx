@@ -36,6 +36,11 @@ export function ChoreEditor({ activity, onDone, onCancel }: Props) {
 
   const [title, setTitle] = useState(activity?.title ?? '')
   const [points, setPoints] = useState(activity ? String(activity.points) : '')
+  /*
+   * Task [73]. A new chore starts on the wall, matching the server's default — a chore you just
+   * bothered to add is one you probably want one tap away.
+   */
+  const [isQuick, setIsQuick] = useState(activity?.isQuick ?? true)
   const [clientErrors, setClientErrors] = useState<ChoreErrors>({})
   const [serverError, setServerError] = useState<ApiError | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -59,7 +64,7 @@ export function ChoreEditor({ activity, onDone, onCancel }: Props) {
     setClientErrors(errors)
     if (hasErrors(errors)) return
 
-    const payload = { title: title.trim(), points: Number(points.trim()) }
+    const payload = { title: title.trim(), points: Number(points.trim()), isQuick }
 
     try {
       if (isEdit) {
@@ -71,6 +76,7 @@ export function ChoreEditor({ activity, onDone, onCancel }: Props) {
         // Cleared for the next one — adding a chore predicts adding another.
         setTitle('')
         setPoints('')
+        setIsQuick(true)
         titleRef.current?.focus()
       }
     } catch (caught) {
@@ -91,7 +97,8 @@ export function ChoreEditor({ activity, onDone, onCancel }: Props) {
   }
 
   /** Client-side first: it is the more specific complaint, and the server never saw this value. */
-  const titleError = clientErrors.title ?? (serverError ? fieldError(serverError, 'title') : undefined)
+  const titleError =
+    clientErrors.title ?? (serverError ? fieldError(serverError, 'title') : undefined)
   const pointsError =
     clientErrors.points ?? (serverError ? fieldError(serverError, 'points') : undefined)
 
@@ -129,6 +136,32 @@ export function ChoreEditor({ activity, onDone, onCancel }: Props) {
         placeholder="10"
         error={pointsError}
       />
+
+      {/*
+       * Task [73] — which chores make up the dashboard's one-tap wall.
+       *
+       * A checkbox rather than a separate screen, and it lives here because this is already where a
+       * chore is managed: the wall is a property of the chore, not a list kept somewhere else that
+       * could fall out of step with the catalogue.
+       *
+       * **Household-wide, and the copy says so.** Both partners see one wall, and someone unticking
+       * a chore is changing what the other person sees too — worth stating rather than discovering.
+       */}
+      <label className="flex items-start gap-2.5 text-sm">
+        <input
+          type="checkbox"
+          name="isQuick"
+          checked={isQuick}
+          onChange={(event) => setIsQuick(event.target.checked)}
+          className="focus-ring mt-0.5 size-5 shrink-0 accent-[var(--brand-primary)]"
+        />
+        <span>
+          <span className="font-display font-semibold">Show on the dashboard</span>
+          <span className="block text-muted">
+            One-tap logging for both of you. Untick the ones you rarely do.
+          </span>
+        </span>
+      </label>
 
       <div className="flex gap-2">
         <Button

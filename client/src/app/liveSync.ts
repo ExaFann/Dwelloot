@@ -59,9 +59,19 @@ export const LIVE_POLL_MS = 20_000
 /**
  * Spread into any query whose answer can be changed by **the other member of the household**.
  *
- * Deliberately not applied to everything. A query that only this user can change — the chore
- * catalogue, the reward catalogue — is already correct through mutation invalidation, and polling
- * it would be requests spent to re-fetch a value that cannot have moved.
+ * ### The rule, and the mistake it corrects
+ *
+ * This originally said the catalogue queries were exempt because "only this user can change them".
+ * **That was simply false.** Every catalogue in this app is household-scoped and either partner can
+ * create, rename, re-price and remove from it — [47] built chore CRUD for both partners and [51]
+ * did the same for rewards. The owner found the consequence: one partner took a chore off the
+ * dashboard wall and the other partner's dashboard did not change, while their *editor* showed the
+ * new value, because the editor's fetch was fresh and the dashboard's was cached. Two views of one
+ * household disagreeing is worse than both being stale.
+ *
+ * The real test is not "who owns this data" but **"can anything the other person does alter this
+ * answer?"** In a two-person shared household almost everything qualifies. The exemptions are the
+ * few things that are genuinely per-user and unwritable by anyone else.
  */
 export const liveQueryOptions = {
   pollingInterval: LIVE_POLL_MS,

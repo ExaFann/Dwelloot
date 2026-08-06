@@ -42,10 +42,10 @@ export function PrizeRedeemFeed() {
   const householdId = me?.householdId ?? undefined
   const household = useGetHouseholdQuery(
     { householdId: householdId as number },
-    { skip: householdId === undefined },
+    { ...liveQueryOptions, skip: householdId === undefined },
   )
 
-  const mine = useMyRedemptionsQuery({ take: 6 })
+  const mine = useMyRedemptionsQuery({ take: 6 }, liveQueryOptions)
   const theirs = usePartnerRedemptionsQuery({ take: 6 }, liveQueryOptions)
 
   const partner = household.data?.members.find((member) => member.id !== me?.id) ?? null
