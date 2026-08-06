@@ -136,7 +136,7 @@ export function StorePage() {
             value={search}
             onChange={(event) => changeQuery(() => setSearch(event.target.value))}
             placeholder="Massage, takeout…"
-            className="focus-ring rounded-base border-2 border-ink bg-card px-3 py-2.5 text-body placeholder:text-muted"
+            className="focus-ring rounded-base border-2 border-ink bg-card px-3 py-2.5 text-body placeholder:text-placeholder"
           />
         </div>
 

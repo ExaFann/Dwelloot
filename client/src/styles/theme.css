@@ -79,6 +79,18 @@
   --surface-card: #ffffff;
   --text-primary: #0a0a0a;
   --text-secondary: #4a4458;
+  /*
+   * Placeholder text, and a third step down rather than a reuse of `--text-secondary`.
+   *
+   * Every input was rendering its placeholder in the secondary ink, which is 9:1 on a white card —
+   * as dark as a caption. An empty field then looked like a filled one, and the owner read the hint
+   * as a value they had typed. A placeholder has to be legible *and* obviously not content.
+   *
+   * 3.7:1 on the light card and 3.6:1 on the dark one: above the 3:1 large-text bar, below anything
+   * that could be mistaken for body copy. Deliberately not AA — a placeholder is never the only
+   * carrier of information here, because every field also has a real `<label>`.
+   */
+  --text-placeholder: #8a8299;
 
   /*
    * Ink — three tokens, not one. `--ink-accent` deliberately does NOT change between schemes:
@@ -143,6 +155,7 @@
   --surface-card: #241c3d;
   --text-primary: #f5f1ff;
   --text-secondary: #b8aed6;
+  --text-placeholder: #7d7397;
 
   /* Borders on bright fills stay black; surfaces and shadows invert. */
   --ink-accent: #000000;
@@ -174,6 +187,7 @@
   --color-card: var(--surface-card);
   --color-body: var(--text-primary);
   --color-muted: var(--text-secondary);
+  --color-placeholder: var(--text-placeholder);
 
   --color-ink: var(--ink-surface);
   --color-ink-accent: var(--ink-accent);

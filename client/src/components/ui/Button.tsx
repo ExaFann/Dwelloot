@@ -47,7 +47,19 @@ export function Button({
          * corners, because a square slab with a hard shadow reads as a card lying on the page rather
          * than a key standing off it. See `--geometry-radius-control` in `theme.css`.
          */
-        'focus-ring rounded-control border-2 px-4 py-2.5 font-display text-sm font-bold uppercase tracking-[0.02em]',
+        /*
+         * `inline-flex` + `min-h-11`, so a button sized by a 16px icon and a button sized by a line
+         * of text are the same height.
+         *
+         * Without it the height came from whatever was inside: a text label produces a line box with
+         * ascender and descender space, a bare `<svg>` produces a 16px inline replaced element, and
+         * the two differ by a few pixels. It showed up on the Store card, where a disabled **Redeem**
+         * sat beside an icon-only **Edit** and the pair looked mismatched — the shadow that normally
+         * masks a small difference is absent while a control is disabled.
+         *
+         * 44px is also the touch-target minimum, so the floor is doing two jobs.
+         */
+        'focus-ring inline-flex min-h-11 items-center justify-center rounded-control border-2 px-4 py-2.5 font-display text-sm font-bold uppercase tracking-[0.02em]',
         VARIANTS[variant],
         // `pressable` carries the shadow; a disabled control should not look liftable.
         isDisabled ? 'cursor-not-allowed opacity-60' : 'pressable',

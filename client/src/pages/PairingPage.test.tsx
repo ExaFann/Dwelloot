@@ -234,24 +234,67 @@ describe('joining a household', () => {
     expect(at(router)).toBe('/pairing')
   })
 
-  it('puts a length error on the Invite code input', async () => {
-    scenario({
-      join: {
-        status: 400,
-        body: {
-          error: 'One or more fields are invalid.',
-          errors: {
-            InviteCode: ['The field InviteCode must be a string with a minimum length of 6…'],
-          },
-        },
-      },
-    })
+  /**
+   * A short code is refused **here**, and the assertion that matters is on the fetch spy.
+   *
+   * The server's own answer is a sentence about a .NET attribute — *"The field InviteCode must be a
+   * string with a minimum length of 6 and a maximum length of 6."* — so the fix is not a nicer
+   * rendering of it, it is never asking. "Shows an error" and "sent nothing" are different claims
+   * and only the second one is the fix; the same reasoning as `choreValidation` in [47].
+   */
+  it('refuses a short invite code without sending anything', async () => {
+    const { requests } = scenario()
     renderPairing()
 
     await joinWith('ABC')
 
     const input = await screen.findByLabelText('Invite code')
     await waitFor(() => expect(input).toHaveAttribute('aria-invalid', 'true'))
+    expect(screen.getByText(/6 characters — this one has 3/)).toBeInTheDocument()
+    expect(requests.some((r) => new URL(r.url).pathname === '/api/households/join')).toBe(false)
+  })
+
+  /** The server keeps the rule; only it knows which six characters exist. That path must survive. */
+  it('still sends a well-formed code, and shows the server’s 404 for an unknown one', async () => {
+    const { requests } = scenario({
+      join: {
+        status: 404,
+        body: { error: 'No household found with that invite code.', errors: null },
+      },
+    })
+    renderPairing()
+
+    await joinWith('ZZZ999')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No household found with that invite code.',
+    )
+    expect(requests.some((r) => new URL(r.url).pathname === '/api/households/join')).toBe(true)
+  })
+
+  /**
+   * The wrapper sentence is dropped when every field message already has an input to sit on.
+   *
+   * Asserted against a *server* 400 rather than the client path above, because that is the only way
+   * the wrapper can reach the screen at all — and asserted in both directions in
+   * `FormAlert.test.tsx`, so a component that simply never rendered an alert would fail there.
+   */
+  it('does not repeat “One or more fields are invalid” above a single bad field', async () => {
+    scenario({
+      create: {
+        status: 400,
+        body: {
+          error: 'One or more fields are invalid.',
+          errors: { Name: ['The Name field is required.'] },
+        },
+      },
+    })
+    renderPairing()
+
+    await createWith('x')
+
+    expect(await screen.findByText('The Name field is required.')).toBeInTheDocument()
+    expect(screen.queryByText(/one or more fields are invalid/i)).not.toBeInTheDocument()
   })
 })
 

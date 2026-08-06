@@ -6,6 +6,11 @@ import {
   useJoinHouseholdMutation,
 } from '../features/household/householdApi'
 import { InviteCodeCard } from '../features/household/InviteCodeCard'
+import {
+  INVITE_CODE_LENGTH,
+  validateHouseholdName,
+  validateInviteCode,
+} from '../features/household/householdValidation'
 import { fieldError, toApiError, type ApiError } from '../api/apiError'
 import { Button } from '../components/ui/Button'
 import { TextInput } from '../components/ui/TextInput'
@@ -31,6 +36,17 @@ export function PairingPage() {
   const [joinError, setJoinError] = useState<ApiError | null>(null)
   const [inviteCode, setInviteCode] = useState<string | null>(null)
 
+  /*
+   * Client-side field errors, kept separate from the API's.
+   *
+   * Same rule as `ChoreEditor`: the client's complaint is about the value in the box, the server's
+   * is about a value it may no longer have, so the client's wins on the same field. Here it also
+   * means the `[StringLength(6, MinimumLength = 6)]` sentence never reaches a screen — see
+   * `validateInviteCode`.
+   */
+  const [createFieldError, setCreateFieldError] = useState<string>()
+  const [joinFieldError, setJoinFieldError] = useState<string>()
+
   /**
    * Invalidating `Me` is what makes `AuthGate` notice the household and move the user on. It is the
    * single trigger for leaving this screen, which is why it is called explicitly at the two points
@@ -43,9 +59,18 @@ export function PairingPage() {
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setCreateError(null)
+    setCreateFieldError(undefined)
     const form = new FormData(event.currentTarget)
+    const name = String(form.get('name') ?? '')
+
+    const invalid = validateHouseholdName(name)
+    if (invalid) {
+      setCreateFieldError(invalid)
+      return
+    }
+
     try {
-      const result = await createHousehold({ name: String(form.get('name') ?? '') }).unwrap()
+      const result = await createHousehold({ name }).unwrap()
       // Deliberately does *not* leave yet — the invite code has to be shown first.
       setInviteCode(result.inviteCode)
     } catch (caught) {
@@ -56,9 +81,18 @@ export function PairingPage() {
   async function handleJoin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setJoinError(null)
+    setJoinFieldError(undefined)
     const form = new FormData(event.currentTarget)
+    const code = String(form.get('inviteCode') ?? '')
+
+    const invalid = validateInviteCode(code)
+    if (invalid) {
+      setJoinFieldError(invalid)
+      return
+    }
+
     try {
-      await joinHousehold({ inviteCode: String(form.get('inviteCode') ?? '') }).unwrap()
+      await joinHousehold({ inviteCode: code }).unwrap()
       // Nothing to show, so move on immediately.
       leavePairing()
     } catch (caught) {
@@ -87,7 +121,8 @@ export function PairingPage() {
             placeholder="Our place"
             required
             maxLength={60}
-            error={createError ? fieldError(createError, 'name') : undefined}
+            error={createFieldError ?? (createError ? fieldError(createError, 'name') : undefined)}
+            onChange={() => setCreateFieldError(undefined)}
           />
           <Button type="submit" pending={isCreating} pendingLabel="Creating…">
             Create
@@ -104,7 +139,7 @@ export function PairingPage() {
             name="inviteCode"
             placeholder="ABC234"
             required
-            maxLength={6}
+            maxLength={INVITE_CODE_LENGTH}
             /*
              * Uppercased as you type. The server matches case-insensitively — verified in [44] — so
              * this is not a correctness fix; it makes the field agree with the code the partner is
@@ -116,8 +151,9 @@ export function PairingPage() {
             spellCheck={false}
             onChange={(event) => {
               event.currentTarget.value = event.currentTarget.value.toUpperCase()
+              setJoinFieldError(undefined)
             }}
-            error={joinError ? fieldError(joinError, 'inviteCode') : undefined}
+            error={joinFieldError ?? (joinError ? fieldError(joinError, 'inviteCode') : undefined)}
           />
           <Button type="submit" variant="success" pending={isJoining} pendingLabel="Joining…">
             Join

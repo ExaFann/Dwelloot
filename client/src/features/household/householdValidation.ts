@@ -26,3 +26,32 @@ export function validateHouseholdName(name: string): string | undefined {
   }
   return undefined
 }
+
+/** `Household.InviteCodeLength` on the server. Exactly six — not a range. */
+export const INVITE_CODE_LENGTH = 6
+
+/**
+ * The invite code, checked before it is sent.
+ *
+ * **This one *is* here to stop an unpresentable message**, which puts it with `choreValidation`
+ * rather than with the name above. `[StringLength(6, MinimumLength = 6)]` on
+ * `JoinHouseholdRequest` produces:
+ *
+ * > The field InviteCode must be a string with a minimum length of 6 and a maximum length of 6.
+ *
+ * That is a sentence about a .NET attribute, it names the DTO property rather than the label on
+ * screen, and it says "minimum 6 and maximum 6" instead of "six". The owner read it as nonsense,
+ * correctly. The server keeps the rule — it is the authority — but a code that cannot pass never
+ * leaves the browser, so the message stays unseen.
+ *
+ * Wrong-but-well-formed codes still round-trip: only the server knows which six characters exist,
+ * and it answers those with a **404** and a real sentence.
+ */
+export function validateInviteCode(code: string): string | undefined {
+  const trimmed = code.trim()
+  if (trimmed.length === 0) return 'Enter the invite code your partner shared.'
+  if (trimmed.length !== INVITE_CODE_LENGTH) {
+    return `Invite codes are ${INVITE_CODE_LENGTH} characters — this one has ${trimmed.length}.`
+  }
+  return undefined
+}

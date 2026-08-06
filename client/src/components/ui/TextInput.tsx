@@ -33,7 +33,7 @@ export function TextInput({ label, error, className = '', ...rest }: Props) {
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         className={[
-          'focus-ring rounded-base border-2 bg-card px-3 py-2.5 text-body placeholder:text-muted',
+          'focus-ring rounded-base border-2 bg-card px-3 py-2.5 text-body placeholder:text-placeholder',
           error ? 'border-danger' : 'border-ink',
           className,
         ].join(' ')}

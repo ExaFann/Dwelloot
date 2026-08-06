@@ -90,7 +90,7 @@ export function LogActivityPage() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Dishes, laundry…"
-          className="focus-ring rounded-base border-2 border-ink bg-card px-3 py-2.5 text-body placeholder:text-muted"
+          className="focus-ring rounded-base border-2 border-ink bg-card px-3 py-2.5 text-body placeholder:text-placeholder"
         />
       </div>
 
@@ -112,8 +112,18 @@ export function LogActivityPage() {
           {debounced ? `No chores match “${debounced}”.` : 'No chores in your household yet.'}
         </p>
       ) : (
-        /* Two-up from `lg` ([58]): twelve default chores is two screens of scrolling at one column. */
-        <ul className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:items-start">
+        /*
+         * One column on a phone, two on a tablet, three on a desktop.
+         *
+         * [58] gave this two columns from `lg` and stopped there, which left a 1280px desktop showing
+         * two ~450px rows for a title that is rarely longer than "Clean the bathroom" — most of each
+         * row was empty. Owner's call.
+         *
+         * Viewport breakpoints are the right instrument *here*, unlike the quick-log wall on the
+         * dashboard: this list is the page's full content column, so the viewport and the container
+         * grow together. `ui-exp01` R2.3 records the case where that is not true.
+         */
+        <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 md:items-start xl:grid-cols-3">
           {data.items.map((activity) =>
             editingId === activity.id ? (
               <li key={activity.id}>
@@ -277,9 +287,23 @@ function ChoreRow({
           onToggle()
         }}
         {...handlers}
+        /*
+         * **No press physics here.** Owner's call: twelve of these in a grid, each lifting and
+         * dropping under its own hard shadow, read as a page of buttons rather than a list you pick
+         * from — and a chore row is a *selection*, not an action. Nothing is sent when you tap one.
+         *
+         * `pressable-sm` was already the reduced version of that shadow, added in [46] for the same
+         * complaint one step earlier; this takes the last step and removes it.
+         *
+         * The affordance moves to the tick box, the border and the fill, which is where the state
+         * actually lives. `focus-ring` is added because `pressable-sm` was never a focus indicator
+         * and this row had none — keyboard users were selecting invisibly.
+         */
         className={[
-          'pressable-sm flex w-full touch-none items-center justify-between gap-3 rounded-control border-2 px-3 py-2.5 text-left font-display text-sm font-semibold',
-          isSelected ? 'border-ink-accent bg-primary text-primary-fg' : 'border-ink bg-card',
+          'focus-ring flex w-full touch-none items-center justify-between gap-3 rounded-control border-2 px-3 py-2.5 text-left font-display text-sm font-semibold transition-colors',
+          isSelected
+            ? 'border-ink-accent bg-primary text-primary-fg'
+            : 'border-ink bg-card hover:border-primary',
         ].join(' ')}
       >
         <span className="flex min-w-0 items-center gap-2.5">
