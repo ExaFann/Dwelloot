@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_TITLE_LENGTH, hasErrors, validateChore } from './choreValidation'
+import { MAX_TITLE_LENGTH, hasErrors, validateChore, MAX_INT } from './choreValidation'
 
 /**
  * These rules exist because of a defect that reached the screen: an empty points box was encoded as
@@ -105,5 +105,36 @@ describe('both fields at once', () => {
   it('reports only the field that is wrong', () => {
     expect(validateChore({ title: 'Fine', points: '' }).title).toBeUndefined()
     expect(validateChore({ title: '', points: '5' }).points).toBeUndefined()
+  })
+})
+
+/**
+ * The **upper** end of `[Range(1, int.MaxValue)]`, which this file mirrored only the bottom half of.
+ *
+ * A value above the range never reaches model validation: it overflows a .NET `int` during JSON
+ * deserialisation, and the reply names the DTO type — the same leak [47] removed from the
+ * `points: null` path and left open on this one. So the assertion that matters is not the message,
+ * it is that a request is never sent; that half lives in the component test.
+ */
+describe('a points beyond int range', () => {
+  it('is accepted exactly at int.MaxValue, because the server accepts it', () => {
+    expect(validateChore({ title: 'Dishes', points: String(MAX_INT) }).points).toBeUndefined()
+  })
+
+  it('is rejected one past it', () => {
+    expect(validateChore({ title: 'Dishes', points: String(MAX_INT + 1) }).points).toBeDefined()
+  })
+
+  it('is rejected for a value far beyond it — the probe that found this', () => {
+    expect(validateChore({ title: 'Dishes', points: '99999999999' }).points).toBeDefined()
+  })
+
+  it('never names the DTO, the JSON path or the raw bound', () => {
+    const message = validateChore({ title: 'Dishes', points: '99999999999' }).points ?? ''
+    expect(message).not.toMatch(/API\.Dtos|\$\.|2147483647|JSON/i)
+  })
+
+  it('is 2147483647, matching int.MaxValue', () => {
+    expect(MAX_INT).toBe(2147483647)
   })
 })

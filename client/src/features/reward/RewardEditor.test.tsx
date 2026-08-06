@@ -82,6 +82,25 @@ describe('client-side validation stops the unpresentable payloads', () => {
     expect(sent(calls, 'POST')).toHaveLength(0)
   })
 
+  /**
+   * Above `int.MaxValue`. Found by probing the running API: the value overflows a .NET `int` during
+   * JSON deserialisation, so the reply names the DTO type — the identical leak [47] removed from
+   * the `coinCost: null` path, reached through the other end of `[Range(1, int.MaxValue)]`. The
+   * assertion that matters is the request count, not the message.
+   */
+  it('sends nothing when the cost is beyond int range', async () => {
+    const calls = stub()
+    renderEditor()
+    const user = userEvent.setup()
+
+    await user.type(screen.getByLabelText('Reward'), 'Breakfast in bed')
+    await user.type(screen.getByLabelText('Cost in Coins'), '99999999999')
+    await user.click(screen.getByRole('button', { name: /add reward/i }))
+
+    expect(await screen.findByText(/more coins than/i)).toBeInTheDocument()
+    expect(sent(calls, 'POST')).toHaveLength(0)
+  })
+
   it('sends nothing when the title is blank', async () => {
     const calls = stub()
     renderEditor()
@@ -125,7 +144,10 @@ describe('client-side validation stops the unpresentable payloads', () => {
 
 describe('creating', () => {
   it('posts the trimmed title and a numeric cost', async () => {
-    const calls = stub({ status: 201, body: { id: 400, title: 'Breakfast in bed', coinCost: 30, pausesCompetition: false } })
+    const calls = stub({
+      status: 201,
+      body: { id: 400, title: 'Breakfast in bed', coinCost: 30, pausesCompetition: false },
+    })
     renderEditor()
     const user = userEvent.setup()
 
@@ -145,7 +167,10 @@ describe('creating', () => {
   })
 
   it('carries the pausing flag when it is ticked', async () => {
-    const calls = stub({ status: 201, body: { id: 400, title: 'Day off', coinCost: 80, pausesCompetition: true } })
+    const calls = stub({
+      status: 201,
+      body: { id: 400, title: 'Day off', coinCost: 80, pausesCompetition: true },
+    })
     renderEditor()
     const user = userEvent.setup()
 
@@ -160,7 +185,10 @@ describe('creating', () => {
   })
 
   it('reports success and clears for the next one', async () => {
-    stub({ status: 201, body: { id: 400, title: 'Breakfast in bed', coinCost: 30, pausesCompetition: false } })
+    stub({
+      status: 201,
+      body: { id: 400, title: 'Breakfast in bed', coinCost: 30, pausesCompetition: false },
+    })
     const { onDone } = renderEditor()
     const user = userEvent.setup()
 

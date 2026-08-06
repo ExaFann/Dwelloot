@@ -95,6 +95,13 @@ describe('client-side validation stops the unpresentable payloads', () => {
     ['0', /at least 1/i],
     ['-3', /at least 1/i],
     ['2.5', /whole number/i],
+    /*
+     * Above `int.MaxValue`. Found by probing the running API: the value overflows a .NET `int`
+     * during JSON deserialisation, so the reply names the DTO type — the identical leak [47]
+     * removed from the `points: null` path, reached through the other end of the same rule. The
+     * assertion that matters is the request count below, not the message.
+     */
+    ['99999999999', /more points than/i],
   ])('sends nothing for points %o', async (points, expected) => {
     const calls = stub()
     renderEditor()
@@ -114,7 +121,9 @@ describe('client-side validation stops the unpresentable payloads', () => {
 
     await userEvent.setup().click(screen.getByRole('button', { name: /add chore/i }))
 
-    await waitFor(() => expect(screen.getByLabelText('Chore')).toHaveAttribute('aria-invalid', 'true'))
+    await waitFor(() =>
+      expect(screen.getByLabelText('Chore')).toHaveAttribute('aria-invalid', 'true'),
+    )
     expect(screen.getByLabelText('Points')).toHaveAttribute('aria-invalid', 'true')
   })
 
@@ -171,7 +180,9 @@ describe('creating', () => {
     await user.type(screen.getByLabelText('Points'), '8')
     await user.click(screen.getByRole('button', { name: /add chore/i }))
 
-    await waitFor(() => expect(onDone).toHaveBeenCalledWith('Water the plants added to your chores.'))
+    await waitFor(() =>
+      expect(onDone).toHaveBeenCalledWith('Water the plants added to your chores.'),
+    )
     expect(screen.getByLabelText('Chore')).toHaveValue('')
   })
 

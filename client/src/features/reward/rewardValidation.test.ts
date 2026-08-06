@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_TITLE_LENGTH, hasErrors, validateReward } from './rewardValidation'
+import { MAX_TITLE_LENGTH, hasErrors, validateReward, MAX_INT } from './rewardValidation'
 
 /**
  * The mirror of `choreValidation.test.ts`, and for the same reason one DTO along: an empty cost box
@@ -63,11 +63,15 @@ describe('the cost', () => {
   })
 
   it('rejects text that is not a number', () => {
-    expect(validateReward({ ...valid, coinCost: 'lots' }).coinCost).toBe('The cost must be a number.')
+    expect(validateReward({ ...valid, coinCost: 'lots' }).coinCost).toBe(
+      'The cost must be a number.',
+    )
   })
 
   it('rejects a fraction of a Coin', () => {
-    expect(validateReward({ ...valid, coinCost: '2.5' }).coinCost).toBe('Coins come in whole numbers.')
+    expect(validateReward({ ...valid, coinCost: '2.5' }).coinCost).toBe(
+      'Coins come in whole numbers.',
+    )
   })
 
   it.each(['0', '-1', '-40'])('rejects %s, matching the server’s Range(1, …)', (coinCost) => {
@@ -81,5 +85,38 @@ describe('hasErrors', () => {
     expect(errors.title).toBeDefined()
     expect(errors.coinCost).toBeDefined()
     expect(hasErrors(errors)).toBe(true)
+  })
+})
+
+/**
+ * The **upper** end of `[Range(1, int.MaxValue)]`, which this file mirrored only the bottom half of.
+ *
+ * A value above the range never reaches model validation: it overflows a .NET `int` during JSON
+ * deserialisation, and the reply names the DTO type — the same leak [47] removed from the
+ * `coinCost: null` path and left open on this one. So the assertion that matters is not the message,
+ * it is that a request is never sent; that half lives in the component test.
+ */
+describe('a coinCost beyond int range', () => {
+  it('is accepted exactly at int.MaxValue, because the server accepts it', () => {
+    expect(validateReward({ title: 'Massage', coinCost: String(MAX_INT) }).coinCost).toBeUndefined()
+  })
+
+  it('is rejected one past it', () => {
+    expect(
+      validateReward({ title: 'Massage', coinCost: String(MAX_INT + 1) }).coinCost,
+    ).toBeDefined()
+  })
+
+  it('is rejected for a value far beyond it — the probe that found this', () => {
+    expect(validateReward({ title: 'Massage', coinCost: '99999999999' }).coinCost).toBeDefined()
+  })
+
+  it('never names the DTO, the JSON path or the raw bound', () => {
+    const message = validateReward({ title: 'Massage', coinCost: '99999999999' }).coinCost ?? ''
+    expect(message).not.toMatch(/API\.Dtos|\$\.|2147483647|JSON/i)
+  })
+
+  it('is 2147483647, matching int.MaxValue', () => {
+    expect(MAX_INT).toBe(2147483647)
   })
 })

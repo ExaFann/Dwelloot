@@ -19,6 +19,24 @@
 /** The server's cap, from `CleanTextAttribute` on the request DTO. */
 export const MAX_TITLE_LENGTH = 80
 
+/**
+ * `int.MaxValue`, and the reason it is here rather than left to the server.
+ *
+ * `[Range(1, int.MaxValue)]` has two ends and this file mirrored only the lower one. A value above
+ * the range does not reach model validation at all: it overflows a .NET `int` during **JSON
+ * deserialisation**, which answers with
+ *
+ *     "$.points": ["The JSON value could not be converted to API.Dtos.Activities…"]
+ *
+ * — byte for byte the leak [47] shipped to a screen once, reached through a different door. The fix
+ * there was `points: null`; nobody checked the other end of the same rule.
+ *
+ * Mirrored exactly rather than capped at something more sensible: the standing rule is that client
+ * validation must never refuse a value the server would accept, because no server response would
+ * ever contradict it (`passwordPolicy.ts` makes the same argument).
+ */
+export const MAX_INT = 2147483647
+
 export type ChoreDraft = { title: string; points: string }
 export type ChoreErrors = { title?: string; points?: string }
 
@@ -47,8 +65,11 @@ export function validateChore({ title, points }: ChoreDraft): ChoreErrors {
       // The column is an `int`; a decimal would be truncated silently or rejected obscurely.
       errors.points = 'Points must be a whole number.'
     } else if (value < 1) {
-      // Matches the server's `[Range(1, int.MaxValue)]`.
+      // Matches the server's `[Range(1, int.MaxValue)]`, lower bound.
       errors.points = 'Points must be at least 1.'
+    } else if (value > MAX_INT) {
+      // The upper bound of the same rule — see `MAX_INT`. Without this the request leaks the DTO.
+      errors.points = 'That is more points than a chore can be worth.'
     }
   }
 
