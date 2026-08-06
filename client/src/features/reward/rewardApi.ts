@@ -21,6 +21,39 @@ export type Reward = {
   pausesCompetition: boolean
 }
 
+/**
+ * What a store mutation did — task [68].
+ *
+ * A paired household's changes go to the partner's queue instead of taking effect, and the server
+ * says which happened with the **status code**: 201/200/204 for applied, **202 Accepted** for
+ * queued. The client cannot work this out for itself — it would have to know the household's member
+ * count, which it may hold a stale copy of, and getting it wrong means showing "Saved" over a store
+ * that has not changed.
+ *
+ * Discriminated on `outcome` rather than on the shape of the payload: the same rule [53] applies to
+ * loot box prizes, where `result` is the contract and the nullable fields are not.
+ */
+export type RewardMutationOutcome<TApplied> =
+  | { outcome: 'applied'; reward: TApplied }
+  | { outcome: 'queued'; changeRequestId: number; message: string }
+
+/**
+ * Reads the status code rather than sniffing the body.
+ *
+ * 202 is the one status that means "understood, not done yet", and it is the only signal that does
+ * not depend on the queued and applied bodies happening to differ in a field name.
+ */
+function readOutcome<T>(
+  body: unknown,
+  meta: { response?: Response } | undefined,
+): RewardMutationOutcome<T> {
+  if (meta?.response?.status === 202) {
+    const queued = body as { changeRequestId: number; message: string }
+    return { outcome: 'queued', changeRequestId: queued.changeRequestId, message: queued.message }
+  }
+  return { outcome: 'applied', reward: body as T }
+}
+
 export const rewardApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     /**
@@ -32,9 +65,15 @@ export const rewardApi = baseApi.injectEndpoints({
       providesTags: ['Reward'],
     }),
 
-    createReward: build.mutation<Reward, { title: string; coinCost: number }>({
+    createReward: build.mutation<
+      RewardMutationOutcome<Reward>,
+      { title: string; coinCost: number }
+    >({
       query: (body) => ({ url: '/api/rewards', method: 'POST', body }),
-      invalidatesTags: ['Reward'],
+      transformResponse: readOutcome<Reward>,
+      // `RewardChange` too: a queued create is a new row in the partner's queue, and this client
+      // may be showing that queue on another tab.
+      invalidatesTags: ['Reward', 'RewardChange'],
     }),
 
     /**
@@ -44,9 +83,13 @@ export const rewardApi = baseApi.injectEndpoints({
      * Re-pricing is safe to expose because `redemptions.coins_spent` is a snapshot (§4.3): past
      * purchases keep what they actually cost. That column is why editing exists at all.
      */
-    updateReward: build.mutation<Reward, { id: number; title: string; coinCost: number }>({
+    updateReward: build.mutation<
+      RewardMutationOutcome<Reward>,
+      { id: number; title: string; coinCost: number }
+    >({
       query: ({ id, ...body }) => ({ url: `/api/rewards/${id}`, method: 'PATCH', body }),
-      invalidatesTags: ['Reward'],
+      transformResponse: readOutcome<Reward>,
+      invalidatesTags: ['Reward', 'RewardChange'],
     }),
 
     /**
@@ -60,9 +103,10 @@ export const rewardApi = baseApi.injectEndpoints({
      * Nothing here says "archive". From the user's side the reward is gone; the copy promises only
      * the part they can observe, which is that what they already redeemed is untouched.
      */
-    deleteReward: build.mutation<void, { id: number }>({
+    deleteReward: build.mutation<RewardMutationOutcome<void>, { id: number }>({
       query: ({ id }) => ({ url: `/api/rewards/${id}`, method: 'DELETE' }),
-      invalidatesTags: ['Reward'],
+      transformResponse: readOutcome<void>,
+      invalidatesTags: ['Reward', 'RewardChange'],
     }),
 
     /**

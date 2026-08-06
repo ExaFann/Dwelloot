@@ -26,6 +26,8 @@ export const API_TAGS = [
   'Reward',
   'Redemption',
   'Badge',
+  /** Proposed store changes waiting on the partner — task [68]. */
+  'RewardChange',
 ] as const
 
 /**

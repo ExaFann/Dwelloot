@@ -29,6 +29,24 @@ type Props = {
   onCancel: () => void
 }
 
+/**
+ * What to tell the user, given what the server actually did — task [68].
+ *
+ * In a household of two, nothing here takes effect until the partner agrees, and the server says so
+ * with a **202**. Reporting the applied message regardless would be the worst kind of wrong: the
+ * confirmation would be about a store that has not changed, and the user would have no reason to
+ * expect anything further to happen.
+ *
+ * The server's own sentence is used for the queued case rather than one written here, so the two
+ * cannot drift on what the wait actually means.
+ */
+function describeOutcome(
+  result: { outcome: 'applied' } | { outcome: 'queued'; message: string },
+  applied: string,
+): string {
+  return result.outcome === 'queued' ? result.message : applied
+}
+
 export function RewardEditor({ reward, onDone, onCancel }: Props) {
   const isEdit = reward !== undefined
 
@@ -64,11 +82,11 @@ export function RewardEditor({ reward, onDone, onCancel }: Props) {
 
     try {
       if (isEdit) {
-        await updateReward({ id: reward.id, ...payload }).unwrap()
-        onDone(`${payload.title} updated.`)
+        const result = await updateReward({ id: reward.id, ...payload }).unwrap()
+        onDone(describeOutcome(result, `${payload.title} updated.`))
       } else {
-        await createReward(payload).unwrap()
-        onDone(`${payload.title} added to the store.`)
+        const result = await createReward(payload).unwrap()
+        onDone(describeOutcome(result, `${payload.title} added to the store.`))
         // Cleared for the next one — adding a reward predicts adding another.
         setTitle('')
         setCoinCost('')
@@ -83,8 +101,8 @@ export function RewardEditor({ reward, onDone, onCancel }: Props) {
     if (!isEdit) return
     setServerError(null)
     try {
-      await deleteReward({ id: reward.id }).unwrap()
-      onDone(`${reward.title} removed.`)
+      const result = await deleteReward({ id: reward.id }).unwrap()
+      onDone(describeOutcome(result, `${reward.title} removed.`))
     } catch (caught) {
       setServerError(toApiError(caught))
       setConfirmingDelete(false)

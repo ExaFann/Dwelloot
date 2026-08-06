@@ -1,6 +1,7 @@
 import { PendingApprovals } from '../features/notices/PendingApprovals'
 import { PrizeRedeemFeed } from '../features/notices/PrizeRedeemFeed'
 import { ChoresFeed } from '../features/notices/ChoresFeed'
+import { StoreChanges } from '../features/notices/StoreChanges'
 import { SECTION_ROW_HEIGHT } from '../features/notices/sectionLayout'
 
 /**
@@ -42,6 +43,19 @@ export function NoticesPage() {
           <PrizeRedeemFeed />
           <ChoresFeed />
         </div>
+      </div>
+
+      {/*
+       * Store changes sit **below** the row rather than inside it — task [68].
+       *
+       * The three sections above are a fixed-height row whose two columns are balanced by
+       * construction; a fourth card in either column would break that arithmetic. This one is also
+       * a different kind of thing: like "Waiting on you" it is a decision, not a feed, but it is
+       * rarer, so it goes after the everyday sections rather than competing with the queue for the
+       * top of the reading order.
+       */}
+      <div className="lg:grid lg:grid-cols-2 lg:h-[22rem]">
+        <StoreChanges />
       </div>
     </div>
   )

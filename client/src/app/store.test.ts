@@ -101,6 +101,9 @@ describe('cache tags', () => {
       'Reward',
       'Redemption',
       'Badge',
+      // Task [68]. Store changes wait on the partner, and the queue is a separate cache entity
+      // from the catalogue it wants to alter.
+      'RewardChange',
     ])
   })
 

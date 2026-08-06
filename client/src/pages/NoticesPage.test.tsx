@@ -8,14 +8,37 @@ import { makeStore } from '../app/store'
 import { signedIn } from '../features/auth/authSlice'
 import { NoticesPage } from './NoticesPage'
 
-const ME = { id: 7, name: 'Alex', email: 'a@b.c', householdId: 42, lifetimePoints: 0, coins: 0, currentWinStreak: 0 }
+const ME = {
+  id: 7,
+  name: 'Alex',
+  email: 'a@b.c',
+  householdId: 42,
+  lifetimePoints: 0,
+  coins: 0,
+  currentWinStreak: 0,
+}
 
 const PENDING = [
-  { id: 39, activityTitle: 'Vacuum', pointsAwarded: 15, loggedByUserId: 9, status: 'Pending', completedAt: new Date().toISOString() },
-  { id: 32, activityTitle: 'Mow the lawn', pointsAwarded: 25, loggedByUserId: 9, status: 'Pending', completedAt: new Date().toISOString() },
+  {
+    id: 39,
+    activityTitle: 'Vacuum',
+    pointsAwarded: 15,
+    loggedByUserId: 9,
+    status: 'Pending',
+    completedAt: new Date().toISOString(),
+  },
+  {
+    id: 32,
+    activityTitle: 'Mow the lawn',
+    pointsAwarded: 25,
+    loggedByUserId: 9,
+    status: 'Pending',
+    completedAt: new Date().toISOString(),
+  },
 ]
 
 type Overrides = {
+  rewardChanges?: unknown
   pending?: unknown
   bulk?: { status: number; body: unknown }
   reject?: { status: number; body: unknown }
@@ -29,7 +52,10 @@ function stub(o: Overrides = {}) {
   const calls: { path: string; search: string; method: string; body?: string }[] = []
   const json = (body: unknown, status = 200) =>
     Promise.resolve(
-      new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }),
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+      }),
     )
 
   vi.stubGlobal(
@@ -42,7 +68,15 @@ function stub(o: Overrides = {}) {
 
       if (p === '/api/auth/me') return json(ME)
       if (p === '/api/households/42') {
-        return json({ id: 42, name: 'House', inviteCode: 'X', members: [{ id: 7, name: 'Alex' }, { id: 9, name: 'Sam' }] })
+        return json({
+          id: 42,
+          name: 'House',
+          inviteCode: 'X',
+          members: [
+            { id: 7, name: 'Alex' },
+            { id: 9, name: 'Sam' },
+          ],
+        })
       }
       if (p === '/api/activity-logs' && input.method === 'GET') {
         // The queue and the partner feed share this path; `status` distinguishes them.
@@ -52,14 +86,31 @@ function stub(o: Overrides = {}) {
         return json(o.partnerLogs ?? { items: [], total: 0 })
       }
       if (p === '/api/activity-logs/mine') return json(o.myLogs ?? { items: [], total: 0 })
+
+      /*
+       * Task [68] gave this screen a fourth section, so the page now requests this path too. Left
+       * unstubbed it fell through to the catch-all 404 and rendered a *second* `role="alert"`,
+       * breaking a bulk-approve test that had nothing to do with store changes.
+       *
+       * The same signature as the flake that survived [46]–[48], from the other side: there, a
+       * stub answered a path it was never told about; here, a new query arrived at a stub that
+       * correctly refuses unknown paths. Adding a query to a shared screen is how both happen.
+       */
+      if (p === '/api/reward-changes') return json(o.rewardChanges ?? [])
       if (p === '/api/redemptions/mine') return json(o.myRedemptions ?? { items: [], total: 0 })
       if (p === '/api/redemptions') return json(o.redemptions ?? { items: [], total: 0 })
       if (p === '/api/activity-logs/bulk-approve') {
-        const r = o.bulk ?? { status: 200, body: { approved: PENDING.map((x) => x.id), skipped: [] } }
+        const r = o.bulk ?? {
+          status: 200,
+          body: { approved: PENDING.map((x) => x.id), skipped: [] },
+        }
         return json(r.body, r.status)
       }
       if (p.endsWith('/reject')) {
-        const r = o.reject ?? { status: 200, body: { id: 39, status: 'Rejected', approvedAt: null } }
+        const r = o.reject ?? {
+          status: 200,
+          body: { id: 39, status: 'Rejected', approvedAt: null },
+        }
         return json(r.body, r.status)
       }
       return json({ error: 'That endpoint does not exist.', errors: null }, 404)
@@ -195,7 +246,9 @@ describe('bulk approve', () => {
   })
 
   it('surfaces a real failure', async () => {
-    stub({ bulk: { status: 409, body: { error: 'You are not in a household yet.', errors: null } } })
+    stub({
+      bulk: { status: 409, body: { error: 'You are not in a household yet.', errors: null } },
+    })
     renderPage()
     const user = userEvent.setup()
 
@@ -281,7 +334,9 @@ describe('approving refreshes the standing', () => {
     await user.click(screen.getByRole('button', { name: /^approve$/i }))
 
     await waitFor(() =>
-      expect(calls.filter((c) => c.search.includes('status=pending')).length).toBeGreaterThan(before),
+      expect(calls.filter((c) => c.search.includes('status=pending')).length).toBeGreaterThan(
+        before,
+      ),
     )
   })
 })
@@ -289,8 +344,21 @@ describe('approving refreshes the standing', () => {
 // ─── Sections 2 and 3 ─────────────────────────────────────────────────────────
 
 describe('the prize & redeem feed', () => {
-  const MY_REDEMPTION = { id: 40, rewardId: 3, rewardTitle: 'Takeaway night', coinsSpent: 80, redeemedAt: '2026-08-04T10:00:00Z' }
-  const THEIR_REDEMPTION = { id: 41, userId: 9, rewardId: 4, rewardTitle: 'Saturday lie-in', coinsSpent: 60, redeemedAt: '2026-08-04T11:00:00Z' }
+  const MY_REDEMPTION = {
+    id: 40,
+    rewardId: 3,
+    rewardTitle: 'Takeaway night',
+    coinsSpent: 80,
+    redeemedAt: '2026-08-04T10:00:00Z',
+  }
+  const THEIR_REDEMPTION = {
+    id: 41,
+    userId: 9,
+    rewardId: 4,
+    rewardTitle: 'Saturday lie-in',
+    coinsSpent: 60,
+    redeemedAt: '2026-08-04T11:00:00Z',
+  }
 
   /** The owner's point: a two-person app whose feed shows one person tells half the story. */
   it('shows both partners, newest first', async () => {
@@ -330,7 +398,9 @@ describe('the prize & redeem feed', () => {
 
     await waitFor(() => {
       expect(calls.some((c) => c.path === '/api/redemptions/mine')).toBe(true)
-      expect(calls.some((c) => c.path === '/api/redemptions' && c.search.includes('excludeMine=true'))).toBe(true)
+      expect(
+        calls.some((c) => c.path === '/api/redemptions' && c.search.includes('excludeMine=true')),
+      ).toBe(true)
     })
   })
 
@@ -342,8 +412,23 @@ describe('the prize & redeem feed', () => {
 })
 
 describe('the chores feed', () => {
-  const MY_LOG = { id: 85, activityTitle: 'Wash dishes', pointsAwarded: 10, status: 'Approved', completedAt: '2026-08-04T08:00:00Z', approvedAt: '2026-08-04T09:00:00Z', rejectReason: null }
-  const THEIR_LOG = { id: 90, activityTitle: 'Mop the floors', pointsAwarded: 15, loggedByUserId: 9, status: 'Pending', completedAt: '2026-08-04T09:30:00Z' }
+  const MY_LOG = {
+    id: 85,
+    activityTitle: 'Wash dishes',
+    pointsAwarded: 10,
+    status: 'Approved',
+    completedAt: '2026-08-04T08:00:00Z',
+    approvedAt: '2026-08-04T09:00:00Z',
+    rejectReason: null,
+  }
+  const THEIR_LOG = {
+    id: 90,
+    activityTitle: 'Mop the floors',
+    pointsAwarded: 15,
+    loggedByUserId: 9,
+    status: 'Pending',
+    completedAt: '2026-08-04T09:30:00Z',
+  }
 
   it('shows both partners, newest first', async () => {
     stub({ myLogs: { items: [MY_LOG], total: 1 }, partnerLogs: { items: [THEIR_LOG], total: 1 } })
