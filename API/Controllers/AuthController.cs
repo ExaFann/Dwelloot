@@ -105,6 +105,57 @@ public class AuthController(
             user.HouseholdId,
             user.LifetimePoints,
             user.Coins,
-            user.CurrentWinStreak));
+            user.CurrentWinStreak,
+            user.AvatarKey));
     }
+
+    /// <summary>
+    /// Choose a preset avatar, or clear it — task [72].
+    /// </summary>
+    /// <remarks>
+    /// <c>PUT</c>, not <c>PATCH</c>: the body carries the whole of what it sets, and sending
+    /// <c>null</c> is a meaningful instruction ("go back to the generated one") rather than
+    /// "leave alone". A PATCH whose null means both would have no way to express clearing.
+    /// </remarks>
+    [Authorize]
+    [HttpPut("me/avatar")]
+    public async Task<ActionResult<CurrentUserResponse>> SetAvatar([FromBody] SetAvatarRequest request)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        // An allow-list, not a length check. The value is a lookup key the client renders a drawing
+        // for, so anything storable must be something somebody chose to draw.
+        if (!AvatarPresets.IsValid(request.AvatarKey))
+        {
+            return this.Failure(StatusCodes.Status400BadRequest, "That is not one of the avatars.");
+        }
+
+        var user = await userManager.FindByIdAsync(userId.Value.ToString());
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        user.AvatarKey = request.AvatarKey;
+        await userManager.UpdateAsync(user);
+
+        return Ok(new CurrentUserResponse(
+            user.Id,
+            user.Name,
+            user.Email,
+            user.HouseholdId,
+            user.LifetimePoints,
+            user.Coins,
+            user.CurrentWinStreak,
+            user.AvatarKey));
+    }
+
+    /// <summary>The list the picker is built from, so the client never invents a key.</summary>
+    [AllowAnonymous]
+    [HttpGet("/api/avatars")]
+    public ActionResult<IReadOnlyList<string>> Avatars() => Ok(AvatarPresets.All.ToList());
 }

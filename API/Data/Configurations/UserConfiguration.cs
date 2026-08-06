@@ -38,6 +38,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         // so two simultaneous redemptions of a 30-Coin balance both write coins = 0 and neither goes
         // negative. That race is recorded as deferred debt in log 030 along with why each fix for it
         // was rejected - do not read this constraint as covering it.
+        builder.Property(u => u.AvatarKey)
+            .HasMaxLength(AvatarPresets.KeyMaxLength);
+
         builder.ToTable(t => t.HasCheckConstraint("ck_users_coins_not_negative", "coins >= 0"));
 
         // A blank name is a single-row rule, so it belongs here - the same boundary that puts

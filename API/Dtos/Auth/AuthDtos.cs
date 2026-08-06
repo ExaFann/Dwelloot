@@ -46,4 +46,17 @@ public record CurrentUserResponse(
     int? HouseholdId,
     int LifetimePoints,
     int Coins,
-    int CurrentWinStreak);
+    int CurrentWinStreak,
+    /// <summary>Chosen preset, or null for the generated identicon — task [72].</summary>
+    string? AvatarKey);
+
+/// <summary>
+/// Body of <c>PUT /api/auth/me/avatar</c>. Null clears the choice — task [72].
+/// </summary>
+/// <remarks>
+/// Deliberately **not** <c>[Required]</c>: null is the instruction to go back to the generated
+/// identicon, and it is the column's default. Validated against the allow-list in the controller
+/// rather than by an attribute, because the valid set lives in <see cref="Entities.AvatarPresets"/>
+/// and duplicating it into a `RegularExpression` would be a second copy to drift.
+/// </remarks>
+public record SetAvatarRequest(string? AvatarKey);

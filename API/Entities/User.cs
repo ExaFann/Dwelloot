@@ -35,6 +35,16 @@ public class User : IdentityUser<int>
 
     public Household? Household { get; set; }
 
+    /// <summary>
+    /// Which preset avatar this user picked, or null for the generated identicon — task [72].
+    /// </summary>
+    /// <remarks>
+    /// Validated against <see cref="AvatarPresets.All"/> on the way in. Null is the default and
+    /// stays valid forever: a user who never opens the picker, and one who picks and then clears,
+    /// are the same state, and `Avatar.tsx` already draws something for both.
+    /// </remarks>
+    public string? AvatarKey { get; set; }
+
     /// <summary>Never-spent contribution measure. Decides who wins a competition period.</summary>
     public int LifetimePoints { get; set; }
 

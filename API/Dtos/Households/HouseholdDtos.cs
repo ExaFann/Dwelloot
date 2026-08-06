@@ -34,7 +34,12 @@ public record RenameHouseholdRequest(
     [Required, CleanText(Household.NameMaxLength)]
     string Name);
 
-public record HouseholdMemberResponse(int Id, string Name);
+/// <remarks>
+/// <c>AvatarKey</c> since [72]: the head-to-head card draws both partners, and without it the
+/// other person's chosen avatar would be invisible to you — which is most of the point of choosing
+/// one. Null means they have not picked, and the client draws the generated identicon.
+/// </remarks>
+public record HouseholdMemberResponse(int Id, string Name, string? AvatarKey);
 
 /// <summary>Shape of <c>GET /api/households/{id}</c>.</summary>
 public record HouseholdDetailsResponse(
