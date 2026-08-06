@@ -4,6 +4,8 @@ import { Avatar } from '../../components/ui/Avatar'
 import { useMeQuery } from '../auth/authApi'
 import { useGetHouseholdQuery } from '../household/householdApi'
 import { toApiError } from '../../api/apiError'
+import { SkeletonList } from '../../components/ui/Skeleton'
+import { SECTION_BODY, SECTION_SHELL } from './sectionLayout'
 
 /**
  * **Prizes and redemptions — both partners, newest first, and deliberately the loud section.**
@@ -75,54 +77,51 @@ export function PrizeRedeemFeed() {
   const isLoading = mine.isLoading || theirs.isLoading
 
   return (
-    <section
-      aria-labelledby="prize-feed-heading"
-      className="rounded-base border-2 border-ink bg-card p-4 sm:p-5"
-    >
-      <h2 id="prize-feed-heading" className="text-lg">
+    <section aria-labelledby="prize-feed-heading" className={SECTION_SHELL}>
+      <h2 id="prize-feed-heading" className="shrink-0 text-lg">
         Prizes &amp; rewards
       </h2>
 
-      {error ? (
-        <p role="alert" className="mt-3 text-muted">
-          {toApiError(error).message}
-        </p>
-      ) : isLoading ? (
-        <p role="status" className="mt-3 text-muted">
-          Loading…
-        </p>
-      ) : entries.length === 0 ? (
-        <p className="mt-3 text-muted">
-          Nothing claimed yet. Win a period, open the box, then spend the Coins in the Store.
-        </p>
-      ) : (
-        <ul className="mt-3 flex flex-col gap-2">
-          {entries.map((entry) => (
-            <li
-              key={entry.key}
-              className="flex items-center gap-3 rounded-base border-2 border-ink-accent bg-warning px-3 py-2.5 text-warning-fg"
-            >
-              {entry.who && (
-                <Avatar
-                  userId={entry.who.id}
-                  name={entry.who.name}
-                  role={entry.isMine ? 'self' : 'opponent'}
-                  size="sm"
-                />
-              )}
-              <span className="min-w-0 flex-1">
-                {/* One interpolated string, not three JSX children — otherwise the sentence is
+      <div className={SECTION_BODY}>
+        {error ? (
+          <p role="alert" className="text-muted">
+            {toApiError(error).message}
+          </p>
+        ) : isLoading ? (
+          <SkeletonList label="Loading prizes and rewards" rows={3} />
+        ) : entries.length === 0 ? (
+          <p className="flex h-full items-center justify-center text-center text-muted">
+            Nothing claimed yet. Win a period, open the box, then spend the Coins in the Store.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {entries.map((entry) => (
+              <li
+                key={entry.key}
+                className="flex items-center gap-3 rounded-base border-2 border-ink-accent bg-warning px-3 py-2.5 text-warning-fg"
+              >
+                {entry.who && (
+                  <Avatar
+                    userId={entry.who.id}
+                    name={entry.who.name}
+                    role={entry.isMine ? 'self' : 'opponent'}
+                    size="sm"
+                  />
+                )}
+                <span className="min-w-0 flex-1">
+                  {/* One interpolated string, not three JSX children — otherwise the sentence is
                     split across text nodes and cannot be matched or read as one phrase. */}
-                <span className="block truncate font-display text-sm font-bold">
-                  {`${entry.isMine ? 'You' : (entry.who?.name ?? 'Your partner')} redeemed ${entry.title}`}
+                  <span className="block truncate font-display text-sm font-bold">
+                    {`${entry.isMine ? 'You' : (entry.who?.name ?? 'Your partner')} redeemed ${entry.title}`}
+                  </span>
+                  <span className="block text-xs opacity-80">{relativeTime(entry.at)}</span>
                 </span>
-                <span className="block text-xs opacity-80">{relativeTime(entry.at)}</span>
-              </span>
-              <span className="shrink-0 font-display text-base font-bold">−{entry.coins}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+                <span className="shrink-0 font-display text-base font-bold">−{entry.coins}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   )
 }

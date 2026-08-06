@@ -54,6 +54,11 @@ describe('the wrapper sentence is dropped when it adds nothing', () => {
 })
 
 describe('the alert survives everywhere it is load-bearing', () => {
+  /**
+   * The message survives; the wrapper above it does not, because the message is now the thing
+   * speaking. Asserted in both directions so "renders something" cannot pass by rendering the
+   * wrapper alone.
+   */
   it('renders when a field message has no input to sit on', () => {
     render(
       <FormAlert
@@ -63,8 +68,24 @@ describe('the alert survives everywhere it is load-bearing', () => {
     )
 
     const alert = screen.getByRole('alert')
-    expect(alert).toHaveTextContent(WRAPPER)
-    expect(alert).toHaveTextContent('That email is taken.')
+    expect(alert).toHaveTextContent(/already registered/i)
+    expect(alert).not.toHaveTextContent(WRAPPER)
+  })
+
+  /** An unmapped key passes through verbatim — the map must not be a whitelist. */
+  it('shows a message it has never seen, unchanged', () => {
+    render(
+      <FormAlert
+        error={error({
+          fieldErrors: { SomeFutureRule: ['Households may not be renamed on a Tuesday.'] },
+        })}
+        claimedFields={['name']}
+      />,
+    )
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Households may not be renamed on a Tuesday.',
+    )
   })
 
   /**
@@ -81,7 +102,7 @@ describe('the alert survives everywhere it is load-bearing', () => {
       />,
     )
 
-    expect(screen.getByRole('alert')).toHaveTextContent('The JSON value could not be converted.')
+    expect(screen.getByRole('alert')).toHaveTextContent(/could not be read/i)
   })
 
   /** A 409, a 404 or a transport failure has no `errors` map, and its sentence is the whole message. */

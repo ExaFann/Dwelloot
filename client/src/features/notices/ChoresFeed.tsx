@@ -7,6 +7,8 @@ import { describeLogPoints, relativeTime } from '../activity/logDisplay'
 import { useMeQuery } from '../auth/authApi'
 import { useGetHouseholdQuery } from '../household/householdApi'
 import { toApiError } from '../../api/apiError'
+import { SkeletonList } from '../../components/ui/Skeleton'
+import { SECTION_BODY, SECTION_SHELL } from './sectionLayout'
 
 /**
  * **Every chore either partner has logged recently, newest first — and whether it counted yet.**
@@ -77,59 +79,62 @@ export function ChoresFeed() {
   const isLoading = mine.isLoading || theirs.isLoading
 
   return (
-    <section
-      aria-labelledby="chores-feed-heading"
-      className="rounded-base border-2 border-ink bg-card p-4 sm:p-5"
-    >
+    <section aria-labelledby="chores-feed-heading" className={SECTION_SHELL}>
       <h2
         id="chores-feed-heading"
-        className="font-display text-sm font-bold uppercase tracking-[0.08em] text-muted"
+        className="shrink-0 font-display text-sm font-bold uppercase tracking-[0.08em] text-muted"
       >
         Chores feed
       </h2>
 
-      {error ? (
-        <p role="alert" className="mt-2 text-sm text-muted">
-          {toApiError(error).message}
-        </p>
-      ) : isLoading ? (
-        <p role="status" className="mt-2 text-sm text-muted">
-          Loading…
-        </p>
-      ) : entries.length === 0 ? (
-        <p className="mt-2 text-sm text-muted">Nothing logged by either of you yet.</p>
-      ) : (
-        <ul className="mt-2 flex flex-col gap-1.5">
-          {entries.slice(0, 10).map((entry) => {
-            const display = describeLogPoints(entry.status, entry.points)
-            return (
-              <li key={entry.key} className="flex items-baseline gap-2 text-sm">
-                <span
-                  aria-hidden="true"
-                  className={`size-2 shrink-0 translate-y-[-1px] border border-ink-accent ${DOT[entry.status]}`}
-                />
-                <span
-                  className={[
-                    'shrink-0 font-display text-xs font-bold',
-                    entry.isMine ? 'text-primary' : 'text-success',
-                  ].join(' ')}
-                >
-                  {entry.who}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-muted">{entry.title}</span>
-                {/* The marker the section exists for — a word, not only a colour. */}
-                <span className="shrink-0 text-xs text-muted">{display.label}</span>
-                <span className="shrink-0 font-display text-xs font-bold">
-                  {display.tone === 'approved' ? `+${entry.points}` : display.tone === 'pending' ? `(${entry.points})` : '—'}
-                </span>
-                <span className="hidden shrink-0 text-xs text-muted sm:inline">
-                  {relativeTime(entry.at)}
-                </span>
-              </li>
-            )
-          })}
-        </ul>
-      )}
+      <div className={SECTION_BODY}>
+        {error ? (
+          <p role="alert" className="text-sm text-muted">
+            {toApiError(error).message}
+          </p>
+        ) : isLoading ? (
+          <SkeletonList label="Loading the chores feed" rows={4} />
+        ) : entries.length === 0 ? (
+          <p className="flex h-full items-center justify-center text-center text-sm text-muted">
+            Nothing logged by either of you yet.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-1.5">
+            {entries.slice(0, 10).map((entry) => {
+              const display = describeLogPoints(entry.status, entry.points)
+              return (
+                <li key={entry.key} className="flex items-baseline gap-2 text-sm">
+                  <span
+                    aria-hidden="true"
+                    className={`size-2 shrink-0 translate-y-[-1px] border border-ink-accent ${DOT[entry.status]}`}
+                  />
+                  <span
+                    className={[
+                      'shrink-0 font-display text-xs font-bold',
+                      entry.isMine ? 'text-primary' : 'text-success',
+                    ].join(' ')}
+                  >
+                    {entry.who}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-muted">{entry.title}</span>
+                  {/* The marker the section exists for — a word, not only a colour. */}
+                  <span className="shrink-0 text-xs text-muted">{display.label}</span>
+                  <span className="shrink-0 font-display text-xs font-bold">
+                    {display.tone === 'approved'
+                      ? `+${entry.points}`
+                      : display.tone === 'pending'
+                        ? `(${entry.points})`
+                        : '—'}
+                  </span>
+                  <span className="hidden shrink-0 text-xs text-muted sm:inline">
+                    {relativeTime(entry.at)}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
     </section>
   )
 }

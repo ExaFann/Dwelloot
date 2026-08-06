@@ -1,6 +1,7 @@
 import { PendingApprovals } from '../features/notices/PendingApprovals'
 import { PrizeRedeemFeed } from '../features/notices/PrizeRedeemFeed'
 import { ChoresFeed } from '../features/notices/ChoresFeed'
+import { SECTION_ROW_HEIGHT } from '../features/notices/sectionLayout'
 
 /**
  * The Notices tab — three sections, **most to least urgent**, and the order is the design:
@@ -24,9 +25,20 @@ export function NoticesPage() {
        * across it: the only section with a decision to make keeps the top of the reading order on
        * its own, and the two feeds — both chronological, both read-only — stack beside it.
        */}
-      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
+      {/*
+       * **No `lg:items-start`.** That was here from [58] and it is what kept the sections
+       * content-sized on desktop: with `items-start` a grid item is only as tall as its contents, so
+       * the `h-full` on each section resolved against its own height and changed nothing. Measured
+       * before the fix — 566 / 212 / 330px for the three cards, all set by how much data happened to
+       * be loaded. The default `stretch` is what makes `h-full` mean "the row".
+       */}
+      <div className={`flex flex-col gap-6 lg:grid lg:grid-cols-2 ${SECTION_ROW_HEIGHT}`}>
         <PendingApprovals />
-        <div className="flex flex-col gap-6">
+        {/*
+         * `min-h-0` again, one level up. Without it this column refuses to shrink below its two
+         * children's content and the row height is ignored — the same trap as inside each section.
+         */}
+        <div className="flex min-h-0 flex-col gap-6">
           <PrizeRedeemFeed />
           <ChoresFeed />
         </div>

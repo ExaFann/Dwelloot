@@ -152,14 +152,18 @@ describe('a rejected sign in', () => {
 
     const email = await screen.findByLabelText('Email')
     await waitFor(() => expect(email).toHaveAttribute('aria-invalid', 'true'))
-    expect(
-      screen.getByText('The Email field is not a valid e-mail address.'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('The Email field is not a valid e-mail address.')).toBeInTheDocument()
     // The other direction: password had no error, so it must not be marked.
     expect(screen.getByLabelText('Password')).not.toHaveAttribute('aria-invalid')
   })
 
-  it('does not lose messages whose key is not a form field', async () => {
+  /**
+   * `$` is a JSON path, and its message is a parser diagnostic. It must still **reach the user** —
+   * a form that rejects a submission and says nothing is the failure this list exists for — but it
+   * now reaches them as a sentence rather than as .NET internals. Both halves asserted: something
+   * is shown, and the raw diagnostic is not.
+   */
+  it('shows a readable sentence for a key that is not a form field', async () => {
     stubFetch(400, {
       error: 'One or more fields are invalid.',
       errors: { $: ["'n' is an invalid start of a property name."] },
@@ -168,7 +172,10 @@ describe('a rejected sign in', () => {
 
     await submit()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/invalid start of a property name/)
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(/could not be read/i)
+    expect(alert).not.toHaveTextContent(/invalid start of a property name/)
+    expect(alert).not.toHaveTextContent(/\$/)
   })
 
   it('falls back to a readable message when the body carries none', async () => {

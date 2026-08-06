@@ -72,9 +72,81 @@ describe('the form', () => {
     expect(screen.getByLabelText('Password')).toHaveAttribute('autocomplete', 'new-password')
   })
 
-  it('states the password rule up front instead of letting the server reject it', () => {
+  /**
+   * The page used to state **one** rule — "At least 8 characters." — while the server enforced
+   * four, so `abcdefgh` obeyed every instruction on screen and was still refused. A test that
+   * checked only the length sentence passed throughout that. It now checks all four.
+   */
+  it('states every password rule up front, not just the length', async () => {
     renderRegister()
     expect(screen.getByText(/at least 8 characters/i)).toBeInTheDocument()
+    expect(screen.getByText(/uppercase letter/i)).toBeInTheDocument()
+    expect(screen.getByText(/lowercase letter/i)).toBeInTheDocument()
+    expect(screen.getByText(/a number/i)).toBeInTheDocument()
+  })
+
+  it('ticks the rules off as they are met, and only the ones that are', async () => {
+    renderRegister()
+    const user = userEvent.setup()
+
+    await user.type(screen.getByLabelText('Password'), 'abcdefgh')
+
+    // Met: length and lowercase. Not met: uppercase and digit.
+    expect(screen.getByLabelText(/at least 8 characters: met/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/lowercase letter: met/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/uppercase letter: not met yet/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/a number: not met yet/i)).toBeInTheDocument()
+  })
+})
+
+/**
+ * The claim is "the server is never asked a question it is certain to refuse", so every assertion
+ * is on the **fetch spy**. "Shows an error" and "sent nothing" are different claims and only the
+ * second is the fix — [47]'s rule, in a third place.
+ */
+describe('a submission the client can already judge', () => {
+  it('sends nothing when the password breaks a rule', async () => {
+    const { spy } = stubFetchSequence({ status: 201, body: {} })
+    renderRegister()
+    const user = userEvent.setup()
+
+    await user.type(screen.getByLabelText('Name'), 'Alex')
+    await user.type(screen.getByLabelText('Email'), 'alex@example.com')
+    await user.type(screen.getByLabelText('Password'), 'abcdefgh')
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  it('sends nothing when the email is malformed, and says so on the field', async () => {
+    const { spy } = stubFetchSequence({ status: 201, body: {} })
+    renderRegister()
+    const user = userEvent.setup()
+
+    await user.type(screen.getByLabelText('Name'), 'Alex')
+    await user.type(screen.getByLabelText('Email'), 'nobody')
+    await user.type(screen.getByLabelText('Password'), 'Passw0rd!23')
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+
+    expect(spy).not.toHaveBeenCalled()
+    expect(await screen.findByText(/does not look like an email address/i)).toBeInTheDocument()
+    expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true')
+  })
+
+  /**
+   * Validating on every keystroke would tell someone their email is malformed after the first
+   * character, which is true and useless. The error waits for blur.
+   */
+  it('does not complain about a half-typed email before the field is left', async () => {
+    stubFetchSequence({ status: 201, body: {} })
+    renderRegister()
+    const user = userEvent.setup()
+
+    await user.type(screen.getByLabelText('Email'), 'al')
+    expect(screen.queryByText(/does not look like an email address/i)).not.toBeInTheDocument()
+
+    await user.tab()
+    expect(await screen.findByText(/does not look like an email address/i)).toBeInTheDocument()
   })
 })
 
@@ -95,7 +167,19 @@ describe('a successful registration', () => {
       '/api/auth/register',
       '/api/auth/login',
     ])
-    expect(router.state.location.pathname).toBe('/')
+    /*
+     * `waitFor`, not a bare assertion — and this was a latent flake, not a style preference.
+     *
+     * The token landing in the store is **not** the moment the route changes: AuthGate then fetches
+     * `/api/auth/me` to learn whether there is a household, and only navigates once that answers. So
+     * this assertion sat one un-awaited async hop past the thing above it, and passed only because
+     * the hop usually completed inside the same flush.
+     *
+     * It started failing when this file grew a few more tests — nothing about the behaviour changed,
+     * only how much work ran before it. A test that is correct but timing-dependent is still a
+     * flake ([59]).
+     */
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'))
   })
 })
 
@@ -113,21 +197,32 @@ describe('a duplicate email', () => {
     await submit()
 
     const alert = await screen.findByRole('alert')
-    expect(alert).toHaveTextContent('One or more validation errors occurred.')
+    expect(alert).toHaveTextContent(/already registered/i)
     expect(alert).not.toHaveTextContent(/something went wrong/i)
+    // ProblemDetails' title is a wrapper: it says only that *something* failed, which the
+    // sentence above already says better. Suppressed once anything else speaks.
+    expect(alert).not.toHaveTextContent('One or more validation errors occurred.')
   })
 
   /**
    * Neither `DuplicateEmail` nor `DuplicateUserName` is an input on this form, so only the
-   * unclaimed-error list makes them visible.
+   * unclaimed-error list makes them visible at all.
+   *
+   * The pair also says the same thing twice, and the second one says **"Username"** to someone who
+   * only ever typed an email — Identity derives the username from it. One sentence now, and the
+   * absence of the word is asserted, because that is the defect.
    */
-  it('surfaces the messages even though no input is bound to those keys', async () => {
+  it('says it once in plain terms, not twice in Identity terms', async () => {
     stubFetchSequence({ status: 400, body: DUPLICATE_EMAIL })
     renderRegister()
 
     await submit()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/is already taken/)
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(/that email is already registered/i)
+    expect(alert).not.toHaveTextContent(/username/i)
+    // One item, not two saying the same thing.
+    expect(alert.querySelectorAll('li')).toHaveLength(1)
   })
 
   it('does not sign the user in', async () => {

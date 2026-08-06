@@ -124,9 +124,23 @@ export function fieldError(error: ApiError, field: string): string | undefined {
  * Render these alongside the form. Verified against the live API in task [41].
  */
 export function unclaimedFieldErrors(error: ApiError, claimedFields: readonly string[]): string[] {
+  return unclaimedFieldEntries(error, claimedFields).map(([, message]) => message)
+}
+
+/**
+ * The same list, but keeping each message's **key**.
+ *
+ * `humaniseError` decides what to show by key rather than by wording — `DuplicateUserName` is
+ * dropped because `DuplicateEmail` already said it, and matching on the sentence would break the
+ * moment .NET rephrases it. The key is the stable part, so it has to survive this far.
+ */
+export function unclaimedFieldEntries(
+  error: ApiError,
+  claimedFields: readonly string[],
+): [string, string][] {
   if (!error.fieldErrors) return []
   const claimed = new Set(claimedFields.map((f) => f.toLowerCase()))
   return Object.entries(error.fieldErrors)
     .filter(([key]) => !claimed.has(key.toLowerCase()))
-    .flatMap(([, messages]) => messages)
+    .flatMap(([key, messages]) => messages.map((message): [string, string] => [key, message]))
 }

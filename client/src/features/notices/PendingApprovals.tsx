@@ -9,8 +9,11 @@ import {
 import { relativeTime } from '../activity/logDisplay'
 import { summariseBulkApprove } from './bulkApproveSummary'
 import { toApiError } from '../../api/apiError'
+import { useTransientMessage } from '../../app/useTransientMessage'
 import { Button } from '../../components/ui/Button'
 import { TextInput } from '../../components/ui/TextInput'
+import { SkeletonList } from '../../components/ui/Skeleton'
+import { SECTION_BODY, SECTION_SHELL } from './sectionLayout'
 
 /**
  * Section one of the Notices tab: the partner's chores waiting on you.
@@ -34,8 +37,14 @@ export function PendingApprovals() {
   const [rejectingId, setRejectingId] = useState<number | null>(null)
   const [reason, setReason] = useState('')
   const [reasonError, setReasonError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
-  const [failure, setFailure] = useState<string | null>(null)
+  /*
+   * Both clear themselves. The notice used to be a plain `useState` that nothing ever reset, so
+   * "1 approved." stayed on screen indefinitely and went on describing an action the user had
+   * finished several steps ago. The failure gets the same treatment for the same reason — a stale
+   * error is worse than a stale confirmation.
+   */
+  const { message: notice, show: showNotice, clear: clearNotice } = useTransientMessage()
+  const { message: failure, show: showFailure, clear: clearFailure } = useTransientMessage()
 
   const items = data?.items ?? []
   const selected = items.filter((item) => selectedIds.includes(item.id))
@@ -48,15 +57,17 @@ export function PendingApprovals() {
   }
 
   async function approveSelected() {
-    setNotice(null)
-    setFailure(null)
+    clearNotice()
+    clearFailure()
     try {
-      const result = await bulkApprove({ ids: selected.map((s) => s.id) }).unwrap()
+      const result = await bulkApprove({
+        ids: selected.map((s) => s.id),
+      }).unwrap()
       // Straight from the response — see `summariseBulkApprove`.
-      setNotice(summariseBulkApprove(result))
+      showNotice(summariseBulkApprove(result))
       setSelectedIds([])
     } catch (caught) {
-      setFailure(toApiError(caught).message)
+      showFailure(toApiError(caught).message)
     }
   }
 
@@ -73,24 +84,22 @@ export function PendingApprovals() {
     }
 
     setReasonError(null)
-    setFailure(null)
+    clearFailure()
     try {
       await rejectLog({ id: log.id, reason: trimmed }).unwrap()
-      setNotice(`${log.activityTitle} rejected.`)
+      showNotice(`${log.activityTitle} rejected.`)
       setRejectingId(null)
       setReason('')
       setSelectedIds((ids) => ids.filter((id) => id !== log.id))
     } catch (caught) {
-      setFailure(toApiError(caught).message)
+      showFailure(toApiError(caught).message)
     }
   }
 
   return (
-    <section
-      aria-labelledby="pending-heading"
-      className="rounded-base border-2 border-ink bg-card p-4 sm:p-5"
-    >
-      <div className="flex items-baseline justify-between gap-3">
+    <section aria-labelledby="pending-heading" className={SECTION_SHELL}>
+      {/* Header stays put; only the queue below it scrolls. */}
+      <div className="flex shrink-0 items-baseline justify-between gap-3">
         <h2 id="pending-heading" className="text-lg">
           Waiting on you
         </h2>
@@ -101,120 +110,130 @@ export function PendingApprovals() {
         )}
       </div>
 
-      {isError ? (
-        <p role="alert" className="mt-3 text-muted">
-          {toApiError(error).message}
-        </p>
-      ) : isLoading || !data ? (
-        <p role="status" className="mt-3 text-muted">
-          Loading…
-        </p>
-      ) : items.length === 0 ? (
-        <p className="mt-3 text-muted">Nothing waiting on you. Your partner is all caught up.</p>
-      ) : (
-        <ul className="mt-3 flex flex-col gap-2">
-          {items.map((log) =>
-            rejectingId === log.id ? (
-              <li key={log.id}>
-                <div className="flex flex-col gap-3 rounded-base border-2 border-danger bg-card p-3">
-                  <p className="font-display text-sm font-bold">Reject {log.activityTitle}?</p>
-                  <TextInput
-                    label="Reason"
-                    name="reason"
-                    value={reason}
-                    onChange={(event) => setReason(event.target.value)}
-                    maxLength={MAX_REASON + 40}
-                    placeholder="The bins are still full…"
-                    error={reasonError ?? undefined}
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      variant="danger"
-                      className="flex-1"
-                      pending={isRejecting}
-                      pendingLabel="Rejecting…"
-                      onClick={() => void submitRejection(log)}
-                    >
-                      Reject
-                    </Button>
-                    <Button
-                      variant="neutral"
-                      onClick={() => {
-                        setRejectingId(null)
-                        setReasonError(null)
-                        setReason('')
-                      }}
-                    >
-                      Cancel
-                    </Button>
+      <div className={SECTION_BODY}>
+        {isError ? (
+          <p role="alert" className="text-muted">
+            {toApiError(error).message}
+          </p>
+        ) : isLoading || !data ? (
+          <SkeletonList label="Loading the chores waiting on you" rows={3} />
+        ) : items.length === 0 ? (
+          /* Centred, so a fixed-height box with nothing in it reads as "all clear" not "broken". */
+          <p className="flex h-full items-center justify-center text-center text-muted">
+            Nothing waiting on you. Your partner is all caught up.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {items.map((log) =>
+              rejectingId === log.id ? (
+                <li key={log.id}>
+                  <div className="flex flex-col gap-3 rounded-base border-2 border-danger bg-card p-3">
+                    <p className="font-display text-sm font-bold">Reject {log.activityTitle}?</p>
+                    <TextInput
+                      label="Reason"
+                      name="reason"
+                      value={reason}
+                      onChange={(event) => setReason(event.target.value)}
+                      maxLength={MAX_REASON + 40}
+                      placeholder="The bins are still full…"
+                      error={reasonError ?? undefined}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="danger"
+                        className="flex-1"
+                        pending={isRejecting}
+                        pendingLabel="Rejecting…"
+                        onClick={() => void submitRejection(log)}
+                      >
+                        Reject
+                      </Button>
+                      <Button
+                        variant="neutral"
+                        onClick={() => {
+                          setRejectingId(null)
+                          setReasonError(null)
+                          setReason('')
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </li>
-            ) : (
-              <li key={log.id}>
-                <button
-                  type="button"
-                  aria-pressed={selectedIds.includes(log.id)}
-                  onClick={() => toggle(log.id)}
-                  className={[
-                    'pressable-sm flex w-full items-center justify-between gap-3 rounded-control border-2 px-3 py-2.5 text-left',
-                    selectedIds.includes(log.id)
-                      ? 'border-ink-accent bg-primary text-primary-fg'
-                      : 'border-ink bg-card',
-                  ].join(' ')}
-                >
-                  <span className="flex min-w-0 items-center gap-2.5">
-                    {/* A tick, not a filled square — see the note in `LogActivityPage` (`ui-exp01`). */}
-                    <span
-                      aria-hidden="true"
-                      className={[
-                        'grid size-5 shrink-0 place-items-center border-2 border-ink-accent',
-                        selectedIds.includes(log.id) ? 'bg-card text-primary' : 'bg-transparent',
-                      ].join(' ')}
-                    >
-                      {selectedIds.includes(log.id) && <Check size={14} strokeWidth={4} />}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate font-display text-sm font-semibold">
-                        {log.activityTitle}
-                      </span>
-                      <span className="block text-xs opacity-80">
-                        {relativeTime(log.completedAt)}
-                      </span>
-                    </span>
-                  </span>
-                  {/* Blue is Points, yellow is Coins — see the note on the same badge in the Log tab. */}
-                  <span
+                </li>
+              ) : (
+                <li key={log.id}>
+                  <button
+                    type="button"
+                    aria-pressed={selectedIds.includes(log.id)}
+                    onClick={() => toggle(log.id)}
                     className={[
-                      'shrink-0 rounded-base border-2 border-ink-accent px-2 py-0.5 font-display text-xs font-bold',
-                      selectedIds.includes(log.id) ? 'bg-card text-body' : 'bg-points text-points-fg',
+                      'pressable-sm flex w-full items-center justify-between gap-3 rounded-control border-2 px-3 py-2.5 text-left',
+                      selectedIds.includes(log.id)
+                        ? 'border-ink-accent bg-primary text-primary-fg'
+                        : 'border-ink bg-card',
                     ].join(' ')}
                   >
-                    {log.pointsAwarded} pts
-                  </span>
-                </button>
-              </li>
-            ),
-          )}
-        </ul>
-      )}
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      {/* A tick, not a filled square — see the note in `LogActivityPage` (`ui-exp01`). */}
+                      <span
+                        aria-hidden="true"
+                        className={[
+                          'grid size-5 shrink-0 place-items-center border-2 border-ink-accent',
+                          selectedIds.includes(log.id) ? 'bg-card text-primary' : 'bg-transparent',
+                        ].join(' ')}
+                      >
+                        {selectedIds.includes(log.id) && <Check size={14} strokeWidth={4} />}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-display text-sm font-semibold">
+                          {log.activityTitle}
+                        </span>
+                        <span className="block text-xs opacity-80">
+                          {relativeTime(log.completedAt)}
+                        </span>
+                      </span>
+                    </span>
+                    {/* Blue is Points, yellow is Coins — see the note on the same badge in the Log tab. */}
+                    <span
+                      className={[
+                        'shrink-0 rounded-base border-2 border-ink-accent px-2 py-0.5 font-display text-xs font-bold',
+                        selectedIds.includes(log.id)
+                          ? 'bg-card text-body'
+                          : 'bg-points text-points-fg',
+                      ].join(' ')}
+                    >
+                      {log.pointsAwarded} pts
+                    </span>
+                  </button>
+                </li>
+              ),
+            )}
+          </ul>
+        )}
+      </div>
 
+      {/*
+       * Everything below the scroll region is pinned, so the action bar cannot be scrolled out of
+       * reach of the selection it acts on — the mistake [47] found on the Log tab, where the submit
+       * button sat after twelve rows.
+       */}
       {failure && (
-        <p role="alert" className="mt-3 font-display text-sm font-bold text-danger">
+        <p role="alert" className="mt-3 shrink-0 font-display text-sm font-bold text-danger">
           {failure}
         </p>
       )}
       {notice && (
         <p
           role="status"
-          className="mt-3 rounded-base border-2 border-ink-accent bg-success px-3 py-2 font-display text-sm font-bold text-success-fg"
+          className="mt-3 shrink-0 rounded-base border-2 border-ink-accent bg-success px-3 py-2 font-display text-sm font-bold text-success-fg"
         >
           {notice}
         </p>
       )}
 
       {items.length > 0 && (
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex shrink-0 gap-2">
           <Button
             variant="success"
             className="flex-1"
