@@ -608,7 +608,7 @@
 }
 
 @utility confetti-piece {
-  animation: dwelloot-confetti-fall var(--fall, 2600ms) linear var(--delay, 0ms) both;
+  animation: dwelloot-confetti-fall var(--fall, 3600ms) linear var(--delay, 0ms) both;
 
   /*
    * Nothing is positioned by this animation — the pieces are decorative and `aria-hidden`, and the

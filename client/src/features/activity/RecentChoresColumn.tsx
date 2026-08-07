@@ -194,8 +194,16 @@ export function RecentChoresColumn({
             {removable && (
               /*
                * Hidden until wanted, but never *absent*: `opacity-0` keeps it in the tab order and
-               * in the accessibility tree, so a keyboard reveals it via `group-focus-within` and a
+               * in the accessibility tree, so a keyboard reveals it via `focus-visible` and a
                * screen reader finds it regardless. `hidden` would have removed it from both.
+               *
+               * **`focus-visible`, not `group-focus-within`** — [80], and it is a bug fix rather
+               * than a preference. Cancelling hands focus back to this trigger (see `cancelConfirm`),
+               * which is right for a keyboard user but meant `group-focus-within` then held the ×
+               * lit until you clicked somewhere else: the owner saw a glyph that would not go away.
+               * `:focus-visible` does not match focus that followed a mouse click, so a pointer user
+               * sees it fade and a keyboard user still sees where they are. Scoped to the button
+               * itself because the group — the `<li>` — is not focusable.
                *
                * `sm:opacity-0` rather than a flat `opacity-0`: hover does not exist on a phone, so
                * below 640px the trigger stays visible — otherwise deleting would be reachable only
@@ -212,7 +220,7 @@ export function RecentChoresColumn({
                     node.focus()
                   }
                 }}
-                className="focus-ring ml-auto shrink-0 rounded-control p-0.5 text-muted transition-opacity hover:text-danger sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100"
+                className="focus-ring ml-auto shrink-0 rounded-control p-0.5 text-muted transition-opacity hover:text-danger sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
               >
                 <RejectIcon className="size-3" />
               </button>

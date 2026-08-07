@@ -283,4 +283,21 @@ describe('removing a pending chore', () => {
     // Never `hidden`: below sm there is no hover, so the trigger has to stay plainly visible.
     expect(trigger.className).not.toMatch(/\bhidden\b/)
   })
+
+  /**
+   * The owner's bug ([80]): after Keep, the × stayed lit until you clicked elsewhere.
+   *
+   * `cancelConfirm` focuses the trigger — correct, so a keyboard user is not dropped on `<body>` —
+   * and the reveal was keyed on `group-focus-within`, which that focus satisfies. `:focus-visible`
+   * does not match focus following a mouse click, so the same return is now invisible to a pointer
+   * user. jsdom cannot evaluate `:focus-visible`, so this pins the *rule*; the behaviour is checked
+   * in the browser.
+   */
+  it('reveals on focus-visible, not on any focus — or Keep leaves the × stuck on', () => {
+    render(<RecentChoresColumn chores={chores} align="left" emptyLabel="—" onRemove={() => {}} />)
+
+    const trigger = screen.getByRole('button', { name: /remove dishes/i })
+    expect(trigger.className).toContain('sm:focus-visible:opacity-100')
+    expect(trigger.className).not.toContain('group-focus-within')
+  })
 })

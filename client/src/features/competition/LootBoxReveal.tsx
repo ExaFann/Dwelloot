@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChestMark, CoinMark, RewardIcon } from '../../components/ui/icons'
+import { ChestMark, CoinMark, PointsMark, RewardIcon } from '../../components/ui/icons'
 import { useMeQuery } from '../auth/authApi'
 import { useCurrentCompetitionQuery } from './competitionApi'
 import { useOpenLootBoxMutation, type OpenLootBoxResult } from './lootBoxApi'
@@ -116,28 +116,78 @@ export function LootBoxReveal() {
 const ON_SCRIM = '#F0EBFF'
 
 /**
- * The confetti for a bonus reward — [79]. Thirty pieces, each with its own column, drift, spin,
- * duration, delay, colour and shape, generated once at module load rather than per render.
+ * The confetti for a bonus reward — [79], widened in [80] after the owner judged it too thin.
+ *
+ * **72 pieces over ~3.4–5.2s**, up from 30 over ~2.2–3.2s, and six kinds rather than two: coins,
+ * Points marks, ribbons, squares, diamonds and triangles. The two currency marks are in there
+ * deliberately — this is the app's own iconography raining down, not generic party confetti.
  *
  * Deterministic on purpose: `Math.random()` here would mean the burst differed every time the
- * component re-rendered mid-fall — a poll lands every 20s — and pieces would jump. A fixed spread
- * that *looks* scattered beats a random one that cannot hold still.
+ * component re-rendered mid-fall — a poll lands every 20s — and pieces would jump. The spread is
+ * built from co-prime-ish multipliers so the columns, delays and durations never line up into a
+ * visible grid; it *looks* scattered and holds still, which random cannot do.
  *
  * The palette is the decorative ramp plus the brand hues, which is what `--deco-*` exists for: a
  * celebration wants more colours than the semantic palette is allowed to supply.
  */
-const CONFETTI_COLOURS = ['#7C4DFF', '#3DDC97', '#FFE14A', '#FF8A3D', '#4CC9F0', '#FF5C5C']
+const CONFETTI_COLOURS = [
+  '#7C4DFF',
+  '#3DDC97',
+  '#FFE14A',
+  '#FF8A3D',
+  '#4CC9F0',
+  '#FF5C5C',
+  '#3B6BFF',
+]
 
-const CONFETTI = Array.from({ length: 30 }, (_, i) => ({
+type ConfettiKind = 'coin' | 'points' | 'ribbon' | 'square' | 'diamond' | 'triangle'
+const CONFETTI_KINDS: ConfettiKind[] = [
+  'ribbon',
+  'coin',
+  'square',
+  'diamond',
+  'points',
+  'triangle',
+  'ribbon',
+  'square',
+]
+
+const CONFETTI = Array.from({ length: 72 }, (_, i) => ({
+  // 97 and 100 are co-prime, so 72 pieces never repeat a column.
   left: `${(i * 97) % 100}%`,
-  drift: `${(((i * 37) % 41) - 20) * 3}px`,
-  spin: `${360 + ((i * 53) % 5) * 180}deg`,
-  fall: `${2200 + ((i * 29) % 9) * 130}ms`,
-  delay: `${(i * 43) % 700}ms`,
+  drift: `${(((i * 37) % 41) - 20) * 4}px`,
+  spin: `${360 + ((i * 53) % 7) * 180}deg`,
+  fall: `${3400 + ((i * 29) % 13) * 150}ms`,
+  // Staggered over 1.6s so it falls as a shower rather than a single curtain.
+  delay: `${(i * 43) % 1600}ms`,
   colour: CONFETTI_COLOURS[i % CONFETTI_COLOURS.length],
-  // A third of them are tall ribbons rather than squares — one shape reads as a texture, not paper.
-  tall: i % 3 === 0,
+  kind: CONFETTI_KINDS[i % CONFETTI_KINDS.length],
 }))
+
+/** One piece. The marks keep their own fills; the plain shapes take the piece's colour. */
+function ConfettiPiece({ kind, colour }: { kind: ConfettiKind; colour: string }) {
+  if (kind === 'coin') return <CoinMark className="size-5" />
+  if (kind === 'points') return <PointsMark className="size-5" />
+
+  const shape =
+    kind === 'ribbon'
+      ? 'h-5 w-1.5'
+      : kind === 'square'
+        ? 'size-2.5'
+        : kind === 'diamond'
+          ? 'size-2.5 rotate-45'
+          : // triangle: a CSS-border triangle needs no extra markup and keeps the set flat-edged.
+            'size-0 border-x-[6px] border-b-[10px] border-x-transparent'
+
+  return (
+    <span
+      className={`block border-ink-accent ${shape} ${kind === 'triangle' ? '' : 'border'}`}
+      style={
+        kind === 'triangle' ? { borderBottomColor: colour } : { backgroundColor: colour }
+      }
+    />
+  )
+}
 
 const COIN_FLIGHTS = [
   { x: '-72px', r: '-260deg', delay: 0 },
@@ -199,21 +249,19 @@ function Revealed({
           {CONFETTI.map((piece, i) => (
             <span
               key={i}
-              className={[
-                'confetti-piece absolute top-0 block border border-ink-accent',
-                piece.tall ? 'h-4 w-1.5' : 'size-2.5',
-              ].join(' ')}
+              className="confetti-piece absolute top-0 block"
               style={
                 {
                   left: piece.left,
-                  backgroundColor: piece.colour,
                   '--drift': piece.drift,
                   '--spin': piece.spin,
                   '--fall': piece.fall,
                   '--delay': piece.delay,
                 } as React.CSSProperties
               }
-            />
+            >
+              <ConfettiPiece kind={piece.kind} colour={piece.colour} />
+            </span>
           ))}
         </div>
       )}
