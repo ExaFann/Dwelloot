@@ -100,9 +100,9 @@ export function LogoMark({ className, style }: IconProps) {
 /**
  * The loot chest — the thing the reveal opens ([53b]). **Owner-addition, not in the sprite**,
  * exempt from fidelity by construction like `BoltIcon`: the owner rejected reusing the logo as
- * the reveal's box ("借鉴颜色,不要挪用 Logo"), so this borrows the palette without the logo's
- * composition — blue trapezoid lid, purple body, a yellow strap over both, yellow clasp, dark
- * diamond keyhole. Flat fills, black strokes, no curves.
+ * the reveal's box ("borrow the colours, don't appropriate the logo"), so this borrows the palette
+ * without the logo's composition — blue trapezoid lid, purple body, a yellow strap over both,
+ * yellow clasp, dark diamond keyhole. Flat fills, black strokes, no curves.
  *
  * `lidClassName` is the animation hook: the lid is its own `<g>` so the reveal can swing it open
  * as a separate layer — the difference between "a drawing shakes" and "a chest opens". The art

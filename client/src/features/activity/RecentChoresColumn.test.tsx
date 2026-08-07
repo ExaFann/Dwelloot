@@ -164,13 +164,67 @@ describe('removing a pending chore', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it('reports the chore id, not its index', () => {
+  /**
+   * Two steps since [78]: the trigger *asks*, and Delete is what sends. This is the assertion the
+   * owner's complaint turns into — a mis-tap now costs one extra tap rather than a logged chore.
+   */
+  it('asks before it deletes', () => {
     const onRemove = vi.fn()
     render(<RecentChoresColumn chores={chores} align="left" emptyLabel="—" onRemove={onRemove} />)
 
     fireEvent.click(screen.getByRole('button', { name: /remove dishes/i }))
 
+    expect(onRemove).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: /delete dishes/i })).toBeInTheDocument()
+  })
+
+  it('reports the chore id, not its index, once confirmed', () => {
+    const onRemove = vi.fn()
+    render(<RecentChoresColumn chores={chores} align="left" emptyLabel="—" onRemove={onRemove} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /remove dishes/i }))
+    fireEvent.click(screen.getByRole('button', { name: /delete dishes/i }))
+
     expect(onRemove).toHaveBeenCalledWith(1)
+  })
+
+  it.each([
+    ['Keep', (title: string) => fireEvent.click(screen.getByRole('button', { name: `Keep ${title}` }))],
+    ['Escape', () => fireEvent.keyDown(screen.getByRole('list'), { key: 'Escape' })],
+  ])('backs out on %s without sending anything', (_name, back) => {
+    const onRemove = vi.fn()
+    render(<RecentChoresColumn chores={chores} align="left" emptyLabel="—" onRemove={onRemove} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /remove dishes/i }))
+    back('Dishes')
+
+    expect(onRemove).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: /remove dishes/i })).toBeInTheDocument()
+  })
+
+  /** Otherwise cancelling drops focus on `<body>` and a keyboard user restarts from the top. */
+  it('returns focus to the row it opened from', () => {
+    render(<RecentChoresColumn chores={chores} align="left" emptyLabel="—" onRemove={() => {}} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /remove dishes/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Keep Dishes' }))
+
+    expect(screen.getByRole('button', { name: /remove dishes/i })).toHaveFocus()
+  })
+
+  /** One row at a time: two open confirms in a 112px scroller is two ways to lose your place. */
+  it('opening a second confirm closes the first', () => {
+    const twoPending = [
+      chores[0],
+      { id: 4, activityTitle: 'Laundry', pointsAwarded: 8, status: 'Pending' as const },
+    ]
+    render(<RecentChoresColumn chores={twoPending} align="left" emptyLabel="—" onRemove={() => {}} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /remove dishes/i }))
+    fireEvent.click(screen.getByRole('button', { name: /remove laundry/i }))
+
+    expect(screen.getByRole('button', { name: 'Delete Laundry' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Delete Dishes' })).not.toBeInTheDocument()
   })
 
   /** A second tap while the first is in flight would send the same delete twice. */
@@ -184,6 +238,25 @@ describe('removing a pending chore', () => {
         isRemoving
       />,
     )
-    expect(screen.getByRole('button', { name: /remove dishes/i })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: /remove dishes/i }))
+    expect(screen.getByRole('button', { name: /delete dishes/i })).toBeDisabled()
+    // Backing out stays available whatever is in flight.
+    expect(screen.getByRole('button', { name: 'Keep Dishes' })).toBeEnabled()
+  })
+
+  /**
+   * jsdom has no `:hover`, so this pins only the half that a unit test *can* see: the glyph is
+   * hidden by opacity rather than removed, so revealing it cannot reflow the row, and it stays in
+   * the tab order and the accessibility tree for keyboard and screen-reader users. Whether hover
+   * actually reveals it is verified in the browser.
+   */
+  it('hides the trigger behind hover from sm up, without removing it', () => {
+    render(<RecentChoresColumn chores={chores} align="left" emptyLabel="—" onRemove={() => {}} />)
+
+    const trigger = screen.getByRole('button', { name: /remove dishes/i })
+    expect(trigger.className).toContain('sm:opacity-0')
+    expect(trigger.className).toContain('sm:group-hover:opacity-100')
+    // Never `hidden`: below sm there is no hover, so the trigger has to stay plainly visible.
+    expect(trigger.className).not.toMatch(/\bhidden\b/)
   })
 })

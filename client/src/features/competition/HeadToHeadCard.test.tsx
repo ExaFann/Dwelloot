@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { makeStore } from '../../app/store'
 import { signedIn } from '../auth/authSlice'
@@ -48,6 +48,7 @@ function stub({
   competitionStatus = 200,
   myLogs = [],
   partnerLogs = [],
+  deleteLog,
 }: {
   members?: { id: number; name: string }[]
   competition?: Competition
@@ -56,6 +57,8 @@ function stub({
   competitionStatus?: number
   myLogs?: unknown[]
   partnerLogs?: unknown[]
+  /** The DELETE's answer. Routed explicitly ([78]) so a refusal is not the catch-all's 404. */
+  deleteLog?: { status: number; body: unknown }
 }) {
   const json = (body: unknown, status = 200) =>
     Promise.resolve(
@@ -86,6 +89,9 @@ function stub({
       }
       if (path === '/api/households/42') {
         return json({ id: 42, name: 'Duel House', inviteCode: 'ABC123', members })
+      }
+      if (input.method === 'DELETE' && path.startsWith('/api/activity-logs/')) {
+        return deleteLog ? json(deleteLog.body, deleteLog.status) : json(null, 204)
       }
       if (path === '/api/activity-logs/mine') return json({ items: myLogs, total: myLogs.length })
       if (path === '/api/activity-logs')
@@ -366,5 +372,30 @@ describe('removing your own pending chore', () => {
     renderCard()
 
     expect(await screen.findByRole('button', { name: /remove dishes/i })).toBeInTheDocument()
+  })
+
+  /**
+   * [78]. The delete used to be `void removeLog({ id })` — fire and forget — so a refusal left the
+   * row sitting there with nothing said. That was survivable behind a one-tap ×; behind a confirm
+   * it is a broken promise, because the confirm's whole claim is "press Delete and this goes". The
+   * likeliest real refusal is the partner approving the chore a second earlier.
+   */
+  it('says why when the delete is refused', async () => {
+    stub({
+      competition: { myPoints: 0, partnerPoints: 0 },
+      myLogs: [pendingMine],
+      deleteLog: {
+        status: 409,
+        body: { error: 'That chore has already been approved.', errors: null },
+      },
+    })
+    renderCard()
+
+    fireEvent.click(await screen.findByRole('button', { name: /remove dishes/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Dishes' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'That chore has already been approved.',
+    )
   })
 })

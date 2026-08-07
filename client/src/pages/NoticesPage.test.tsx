@@ -8,6 +8,11 @@ import { makeStore } from '../app/store'
 import { signedIn } from '../features/auth/authSlice'
 import { NoticesPage } from './NoticesPage'
 
+/**
+ * `avatarKey` is on the fixtures deliberately ([78]). The real `/api/auth/me` and household
+ * payloads have carried it since [72]; these stubs did not, which is the half of the stale-avatar
+ * bug that let it live — the feed dropped the field and no fixture had one to drop.
+ */
 const ME = {
   id: 7,
   name: 'Alex',
@@ -16,6 +21,7 @@ const ME = {
   lifetimePoints: 0,
   coins: 0,
   currentWinStreak: 0,
+  avatarKey: 'fox',
 }
 
 const PENDING = [
@@ -74,8 +80,8 @@ function stub(o: Overrides = {}) {
           name: 'House',
           inviteCode: 'X',
           members: [
-            { id: 7, name: 'Alex' },
-            { id: 9, name: 'Sam' },
+            { id: 7, name: 'Alex', avatarKey: 'fox' },
+            { id: 9, name: 'Sam', avatarKey: 'star' },
           ],
         })
       }
@@ -386,7 +392,7 @@ describe('the prize & redeem feed', () => {
     expect(rows[1]).toMatch(/takeaway night/i)
   })
 
-  it('says who, and shows what was actually paid', async () => {
+  it('says who, and prices nothing', async () => {
     stub({
       myRedemptions: { items: [MY_REDEMPTION], total: 1 },
       redemptions: { items: [THEIR_REDEMPTION], total: 1 },
@@ -397,9 +403,84 @@ describe('the prize & redeem feed', () => {
     // The partner's name arrives from a separate household request; before it lands the row reads
     // "Your partner redeemed …", so this has to wait rather than assert against the placeholder.
     expect(await screen.findByText(/sam redeemed saturday lie-in/i)).toBeInTheDocument()
-    // `coinsSpent` verbatim — a snapshot, never the reward's current price.
-    expect(screen.getByText('−80')).toBeInTheDocument()
-    expect(screen.getByText('−60')).toBeInTheDocument()
+    /*
+     * No figure on a redemption since [78]. The section lists what each of you has *got*, and what
+     * a reward cost after you already own it is not the interesting fact — the reward is, and the
+     * sentence already says "redeemed".
+     */
+    expect(screen.queryByText('−80')).not.toBeInTheDocument()
+    expect(screen.queryByText('−60')).not.toBeInTheDocument()
+  })
+
+  /**
+   * Both directions in one test, because a guard written as `coins !== null` alone would still
+   * price every purchase and pass every other assertion in this block.
+   */
+  it('shows no figure on a redemption, whoever made it', async () => {
+    stub({
+      myRedemptions: { items: [MY_REDEMPTION], total: 1 },
+      redemptions: { items: [THEIR_REDEMPTION], total: 1 },
+    })
+    renderPage()
+
+    await screen.findByText(/you redeemed takeaway night/i)
+    await screen.findByText(/sam redeemed saturday lie-in/i)
+    expect(screen.queryAllByText(/^[+−]\d/)).toHaveLength(0)
+  })
+
+  /**
+   * The stale-avatar bug ([78]): the feed rendered `<Avatar>` without `avatarKey`, so every row
+   * fell back to the generated identicon while the dashboard beside it showed the same people's
+   * chosen avatars. The tell is the initials — an identicon has them, a preset does not.
+   */
+  it('shows each person’s chosen avatar, not the generated fallback', async () => {
+    stub({
+      myRedemptions: { items: [MY_REDEMPTION], total: 1 },
+      redemptions: { items: [THEIR_REDEMPTION], total: 1 },
+    })
+    renderPage()
+
+    const mine = (await screen.findByText(/you redeemed/i)).closest('li')!
+    const theirs = (await screen.findByText(/sam redeemed/i)).closest('li')!
+
+    for (const row of [mine, theirs]) {
+      const avatar = row.firstElementChild!
+      expect(avatar.querySelector('svg')).not.toBeNull()
+      // The initials step aside for a preset — `avatarPresets.test.tsx`'s rule, at feed level.
+      expect(avatar.textContent).toBe('')
+    }
+  })
+
+  /** Purple is you, green is your partner — the row now says whose before it is read ([78]). */
+  it('tints each row by whose it is', async () => {
+    stub({
+      myRedemptions: { items: [MY_REDEMPTION], total: 1 },
+      redemptions: { items: [THEIR_REDEMPTION], total: 1 },
+    })
+    renderPage()
+
+    const mine = (await screen.findByText(/you redeemed/i)).closest('li')!
+    const theirs = (await screen.findByText(/sam redeemed/i)).closest('li')!
+
+    expect(mine.className).toContain('bg-self')
+    expect(theirs.className).toContain('bg-opponent')
+    // Both directions: one yellow for everything would pass a one-sided check.
+    expect(mine.className).not.toContain('bg-warning')
+  })
+
+  /**
+   * [78]. The rows are a *selection*, not an action — the Log tab's chore rows lost their press
+   * physics for exactly that reason and these had drifted from them. The focus ring is the part
+   * that matters beyond taste: `pressable-sm` was never a focus indicator and this row had none,
+   * so keyboard users were selecting invisibly.
+   */
+  it('gives the queue rows a focus ring and no press physics', async () => {
+    stub()
+    renderPage()
+
+    const row = await screen.findByRole('button', { name: /vacuum/i })
+    expect(row.className).toContain('focus-ring')
+    expect(row.className).not.toContain('pressable')
   })
 
   it('asks both endpoints, which partition the household', async () => {
@@ -424,11 +505,11 @@ describe('the prize & redeem feed', () => {
   })
 
   /**
-   * Task [36a] — the section is called "Prizes & rewards" and until now every row read
-   * "<someone> redeemed <something>" with a **−N** figure. A section named for prizes showed only
-   * Coins *leaving*.
+   * Task [36a] gave this section prizes as well as spending; [78] decided only the prize carries a
+   * figure. So the two kinds are told apart by the sentence and the tint, and the one number on
+   * screen is unambiguously something gained.
    */
-  it('shows a won Coin prize with a plus, beside spending with a minus', async () => {
+  it('shows a won Coin prize with a plus, beside spending with no figure', async () => {
     stub({
       myRedemptions: {
         items: [
@@ -462,7 +543,9 @@ describe('the prize & redeem feed', () => {
 
     expect(await screen.findByText(/you won/i)).toBeInTheDocument()
     expect(screen.getByText('+25')).toBeInTheDocument()
-    expect(screen.getByText('−30')).toBeInTheDocument()
+    expect(screen.queryByText('−30')).not.toBeInTheDocument()
+    // Exactly one figure on screen, and it is the win.
+    expect(screen.queryAllByText(/^[+−]\d/)).toHaveLength(1)
   })
 
   /**
@@ -535,10 +618,13 @@ describe('the prize & redeem feed', () => {
     expect(screen.getByText(/you won/i)).toBeInTheDocument()
     expect(screen.getByText(/sam won breakfast in bed/i)).toBeInTheDocument()
 
-    // And the direction is legible at a glance, which is the point of the section.
-    expect(screen.getByText('−30')).toBeInTheDocument()
-    expect(screen.getByText('−40')).toBeInTheDocument()
+    /*
+     * And of the four, exactly one carries a figure: the Coins won. The two purchases are priceless
+     * by design since [78] and the won reward never had a price. This count is the guard that would
+     * catch a partial revert — a `−N` creeping back in would make it 3.
+     */
     expect(screen.getByText('+25')).toBeInTheDocument()
+    expect(screen.queryAllByText(/^[+−]\d/)).toHaveLength(1)
   })
 
   /**

@@ -242,7 +242,7 @@ function BadgeOverlay({ badge, onClose }: { badge: Badge; onClose: () => void })
    * `describeBadge` is the shelf's old display table, surviving its component: the status word,
    * and — for an unlocked badge — the "Earned 13 h ago" line the shelf used to show, which would
    * otherwise be information the shelf's deletion silently lost. The criteria sentence renders for
-   * both states (it is the 简介 the overlay exists to show); for a locked badge it *is* the
+   * both states (it is the summary the overlay exists to show); for a locked badge it *is* the
    * detail, so the extra line renders only when unlocked.
    */
   const display = describeBadge(badge)

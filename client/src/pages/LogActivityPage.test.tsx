@@ -90,6 +90,12 @@ describe('the chore list', () => {
     const request = calls.find((c) => c.path === '/api/activities')
     expect(request?.search).toContain('category=Chore')
     expect(request?.search).toContain('sort=title')
+    /*
+     * And ascending. Since [78] added a sort control, `sort=title` alone no longer pins the order:
+     * `Name Z–A` sends the same field. Without this line, making Z–A the default would leave the
+     * list reversed on load and this test still green.
+     */
+    expect(request?.search).not.toContain('descending')
   })
 
   it('reports a load failure instead of an empty list', async () => {
@@ -246,6 +252,59 @@ describe('reaching edit without a hidden gesture', () => {
 
     expect(screen.getByLabelText('Chore')).toHaveValue('Wash dishes')
     expect(screen.getByRole('button', { name: /remove this chore/i })).toBeInTheDocument()
+  })
+})
+
+describe('sorting — [78]', () => {
+  it('sends the field and direction the chosen option means', async () => {
+    const calls = stub()
+    renderPage()
+    await screen.findByRole('button', { name: /^wash dishes/i })
+
+    await userEvent.setup().selectOptions(screen.getByLabelText('Sort'), 'z-a')
+
+    await waitFor(() =>
+      expect(
+        calls.some(
+          (c) =>
+            c.path === '/api/activities' &&
+            c.search.includes('sort=title') &&
+            c.search.includes('descending=true'),
+        ),
+      ).toBe(true),
+    )
+  })
+
+  /**
+   * The other field, and the reason the owner asked: a control that could only ever re-order by
+   * title would pass the test above. `points` is the second of the two the API accepts.
+   */
+  it('can sort by what a chore is worth', async () => {
+    const calls = stub()
+    renderPage()
+    await screen.findByRole('button', { name: /^wash dishes/i })
+
+    await userEvent.setup().selectOptions(screen.getByLabelText('Sort'), 'most')
+
+    await waitFor(() =>
+      expect(
+        calls.some((c) => c.search.includes('sort=points') && c.search.includes('descending=true')),
+      ).toBe(true),
+    )
+  })
+
+  it('sends ascending without a descending flag at all', async () => {
+    const calls = stub()
+    renderPage()
+    await screen.findByRole('button', { name: /^wash dishes/i })
+
+    await userEvent.setup().selectOptions(screen.getByLabelText('Sort'), 'fewest')
+
+    await waitFor(() =>
+      expect(calls.some((c) => c.search.includes('sort=points'))).toBe(true),
+    )
+    // `descending=false` is the server's default and says nothing; sending it is noise.
+    expect(calls.every((c) => !c.search.includes('descending'))).toBe(true)
   })
 })
 

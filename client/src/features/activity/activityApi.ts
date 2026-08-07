@@ -76,9 +76,13 @@ export const activityApi = baseApi.injectEndpoints({
     /**
      * The full chore list for the log screen ([47]).
      *
-     * `sort=title` is fixed: alphabetical is what makes a list scannable, and the only other valid
-     * value is `points` — confirmed from the API's own 400, which names them
-     * ("Unknown sort field. Valid values: title, points."). Sorting is the Store's job ([51]).
+     * **`sort` is now the caller's** ([78]). It used to be pinned to `title` here, on the reasoning
+     * that alphabetical is what makes a list scannable and sorting is the Store's job ([51]) — the
+     * owner asked for the Log tab to sort by points too, and the API accepted it all along. The two
+     * valid fields are `title` and `points`, confirmed by the API's own 400 ("Unknown sort field.
+     * Valid values: title, points."); `choreQuery.ts` is what keeps a call site from inventing a
+     * third. Omitting it still yields alphabetical, so the two callers that do not care
+     * (`QuickLogTiles`, `QuickLogManager`) are unchanged — and keep their cache key.
      */
     /**
      * The household's chore catalogue — **shared, and both partners write to it.**
@@ -87,9 +91,14 @@ export const activityApi = baseApi.injectEndpoints({
      * dashboard wall left the other partner's wall unchanged. See `liveSync.ts` for why the earlier
      * "only this user can change it" reasoning was wrong.
      */
-    activities: build.query<Paged<Activity>, { search?: string; isQuick?: boolean }>({
-      query: ({ search, isQuick }) => {
-        const params = new URLSearchParams({ category: 'Chore', sort: 'title' })
+    activities: build.query<
+      Paged<Activity>,
+      { search?: string; isQuick?: boolean; sort?: string; descending?: boolean }
+    >({
+      query: ({ search, isQuick, sort, descending }) => {
+        const params = new URLSearchParams({ category: 'Chore', sort: sort ?? 'title' })
+        // Only when true: `descending=false` is the server's default and says nothing.
+        if (descending) params.set('descending', 'true')
         // Only sent when non-empty: `search=` would be a filter for the empty string.
         if (search?.trim()) params.set('search', search.trim())
         /*

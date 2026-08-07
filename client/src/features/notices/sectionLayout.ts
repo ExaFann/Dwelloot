@@ -5,8 +5,8 @@
  *
  * Each section was sized by its contents, so approving one chore, or a partner logging three,
  * re-laid out the whole page: the two feeds on the right jumped up or down, and on a phone the
- * section you were reading moved under your thumb. The owner's word for it was 不可控 — the page had
- * no shape of its own, only the shape of whatever data happened to be loaded.
+ * section you were reading moved under your thumb. The owner's word for it was "uncontrollable" —
+ * the page had no shape of its own, only the shape of whatever data happened to be loaded.
  *
  * A fixed height gives every section a permanent place. Scrolling moves the *contents* of a box,
  * which is a small, local, expected motion, instead of moving every box below it.

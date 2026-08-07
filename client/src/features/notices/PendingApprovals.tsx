@@ -168,11 +168,22 @@ export function PendingApprovals() {
                     type="button"
                     aria-pressed={selectedIds.includes(log.id)}
                     onClick={() => toggle(log.id)}
+                    /*
+                     * **No press physics**, matching the Log tab's chore rows exactly — owner's
+                     * call ([78]), and the same argument that removed them there: these rows are a
+                     * *selection*, not an action. Tapping one adds it to the batch; nothing is sent
+                     * until the action bar below is used. A column of rows each lifting under its
+                     * own hard shadow reads as a page of buttons rather than a list you pick from.
+                     *
+                     * `focus-ring` is added because `pressable-sm` was never a focus indicator and
+                     * this row had none — keyboard users were selecting invisibly. The Log tab
+                     * found the same gap when it made this change.
+                     */
                     className={[
-                      'pressable-sm flex w-full items-center justify-between gap-3 rounded-control border-2 px-3 py-2.5 text-left',
+                      'focus-ring flex w-full items-center justify-between gap-3 rounded-control border-2 px-3 py-2.5 text-left transition-colors',
                       selectedIds.includes(log.id)
                         ? 'border-ink-accent bg-primary text-primary-fg'
-                        : 'border-ink bg-card',
+                        : 'border-ink bg-card hover:border-primary',
                     ].join(' ')}
                   >
                     <span className="flex min-w-0 items-center gap-2.5">

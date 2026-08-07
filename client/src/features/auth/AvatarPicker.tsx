@@ -70,7 +70,9 @@ export function AvatarPicker({ onDone }: { onDone?: () => void }) {
               current === null ? 'border-ink-accent bg-primary' : 'border-ink bg-card',
             ].join(' ')}
           >
-            <Avatar userId={me.id} name={me.name} role="self" size="sm" />
+            {/* `null` on purpose: this tile *is* the "no preset" option, so it must show the
+                generated mark whatever the user has currently chosen. */}
+            <Avatar userId={me.id} name={me.name} role="self" size="sm" avatarKey={null} />
           </button>
         </li>
 

@@ -95,7 +95,7 @@ export function MePage() {
            * never a bare number — with the visual order handled by flex direction, exactly as the
            * tiles did it.
            */}
-          <dl className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-4 gap-y-1">
+          <dl className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-6 gap-y-1">
             <Stat
               label="Coins"
               value={me.coins}
@@ -191,7 +191,15 @@ function Stat({
      * baseline against the xl number's and hoisted the mark visibly high (owner-caught, [75c]).
      */
     <div className="flex flex-row-reverse items-baseline gap-1.5">
-      <dt className="font-display text-[0.7rem] font-semibold uppercase tracking-[0.06em] text-muted">
+      {/*
+       * **`sr-only sm:not-sr-only`, never `hidden sm:inline`** — [78]. Below 640px the mark and the
+       * number carry the stat on their own (owner's call: three labels crowd a phone), but the
+       * label must still exist. `hidden` would take it out of the accessibility tree *and* out of
+       * `textContent`, so a screen reader would hear a bare "13" and the tests that read
+       * "13 … Coins" as one string would break; `sr-only` hides it from eyes only. jsdom does no
+       * media matching, so these base classes are also exactly what the tests see.
+       */}
+      <dt className="sr-only font-display text-[0.7rem] font-semibold uppercase tracking-[0.06em] text-muted sm:not-sr-only">
         {label}
       </dt>
       <dd className="flex items-center gap-1 font-display text-xl font-bold">

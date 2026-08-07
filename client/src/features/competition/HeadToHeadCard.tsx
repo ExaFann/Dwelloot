@@ -21,6 +21,7 @@ import { toApiError } from '../../api/apiError'
 import { Button } from '../../components/ui/Button'
 import { SkeletonBlock, SkeletonList } from '../../components/ui/Skeleton'
 import { LIVE_POLL_MS, liveQueryOptions } from '../../app/liveSync'
+import { useTransientMessage } from '../../app/useTransientMessage'
 
 /**
  * The head-to-head "tug" widget — `wireframes.md` §1: *both partners' current-period Points side by
@@ -122,6 +123,21 @@ export function HeadToHeadCard() {
    */
   /** Task [71]. Owned here rather than in the column, which stays presentational. */
   const [removeLog, { isLoading: isRemoving }] = useDeleteActivityLogMutation()
+  /**
+   * A failed delete used to vanish ([78]). The call was `void removeLog({ id })` — fire and
+   * forget — so a 404 or a lost connection left the row sitting there with no explanation, and the
+   * only clue was that nothing happened. Now that deleting takes a deliberate confirm, saying so
+   * when it fails is the least the confirm owes the person who gave it.
+   */
+  const { message: removeFailure, show: showRemoveFailure } = useTransientMessage()
+
+  const remove = async (id: number) => {
+    try {
+      await removeLog({ id }).unwrap()
+    } catch (caught) {
+      showRemoveFailure(toApiError(caught).message)
+    }
+  }
 
   const myChores = useMyActivityLogsQuery({ take: 12 }, liveQueryOptions)
   const partnerChores = usePartnerActivityLogsQuery({ pageSize: 12 }, liveQueryOptions)
@@ -236,10 +252,15 @@ export function HeadToHeadCard() {
             chores={myVisible}
             align="left"
             emptyLabel="Nothing logged today."
-            onRemove={(id) => void removeLog({ id })}
+            onRemove={(id) => void remove(id)}
             isRemoving={isRemoving}
           />
           <PartnerSlot inviteCode={household.data.inviteCode} />
+          {removeFailure && (
+            <div className="col-span-2">
+              <RemoveFailure message={removeFailure} />
+            </div>
+          )}
         </div>
       ) : (
         <>
@@ -281,11 +302,12 @@ export function HeadToHeadCard() {
               chores={myVisible}
               align="left"
               emptyLabel="Nothing logged today."
-              onRemove={(id) => void removeLog({ id })}
+              onRemove={(id) => void remove(id)}
               isRemoving={isRemoving}
             />
             <RecentChoresColumn chores={partnerVisible} align="right" emptyLabel="Nothing today." />
           </div>
+          {removeFailure && <RemoveFailure message={removeFailure} />}
 
           {/*
            * Three periods: today, this week, this month.
@@ -430,6 +452,18 @@ function PeriodPanel({
 
       <p className="mt-2 font-display text-sm font-bold">{summarise(standing, partnerName)}</p>
     </div>
+  )
+}
+
+/** Why a delete was refused — [78]. The likeliest cause is the partner approving it a moment ago. */
+function RemoveFailure({ message }: { message: string }) {
+  return (
+    <p
+      role="alert"
+      className="mt-3 rounded-base border-2 border-ink-accent bg-danger px-3 py-2 font-display text-sm font-bold text-danger-fg"
+    >
+      {message}
+    </p>
   )
 }
 

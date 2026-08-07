@@ -94,9 +94,20 @@ describe.each(SCHEMES)('%s scheme', (_schemeName, vars) => {
       .toBeGreaterThanOrEqual(AA_TEXT)
   })
 
-  it('body and secondary text meet AA on both page and card', () => {
+  /**
+   * The person tints ([78]) join this loop rather than getting a parallel one: a prize row carries
+   * both inks — the title in `--text-primary`, the timestamp in `--text-secondary` — so a tint that
+   * only cleared the first would ship a legible headline over an unreadable date. The candidate
+   * #215446 was rejected on exactly this assertion, at 4.16:1.
+   */
+  it('body and secondary text meet AA on every surface they land on', () => {
     for (const text of ['--text-primary', '--text-secondary']) {
-      for (const surface of ['--surface-page', '--surface-card']) {
+      for (const surface of [
+        '--surface-page',
+        '--surface-card',
+        '--surface-self',
+        '--surface-opponent',
+      ]) {
         const ratio = contrastRatio(vars[text], vars[surface])
         expect(ratio, `${text} on ${surface} = ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(AA_TEXT)
       }
@@ -114,12 +125,34 @@ describe.each(SCHEMES)('%s scheme', (_schemeName, vars) => {
     )
   })
 
-  it('surface ink is a visible border on both page and card', () => {
-    for (const surface of ['--surface-page', '--surface-card']) {
+  it('surface ink is a visible border on every surface', () => {
+    for (const surface of [
+      '--surface-page',
+      '--surface-card',
+      '--surface-self',
+      '--surface-opponent',
+    ]) {
       const ratio = contrastRatio(vars['--ink-surface'], vars[surface])
       expect(ratio, `--ink-surface on ${surface} = ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(
         AA_NON_TEXT,
       )
+    }
+  })
+
+  /**
+   * And the reason the prize row's border had to move off `--ink-accent` ([78]): accent ink is
+   * black in *both* schemes because it exists for bright brand fills. On the dark person tint that
+   * is 1.74:1 — not a border. Asserted as an inequality rather than left as prose, so a future
+   * "consistency fix" putting accent ink back on a tint fails here instead of shipping.
+   */
+  it('accent ink is NOT a border on the person tints — they take surface ink', () => {
+    for (const tint of ['--surface-self', '--surface-opponent']) {
+      const accent = contrastRatio(vars['--ink-accent'], vars[tint])
+      const surface = contrastRatio(vars['--ink-surface'], vars[tint])
+      expect(
+        surface,
+        `--ink-surface on ${tint} = ${surface.toFixed(2)}:1 vs --ink-accent ${accent.toFixed(2)}:1`,
+      ).toBeGreaterThanOrEqual(accent)
     }
   })
 

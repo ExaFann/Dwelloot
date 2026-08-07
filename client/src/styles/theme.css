@@ -161,6 +161,22 @@
    * (the --deco-* reasoning).
    */
   --mark-bolt: #FFE14A;
+
+  /*
+   * Person tints — [78]. The prize feed's rows were yellow, on a page where yellow means Coins:
+   * the row's own colour was arguing with the figure printed on it. These say *whose* event a row
+   * is, in the language the app already speaks — purple is you, green is your opponent
+   * (`AvatarRole`, design-tokens.md §2.1).
+   *
+   * Surfaces, not fills, and the distinction decides their ink: a fill takes the black
+   * `--ink-accent`, a surface takes `--ink-surface`, which inverts. Black on the dark tint measures
+   * 1.74:1 — that is what forced the row's border to `border-ink`.
+   *
+   * Every value is measured against its text, its muted text and its ink in both schemes by
+   * `tokens.test.ts`. A deeper green was tried and rejected: #215446 drops muted text to 4.16:1.
+   */
+  --surface-self: #CDBAFF;
+  --surface-opponent: #A3E6C7;
 }
 
 [data-theme='dark'] {
@@ -195,6 +211,10 @@
   --mark-coins: #EAB308;
   --mark-flame: #E56B14;
   --mark-bolt: #EAB308;
+
+  /* Deep enough to sit on the dark card, light enough to keep AA under both text inks. */
+  --surface-self: #443473;
+  --surface-opponent: #1E4A3C;
 }
 
 /*
@@ -219,6 +239,8 @@
 
   --color-page: var(--surface-page);
   --color-card: var(--surface-card);
+  --color-self: var(--surface-self);
+  --color-opponent: var(--surface-opponent);
   --color-body: var(--text-primary);
   --color-muted: var(--text-secondary);
   --color-placeholder: var(--text-placeholder);

@@ -108,6 +108,13 @@ export function LootBoxReveal() {
  * of the utility's 950ms base. Eight, asymmetric on purpose: a symmetric spray reads as a
  * particle effect, an uneven one as spilling.
  */
+/**
+ * Text colour inside the reveal. The dialog's scrim is `bg-black/60` in both schemes, so this is
+ * one of the few places a literal beats a token: `--text-primary` inverts, and half of that
+ * inversion is invisible here.
+ */
+const ON_SCRIM = '#F0EBFF'
+
 const COIN_FLIGHTS = [
   { x: '-72px', r: '-260deg', delay: 0 },
   { x: '44px', r: '200deg', delay: 60 },
@@ -195,31 +202,36 @@ function Revealed({
           role="status"
           className="prize-arrive col-start-1 row-start-1 flex flex-col items-center gap-1 py-2"
         >
-          <span
-            className={[
-              'flex items-center gap-2 rounded-base border-2 border-ink-accent px-4 py-2 font-display text-2xl font-bold',
-              // Yellow is Coins and loot, and only those — design-tokens.md §2.1. A bonus reward
-              // is loot too, so both prizes wear it.
-              'bg-warning text-warning-fg',
-            ].join(' ')}
-          >
-            {prize.kind === 'coins' ? (
-              /* The mark is the word ([53b]): "+N ⓒ", with the unit for a screen reader only. */
-              <>
-                +{prize.amount}
-                <CoinMark className="size-6" />
-                <span className="sr-only"> Coins</span>
-              </>
-            ) : (
-              /* A won reward wears the gift glyph — it has the bow. */
-              <>
-                <RewardIcon className="size-6" />
-                {prize.headline}
-              </>
-            )}
-          </span>
-          {/* The scrim is dark in both schemes, so the detail line is fixed near-white. */}
-          <p className="text-sm" style={{ color: '#F0EBFF' }}>
+          {prize.kind === 'coins' ? (
+            /*
+             * **No slab for Coins** ([78]). The yellow box was doing the coin mark's job twice —
+             * and doing it in the colour the mark is already made of. Big number, the mark, and
+             * the unit for a screen reader only, so `textContent` stays exactly "+22 Coins".
+             *
+             * Fixed near-white rather than a class: with the box gone the number inherits from the
+             * dialog, whose scrim is `bg-black/60` in *both* schemes — `text-body` is near-black in
+             * light mode and would vanish. Same reason, same value as the detail line below.
+             */
+            <span
+              className="flex items-center gap-2 font-display text-4xl font-bold"
+              style={{ color: ON_SCRIM }}
+            >
+              +{prize.amount}
+              <CoinMark className="size-8" />
+              <span className="sr-only"> Coins</span>
+            </span>
+          ) : (
+            /*
+             * A won reward keeps its slab: unlike a number, a reward's title is a phrase, and the
+             * gift glyph plus a bordered fill is what makes it read as the prize rather than as a
+             * caption. Yellow is Coins and loot both — design-tokens.md §2.1.
+             */
+            <span className="flex items-center gap-2 rounded-base border-2 border-ink-accent bg-warning px-4 py-2 font-display text-2xl font-bold text-warning-fg">
+              <RewardIcon className="size-6" />
+              {prize.headline}
+            </span>
+          )}
+          <p className="text-sm" style={{ color: ON_SCRIM }}>
             {prize.detail}
           </p>
           <Button variant="neutral" className="mt-2" onClick={onDismiss}>

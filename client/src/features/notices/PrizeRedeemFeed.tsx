@@ -12,10 +12,14 @@ import { CoinMark } from '../../components/ui/icons'
 import { liveQueryOptions } from '../../app/liveSync'
 
 /**
- * **Prizes and redemptions — both partners, newest first, and deliberately the loud section.**
+ * **Prizes and redemptions — both partners, newest first.**
  *
- * Yellow because that is the Coins/loot colour (`design-tokens.md` §2.1); the avatar says whose it
- * was, so the row does not need the player colours as well.
+ * Each row is tinted by *whose* event it is — `--surface-self` for you, `--surface-opponent` for
+ * your partner ([78]). It used to be yellow, on the reasoning that yellow is the Coins/loot colour
+ * and the avatar already said whose it was. Both halves of that failed in use: yellow is what the
+ * Coin figure printed on the row is *made of*, so the row argued with its own number, and the
+ * avatar is 32px of identity carrying a whole row. The tint is the same purple/green the app uses
+ * everywhere else for you/your opponent, so the row answers "mine or theirs" before it is read.
  *
  * ### It is redemptions only, and that is a backend gap rather than a choice
  *
@@ -36,14 +40,20 @@ import { liveQueryOptions } from '../../app/liveSync'
  *
  * The section is called "Prizes & rewards" and until [36a] every row read "<someone> redeemed
  * <something>" with a **−N** figure — a section named for prizes that only ever showed Coins
- * *leaving*. Won boxes now appear beside spending, and the sign is what tells them apart.
+ * *leaving*. Won boxes now appear beside spending, and the verb is what tells them apart.
  */
 type Entry = {
   key: string
-  who: { id: number; name: string } | null
+  /**
+   * `avatarKey` is carried, not just the name — [78]. Dropping it here was the whole of the stale
+   * -avatar bug: `Avatar`'s `avatarKey` is optional, so omitting it silently fell back to the
+   * generated identicon and the row kept showing the drawing the user had already replaced. The
+   * data was fetched all along; this type was too narrow to hold it.
+   */
+  who: { id: number; name: string; avatarKey: string | null } | null
   isMine: boolean
   title: string
-  /** Signed by direction: negative for a purchase, positive for a prize. Null for a won reward. */
+  /** What a won box paid out. Null for a won reward, and unused for spending — see the render. */
   coins: number | null
   direction: 'spent' | 'won'
   at: string
@@ -70,10 +80,13 @@ export function PrizeRedeemFeed() {
    * The two queries **partition** the household's redemptions — every row is in exactly one — so
    * concatenating them cannot double-count.
    */
+  /** Me as a feed identity — built once so no branch can forget half of it again ([78]). */
+  const meAsWho = me ? { id: me.id, name: me.name, avatarKey: me.avatarKey } : null
+
   const entries: Entry[] = [
     ...(mine.data?.items ?? []).map((r) => ({
       key: `m-${r.id}`,
-      who: me ? { id: me.id, name: me.name } : null,
+      who: meAsWho,
       isMine: true,
       title: r.rewardTitle,
       // Verbatim: a snapshot of what was actually paid, not the reward's current price.
@@ -98,7 +111,7 @@ export function PrizeRedeemFeed() {
      */
     ...(prizes.data?.items ?? []).map((p) => ({
       key: `w-${p.competitionId}-${p.userId}`,
-      who: p.userId === me?.id ? (me ? { id: me.id, name: me.name } : null) : partner,
+      who: p.userId === me?.id ? meAsWho : partner,
       isMine: p.userId === me?.id,
       title: p.result === 'coins' ? periodLabel(p.periodType) : (p.reward?.title ?? 'a prize'),
       coins: p.result === 'coins' ? p.coinsAwarded : null,
@@ -132,13 +145,23 @@ export function PrizeRedeemFeed() {
             {entries.map((entry) => (
               <li
                 key={entry.key}
-                className="flex items-center gap-3 rounded-base border-2 border-ink-accent bg-warning px-3 py-2.5 text-warning-fg"
+                /*
+                 * `border-ink`, not `border-ink-accent`: accent ink is black in *both* schemes
+                 * because it is for bright brand fills, and black on the dark tint measures
+                 * 1.74:1 — not a border. These tints are surfaces, so they take surface ink,
+                 * which inverts with the scheme. Pinned in `tokens.test.ts`.
+                 */
+                className={[
+                  'flex items-center gap-3 rounded-base border-2 border-ink px-3 py-2.5 text-body',
+                  entry.isMine ? 'bg-self' : 'bg-opponent',
+                ].join(' ')}
               >
                 {entry.who && (
                   <Avatar
                     userId={entry.who.id}
                     name={entry.who.name}
                     role={entry.isMine ? 'self' : 'opponent'}
+                    avatarKey={entry.who.avatarKey}
                     size="sm"
                   />
                 )}
@@ -150,18 +173,21 @@ export function PrizeRedeemFeed() {
                       entry.direction === 'won' ? 'won' : 'redeemed'
                     } ${entry.title}`}
                   </span>
-                  <span className="block text-xs opacity-80">{relativeTime(entry.at)}</span>
+                  <span className="block text-xs text-muted">{relativeTime(entry.at)}</span>
                 </span>
                 {/*
-                 * The sign is the whole point: this section used to show only −N. A won reward has
-                 * no number at all, because a prize has no price — the reward's identity is what
-                 * was won, and inventing a figure would imply one.
+                 * **Only what was gained carries a figure** ([78]). Spending used to print −N, from
+                 * [36a]'s reasoning that the sign is what tells the two kinds apart. The verb
+                 * already does that — "You redeemed Takeaway night" is unambiguous — and the price
+                 * of something you have already bought is not news. A won reward still shows no
+                 * number, because a prize has no price and inventing a figure would imply one.
+                 *
+                 * The redemption's `coinsSpent` snapshot now reaches no screen at all. That is the
+                 * owner's call, made knowingly.
                  */}
-                {entry.coins !== null && (
-                  /* Signed number + the coin mark ([75b]) — the sign stays the point (see above). */
+                {entry.direction === 'won' && entry.coins !== null && (
                   <span className="flex shrink-0 items-center gap-1 font-display text-base font-bold">
-                    {entry.direction === 'won' ? '+' : '−'}
-                    {entry.coins}
+                    +{entry.coins}
                     <CoinMark className="size-4.5" />
                     <span className="sr-only"> Coins</span>
                   </span>

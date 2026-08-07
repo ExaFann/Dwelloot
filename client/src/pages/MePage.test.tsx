@@ -161,6 +161,22 @@ describe('the profile', () => {
     expect(screen.getByText('2').closest('div')).toHaveTextContent('Streak')
   })
 
+  /**
+   * [78] hides the stat labels below 640px, and *how* is the whole point: `sr-only sm:not-sr-only`,
+   * never `hidden sm:inline`. `hidden` would drop the label from the accessibility tree and from
+   * `textContent`, so a screen reader would hear a bare "13" and the three assertions above would
+   * fail. jsdom does no media matching, so the base class is also exactly what they see — which
+   * makes those three the mutation test for this, and this the statement of why.
+   */
+  it('keeps the stat labels readable to screen readers at every width', async () => {
+    stub()
+    renderPage()
+
+    const label = await screen.findByText('Coins')
+    expect(label).toHaveClass('sr-only')
+    expect(label).toHaveClass('sm:not-sr-only')
+  })
+
   it('names the signed-in user', async () => {
     stub()
     renderPage()

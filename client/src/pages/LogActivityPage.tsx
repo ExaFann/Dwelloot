@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { AddIcon, ApproveIcon, EditIcon, PointsMark, UndoIcon } from '../components/ui/icons'
 import { useActivitiesQuery, type Activity } from '../features/activity/activityApi'
+import {
+  CHORE_SORT_OPTIONS,
+  DEFAULT_CHORE_SORT,
+  choreSortParams,
+  type ChoreSortOption,
+} from '../features/activity/choreQuery'
 import { ChoreEditor } from '../features/activity/ChoreEditor'
 import { useDeferredLog } from '../features/activity/useDeferredLog'
 import { useLongPress } from '../features/activity/useLongPress'
@@ -31,6 +37,7 @@ import { SkeletonList } from '../components/ui/Skeleton'
 export function LogActivityPage() {
   const [search, setSearch] = useState('')
   const [debounced, setDebounced] = useState('')
+  const [sort, setSort] = useState<ChoreSortOption>(DEFAULT_CHORE_SORT)
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [editingId, setEditingId] = useState<number | null>(null)
   const [isCreating, setIsCreating] = useState(false)
@@ -48,7 +55,7 @@ export function LogActivityPage() {
     isError,
     error: loadError,
     refetch,
-  } = useActivitiesQuery({ search: debounced }, liveQueryOptions)
+  } = useActivitiesQuery({ search: debounced, ...choreSortParams(sort) }, liveQueryOptions)
 
   /** Same undo window as the dashboard — nothing is sent until it closes. */
   const { queued, queue, undo, failure } = useDeferredLog()
@@ -77,18 +84,56 @@ export function LogActivityPage() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="chore-search" className="font-display text-sm font-semibold">
-          Search
-        </label>
-        <input
-          id="chore-search"
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Dishes, laundry…"
-          className="focus-ring rounded-base border-2 border-ink bg-card px-3 py-2.5 text-body placeholder:text-placeholder"
-        />
+      {/*
+       * Stacked on a phone, one row from `lg` — the Store's layout, adopted here because the owner
+       * found the same fault the Store's comment records: a search box the width of the page reads
+       * as a mistake rather than a feature. Capping it also made room for the sort control.
+       */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-4">
+        {/*
+         * Capped from `sm`, not from `lg` as the Store does — and the difference is the whole
+         * point of the change. The Store's cap only bites at 1024px, so on the ~700px window this
+         * was reviewed in the box was still the full width of the page, which is exactly what the
+         * owner objected to. Capping at 640 fixes it where it was seen; the row layout still waits
+         * for `lg`, because search and sort side by side need more than 640px between them.
+         */}
+        <div className="flex flex-col gap-1.5 sm:max-w-sm lg:flex-1">
+          <label htmlFor="chore-search" className="font-display text-sm font-semibold">
+            Search
+          </label>
+          <input
+            id="chore-search"
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Dishes, laundry…"
+            className="focus-ring rounded-base border-2 border-ink bg-card px-3 py-2.5 text-body placeholder:text-placeholder"
+          />
+        </div>
+
+        {/*
+         * A native select, for the Store's reason: it is already keyboard-operable and already
+         * follows `color-scheme`, so reproducing it would be bundle for no behaviour. Inline
+         * rather than stacked so two stacked controls do not push the first chore off a 390px
+         * screen. The field/direction pair each option means lives in `choreQuery.ts`.
+         */}
+        <div className="flex items-center gap-3 sm:max-w-sm lg:w-72 lg:shrink-0">
+          <label htmlFor="chore-sort" className="shrink-0 font-display text-sm font-semibold">
+            Sort
+          </label>
+          <select
+            id="chore-sort"
+            value={sort}
+            onChange={(event) => setSort(event.target.value as ChoreSortOption)}
+            className="focus-ring w-full rounded-base border-2 border-ink bg-card px-3 py-2.5 font-display text-sm font-semibold text-body"
+          >
+            {CHORE_SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {isError ? (

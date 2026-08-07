@@ -219,7 +219,8 @@ describe('the overlay — [76a], unlocked badges only since [76b]', () => {
 
     const cell = await screen.findByRole('button', { name: 'Badge 2, unlocked' })
     fireEvent.click(cell)
-    // A click on the card itself must close too ("再点击会回到原本") — nothing stops propagation.
+    // A click on the card itself must close too ("clicking again returns to the original state")
+    // — nothing stops propagation.
     fireEvent.click(screen.getByRole('dialog').firstElementChild!)
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
