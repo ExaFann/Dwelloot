@@ -125,6 +125,19 @@ export function PendingApprovals() {
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
+            {/*
+             * `row-enter` on each row — [81] B. This queue is polled every 20s, so a chore your
+             * partner logged appears on its own while you are looking at the page; without it the
+             * row blinks into existence and reads as a glitch. Keyed on the log id, so React mounts
+             * only genuinely new rows and the animation cannot re-fire on ones already sitting
+             * there.
+             *
+             * **Entry only, deliberately.** An exit animation needs the row kept in the DOM after
+             * the data says it is gone — real state machinery rather than a keyframe, which log
+             * `080`'s survey flagged as the expensive half. Approving already gives feedback three
+             * other ways (the row goes, the count falls, the totals pulse), so the cheap half buys
+             * most of the value.
+             */}
             {items.map((log) =>
               rejectingId === log.id ? (
                 <li key={log.id}>
@@ -163,7 +176,7 @@ export function PendingApprovals() {
                   </div>
                 </li>
               ) : (
-                <li key={log.id}>
+                <li key={log.id} className="row-enter">
                   <button
                     type="button"
                     aria-pressed={selectedIds.includes(log.id)}

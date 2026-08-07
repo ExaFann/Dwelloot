@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router'
+import { Outlet, useLocation } from 'react-router'
 import { BottomNav } from '../components/BottomNav'
 
 /**
@@ -12,6 +12,8 @@ import { BottomNav } from '../components/BottomNav'
  * it a keyboard user tabs through five tabs before reaching content, on every navigation.
  */
 export function AppLayout() {
+  const { pathname } = useLocation()
+
   return (
     <div className="min-h-dvh md:pl-56">
       <a
@@ -26,7 +28,21 @@ export function AppLayout() {
        * just be longer lines of the same single-column content.
        */}
       <main id="main" className="mx-auto max-w-2xl px-4 pb-24 pt-6 md:pb-10 lg:max-w-5xl lg:px-6">
-        <Outlet />
+        {/*
+         * [81] D — a 160ms fade-and-rise on each route change.
+         *
+         * The `key` is what makes it work: React tears the subtree down and rebuilds it when the
+         * path changes, so the animation re-runs. That is also its one cost, and it is worth stating
+         * — remounting means a page cannot keep component state across a navigation to itself. None
+         * do (every screen's state is either in RTK Query's cache or re-derived on mount), but a
+         * future screen that did would lose it here rather than somewhere obvious.
+         *
+         * Keyed on `pathname` only, not `search`: the Store's filters live in component state today,
+         * and a page that re-animated on every keystroke of a query string would be unusable.
+         */}
+        <div key={pathname} className="page-in">
+          <Outlet />
+        </div>
       </main>
       <BottomNav />
     </div>

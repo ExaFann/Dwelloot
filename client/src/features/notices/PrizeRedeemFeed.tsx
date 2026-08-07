@@ -8,7 +8,7 @@ import { periodLabel } from '../competition/standing'
 import { toApiError } from '../../api/apiError'
 import { SkeletonList } from '../../components/ui/Skeleton'
 import { SECTION_BODY, SECTION_SHELL } from './sectionLayout'
-import { CoinMark } from '../../components/ui/icons'
+import { CoinMark, LootboxIcon, RedeemIcon } from '../../components/ui/icons'
 import { liveQueryOptions } from '../../app/liveSync'
 
 /**
@@ -185,11 +185,36 @@ export function PrizeRedeemFeed() {
                  * The redemption's `coinsSpent` snapshot now reaches no screen at all. That is the
                  * owner's call, made knowingly.
                  */}
+                {/*
+                 * **All three outcomes are now marked** ([81]). Only won Coins carried anything,
+                 * so a won reward and a purchase were told apart by reading the sentence — the
+                 * owner's point. Each gets the glyph that names what happened:
+                 *
+                 * - won Coins    → the figure, because how many is the fact
+                 * - won a reward → the loot box it came out of; there is no figure, because a
+                 *                  prize has no price and inventing one would imply it ([36a])
+                 * - redeemed     → the swap mark, which is what spending *is*
+                 *
+                 * `sr-only` text rather than a bare glyph: an `aria-hidden` mark beside nothing
+                 * would leave a screen reader with the sentence and no outcome at all.
+                 */}
                 {entry.direction === 'won' && entry.coins !== null && (
                   <span className="flex shrink-0 items-center gap-1 font-display text-base font-bold">
                     +{entry.coins}
                     <CoinMark className="size-4.5" />
                     <span className="sr-only"> Coins</span>
+                  </span>
+                )}
+                {entry.direction === 'won' && entry.coins === null && (
+                  <span className="flex shrink-0 items-center text-primary">
+                    <LootboxIcon className="size-5" />
+                    <span className="sr-only">Won from a loot box</span>
+                  </span>
+                )}
+                {entry.direction === 'spent' && (
+                  <span className="flex shrink-0 items-center text-muted">
+                    <RedeemIcon className="size-5" />
+                    <span className="sr-only">Redeemed</span>
                   </span>
                 )}
               </li>

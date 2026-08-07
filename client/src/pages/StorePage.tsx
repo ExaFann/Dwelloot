@@ -11,6 +11,7 @@ import {
   type SortOption,
 } from '../features/reward/storeQuery'
 import { useMeQuery } from '../features/auth/authApi'
+import { useChangePulse } from '../app/useChangePulse'
 import { toApiError } from '../api/apiError'
 import { Button } from '../components/ui/Button'
 import { liveQueryOptions } from '../app/liveSync'
@@ -59,6 +60,8 @@ export function StorePage() {
 
   const { data: me } = useMeQuery()
   const balance = me?.coins ?? 0
+  // `me?.coins`, not `balance`: the `?? 0` would read as a change from 0 the moment the query lands.
+  const balancePulsing = useChangePulse(me?.coins, { durationMs: 340 })
 
   /*
    * Live-synced. Under [68] a paired household's edits are *queued*, and the partner **approving**
@@ -112,7 +115,10 @@ export function StorePage() {
           </h2>
           {/* Number + coin mark, not a yellow slab — [75b]'s rule, at balance size. */}
           <span className="flex items-center gap-1.5 font-display text-2xl font-bold">
-            {balance}
+            {/* [81] A — redeeming is the one irreversible action here, so it should be seen. */}
+            <span className={balancePulsing ? 'value-pulse inline-block' : 'inline-block'}>
+              {balance}
+            </span>
             <CoinMark className="size-6" />
             <span className="sr-only"> Coins</span>
           </span>

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useBadgesQuery, type Badge } from './badgeApi'
+import { useNewlyEarnedBadge } from './useNewlyEarnedBadge'
 import { describeBadge, describeProgress } from './badgeDisplay'
 import { badgeWallGeometry, CELL_ORDER } from './badgeWallGeometry'
 import { liveQueryOptions } from '../../app/liveSync'
@@ -28,6 +29,7 @@ const LOCKED_FILTER = { filter: 'grayscale(1) opacity(.7)' } as const
 
 export function BadgeWall({ size = 130 }: { size?: number }) {
   const { data, isLoading, isError, error } = useBadgesQuery(undefined, liveQueryOptions)
+  const justEarned = useNewlyEarnedBadge(data?.items)
 
   /*
    * Measured, not observed: a window `resize` listener covers every reflow this layout actually
@@ -190,7 +192,13 @@ export function BadgeWall({ size = 130 }: { size?: number }) {
                   >
                     <BadgeMark
                       id={badge.id}
-                      className="size-full"
+                      /*
+                       * [81] F — the cell spins when this badge is earned *while you are watching*,
+                       * reusing the overlay's own reveal. Earning used to be silent: badges are
+                       * polled, so one could unlock on this very screen and the only sign was a
+                       * grey hexagon quietly turning colour.
+                       */
+                      className={justEarned === badge.id ? 'badge-reveal size-full' : 'size-full'}
                       /*
                        * Desaturate, never silhouette: the only reason a badge wall motivates
                        * anyone is that the locked artwork stays visible enough to want (§7.1).

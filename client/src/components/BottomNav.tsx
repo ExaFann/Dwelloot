@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router'
 import { HouseholdIcon, LogIcon, MeIcon, NoticesIcon, StoreIcon } from './ui/icons'
 import { usePendingCount } from '../features/notices/usePendingCount'
+import { useChangePulse } from '../app/useChangePulse'
 
 /**
  * The primary navigation — the five tabs from `wireframes.md`.
@@ -34,6 +35,7 @@ const tabs = [
  */
 export function BottomNav() {
   const pending = usePendingCount()
+  const bumping = useChangePulse(pending, { onlyIncrease: true, durationMs: 420 })
 
   return (
     <nav
@@ -67,7 +69,16 @@ export function BottomNav() {
                 {to === '/notices' && pending > 0 && (
                   <span
                     aria-hidden="true"
-                    className="absolute -right-2.5 -top-1.5 grid min-w-4 place-items-center rounded-control border-2 border-ink-accent bg-danger px-1 font-display text-[0.6rem] font-bold leading-4 text-danger-fg"
+                    /*
+                     * [81] C — a bump when the count **rises**, and only then. Approving things
+                     * makes it fall, and a badge that celebrated every decrement would applaud you
+                     * for clearing your own queue. The 20s poll is what makes this worth having:
+                     * the number can change while you are looking at a different tab entirely.
+                     */
+                    className={[
+                      'absolute -right-2.5 -top-1.5 grid min-w-4 place-items-center rounded-control border-2 border-ink-accent bg-danger px-1 font-display text-[0.6rem] font-bold leading-4 text-danger-fg',
+                      bumping ? 'badge-bump' : '',
+                    ].join(' ')}
                   >
                     {pending > 9 ? '9+' : pending}
                   </span>

@@ -451,6 +451,45 @@ describe('the prize & redeem feed', () => {
     }
   })
 
+  /**
+   * [81]. All three outcomes carry a mark now. Only won Coins had one, so a won reward and a
+   * purchase were told apart by reading the sentence — the owner's point. Asserted through the
+   * accessible text rather than the glyph, because that is the part a change to the drawing must
+   * not silently break.
+   */
+  it('marks all three outcomes, not just won Coins', async () => {
+    stub({
+      myRedemptions: { items: [MY_REDEMPTION], total: 1 },
+      prizes: {
+        items: [
+          {
+            competitionId: 9,
+            userId: 7,
+            periodType: 'Daily',
+            result: 'bonusReward',
+            coinsAwarded: null,
+            reward: { id: 5, title: 'Breakfast in bed' },
+            openedAt: '2026-08-06T11:00:00Z',
+          },
+        ],
+        total: 1,
+      },
+    })
+    renderPage()
+
+    // A won reward: the loot box it came out of, and still no figure — a prize has no price.
+    const won = (await screen.findByText(/you won breakfast in bed/i)).closest('li')!
+    expect(won).toHaveTextContent('Won from a loot box')
+    expect(won.querySelector('svg')).not.toBeNull()
+
+    // A purchase: the swap mark, which is what spending is.
+    const spent = (await screen.findByText(/you redeemed takeaway night/i)).closest('li')!
+    expect(spent).toHaveTextContent('Redeemed')
+
+    // And neither invented a number.
+    expect(screen.queryAllByText(/^[+−]\d/)).toHaveLength(0)
+  })
+
   /** Purple is you, green is your partner — the row now says whose before it is read ([78]). */
   it('tints each row by whose it is', async () => {
     stub({

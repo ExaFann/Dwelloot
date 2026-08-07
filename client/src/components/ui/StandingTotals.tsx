@@ -1,3 +1,4 @@
+import { useChangePulse } from '../../app/useChangePulse'
 import { CoinMark, PointsMark, StreakMark } from './icons'
 
 /**
@@ -47,6 +48,13 @@ export function StandingTotals({
 }
 
 function Stat({ label, value, mark }: { label: string; value: number; mark: React.ReactNode }) {
+  /*
+   * [81] A. The number is what changed, so the number is what moves — `inline-block` because a
+   * `scale` on an inline element does nothing, and on the `dd` rather than the whole row so the
+   * label and mark hold still around it.
+   */
+  const pulsing = useChangePulse(value, { durationMs: 340 })
+
   return (
     /*
      * `dt` before `dd` in the DOM so a screen reader hears "Coins, 13", with `flex-row-reverse`
@@ -59,7 +67,7 @@ function Stat({ label, value, mark }: { label: string; value: number; mark: Reac
     <div className="flex flex-row-reverse items-baseline gap-1.5">
       <dt className={LABEL}>{label}</dt>
       <dd className="flex items-center gap-1 font-display text-xl font-bold">
-        {value}
+        <span className={pulsing ? 'value-pulse inline-block' : 'inline-block'}>{value}</span>
         {mark}
       </dd>
     </div>

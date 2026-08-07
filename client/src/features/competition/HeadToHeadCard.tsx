@@ -21,6 +21,7 @@ import { toApiError } from '../../api/apiError'
 import { Button } from '../../components/ui/Button'
 import { SkeletonBlock, SkeletonList } from '../../components/ui/Skeleton'
 import { LIVE_POLL_MS, liveQueryOptions } from '../../app/liveSync'
+import { leadOf, useChangePulse } from '../../app/useChangePulse'
 import { useTransientMessage } from '../../app/useTransientMessage'
 
 /**
@@ -346,6 +347,16 @@ function PeriodPanel({
   hasPartner: boolean
   partnerName?: string
 }) {
+  /*
+   * Above the early return, because hooks cannot sit after one. `undefined` while the period is
+   * still loading is also exactly right: arriving at a lead is not changing one, so the bolt does
+   * not lurch just because the page finished loading.
+   */
+  const leadFlipping = useChangePulse(
+    competition ? leadOf(competition.myPoints, competition.partnerPoints) : undefined,
+    { durationMs: 560 },
+  )
+
   if (!competition) {
     return (
       <div
@@ -441,8 +452,18 @@ function PeriodPanel({
              * bolt read as its contents. A bare mark spinning on the rope is the thing being
              * fought over; the box was a container for it.
              */
-            /* No `text-warning` since [75e]: the bolt carries its own `--mark-bolt` fill. */
-            className="spark absolute top-1/2 z-10 block transition-[left] duration-500"
+            /*
+             * No `text-warning` since [75e]: the bolt carries its own `--mark-bolt` fill.
+             *
+             * [81] E — it lurches when the **lead changes hands**. The bar already animates its
+             * width, so a widening gap is visible; what was invisible was the moment the duel
+             * turned over, which is the only moment in it that is actually news. On the bolt
+             * because that is already where the eye is.
+             */
+            className={[
+              'spark absolute top-1/2 z-10 block transition-[left] duration-500',
+              leadFlipping ? 'lead-flip' : '',
+            ].join(' ')}
             style={{ left: `${mine}%` }}
           >
             <BoltIcon className="size-6.5" />

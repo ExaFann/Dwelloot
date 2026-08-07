@@ -383,6 +383,23 @@ export function BurstIcon({ className }: IconProps) {
 }
 
 /**
+ * Redeemed — two arrows passing in opposite directions, the universal "exchange" shape ([81]).
+ *
+ * **Owner-addition, not in the sprite**, exempt from fidelity by construction like `BoltIcon` and
+ * `ChestMark`. The prize feed needed a mark for spending, and none of the twenty UI glyphs says it:
+ * `ui-store` is a place, `ui-reward` is the thing received. A swap says *something went out and
+ * something came back*, which is exactly what a redemption is. Drawn to the same rules as the rest
+ * — flat fill, hard corners, no curves — with the two shafts offset so it reads at 18px.
+ */
+export function RedeemIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M2 7h13V3l7 6-7 6v-4H2zM22 17H9v4l-7-6 7-6v4h13z" />
+    </Svg>
+  )
+}
+
+/**
  * A hard-edged lightning bolt — the tug bar's divider.
  *
  * **Owner's addition, not in the sprite.** [75] mapped the old lucide `Zap` onto the burst; the
