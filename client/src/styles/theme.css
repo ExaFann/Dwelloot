@@ -757,6 +757,35 @@
   }
 }
 
+/*
+ * ── Task [82]: the landing page's reveal-on-scroll ──────────────────────────────────────────
+ *
+ * A band starts low-and-transparent and settles in when it scrolls into view — `useRevealOnScroll`
+ * adds `band-in`. A *transition*, not a keyframe: it must be able to sit in its start state
+ * indefinitely and run whenever the class arrives.
+ *
+ * Reduced motion shows everything immediately: the start state IS the effect, so unlike the app's
+ * keyframes there is nothing to switch off — the base state itself must not apply.
+ */
+@utility band {
+  opacity: 0;
+  translate: 0 16px;
+  transition:
+    opacity 500ms ease-out,
+    translate 500ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    opacity: 1;
+    translate: 0 0;
+    transition: none;
+  }
+}
+
+@utility band-in {
+  opacity: 1;
+  translate: 0 0;
+}
+
 @utility focus-ring {
   &:focus-visible {
     outline: 3px solid var(--brand-primary);

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { MemoryRouter } from 'react-router'
@@ -505,6 +505,45 @@ describe('the prize & redeem feed', () => {
     expect(theirs.className).toContain('bg-opponent')
     // Both directions: one yellow for everything would pass a one-sided check.
     expect(mine.className).not.toContain('bg-warning')
+  })
+
+  /**
+   * Select all — [82], owner's ask: the common case is "yes to everything", and it cost a tap per
+   * row. One control, two meanings, and the flipping label is what says which.
+   */
+  it('selects the whole queue in one press, and clears it in another', async () => {
+    const calls = stub()
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: /select all/i }))
+
+    expect(screen.getByRole('button', { name: /vacuum/i })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /mow the lawn/i })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+
+    // The label flips to say what the next press means, and that press empties the selection.
+    fireEvent.click(screen.getByRole('button', { name: /clear all/i }))
+    expect(screen.getByRole('button', { name: /vacuum/i })).toHaveAttribute('aria-pressed', 'false')
+
+    // And nothing was sent by either press — selection is not approval.
+    expect(calls.filter((c) => c.path.includes('bulk-approve'))).toHaveLength(0)
+  })
+
+  it('approves everything the select-all selected', async () => {
+    const calls = stub()
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: /select all/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^approve/i }))
+
+    await waitFor(() => {
+      const call = calls.find((c) => c.path.includes('bulk-approve'))
+      expect(call).toBeDefined()
+      // Both fixture ids, in queue order — the whole queue, not the last one clicked.
+      expect(JSON.parse(call!.body!)).toEqual({ ids: [39, 32] })
+    })
   })
 
   /**

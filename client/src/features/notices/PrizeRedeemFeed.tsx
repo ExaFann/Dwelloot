@@ -8,7 +8,7 @@ import { periodLabel } from '../competition/standing'
 import { toApiError } from '../../api/apiError'
 import { SkeletonList } from '../../components/ui/Skeleton'
 import { SECTION_BODY, SECTION_SHELL } from './sectionLayout'
-import { CoinMark, LootboxIcon, RedeemIcon } from '../../components/ui/icons'
+import { CoinMark, PrizeBoxMark, RedeemMark } from '../../components/ui/icons'
 import { liveQueryOptions } from '../../app/liveSync'
 
 /**
@@ -205,15 +205,20 @@ export function PrizeRedeemFeed() {
                     <span className="sr-only"> Coins</span>
                   </span>
                 )}
+                {/*
+                 * Marks, not tinted glyphs, since [82] — the owner's call: the three outcome
+                 * columns share `CoinMark`'s language (fixed fills, ink stroke), so no `text-*`
+                 * class is needed or heeded here.
+                 */}
                 {entry.direction === 'won' && entry.coins === null && (
-                  <span className="flex shrink-0 items-center text-primary">
-                    <LootboxIcon className="size-5" />
+                  <span className="flex shrink-0 items-center">
+                    <PrizeBoxMark className="size-5" />
                     <span className="sr-only">Won from a loot box</span>
                   </span>
                 )}
                 {entry.direction === 'spent' && (
-                  <span className="flex shrink-0 items-center text-muted">
-                    <RedeemIcon className="size-5" />
+                  <span className="flex shrink-0 items-center">
+                    <RedeemMark className="size-5" />
                     <span className="sr-only">Redeemed</span>
                   </span>
                 )}

@@ -388,13 +388,57 @@ export function BurstIcon({ className }: IconProps) {
  * **Owner-addition, not in the sprite**, exempt from fidelity by construction like `BoltIcon` and
  * `ChestMark`. The prize feed needed a mark for spending, and none of the twenty UI glyphs says it:
  * `ui-store` is a place, `ui-reward` is the thing received. A swap says *something went out and
- * something came back*, which is exactly what a redemption is. Drawn to the same rules as the rest
- * — flat fill, hard corners, no curves — with the two shafts offset so it reads at 18px.
+ * something came back*, which is exactly what a redemption is.
+ *
+ * A **mark** since [82], not a `currentColor` glyph: it sits beside `CoinMark` in the feed, and the
+ * owner's call is that the row marks share one language — fixed fills, ink stroke. Yellow out,
+ * orange back: the thing you spent was Coins, and the hues are the two loot colours.
  */
-export function RedeemIcon({ className }: IconProps) {
+export function RedeemMark({ className }: IconProps) {
   return (
     <Svg className={className}>
-      <path d="M2 7h13V3l7 6-7 6v-4H2zM22 17H9v4l-7-6 7-6v4h13z" />
+      <path
+        d="M2 7h13V3l7 6-7 6v-4H2z"
+        fill="var(--mark-coins)"
+        stroke="var(--ink-surface)"
+        strokeWidth="1.4"
+        strokeLinejoin="miter"
+        strokeMiterlimit={10}
+      />
+      <path
+        d="M22 17H9v4l-7-6 7-6v4h13z"
+        fill="var(--mark-flame)"
+        stroke="var(--ink-surface)"
+        strokeWidth="1.4"
+        strokeLinejoin="miter"
+        strokeMiterlimit={10}
+      />
+    </Svg>
+  )
+}
+
+/**
+ * A won prize's box — the `ui-lootbox` drawing at mark strength ([82]).
+ *
+ * Same paths as `LootboxIcon`, different contract: the feed's outcome column is mark territory
+ * (fixed fills + ink stroke, like `CoinMark` beside it), while the glyph stays `currentColor` for
+ * anywhere that needs an inheriting icon. Orange because a bonus reward is loot, and orange is the
+ * loot-adjacent hue the reveal's chest already burns.
+ */
+export function PrizeBoxMark({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      {(['M2 4h20v5H2z', 'M3 10h18v11H3z', 'M10 4h4v17h-4z'] as const).map((d) => (
+        <path
+          key={d}
+          d={d}
+          fill="var(--mark-flame)"
+          stroke="var(--ink-surface)"
+          strokeWidth="1.4"
+          strokeLinejoin="miter"
+          strokeMiterlimit={2}
+        />
+      ))}
     </Svg>
   )
 }

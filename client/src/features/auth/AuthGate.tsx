@@ -5,6 +5,7 @@ import { useMeQuery } from './authApi'
 import { toApiError } from '../../api/apiError'
 import { Button } from '../../components/ui/Button'
 import { liveQueryOptions } from '../../app/liveSync'
+import { LandingPage } from '../../pages/LandingPage'
 
 /**
  * The one place routing decisions about identity are made.
@@ -13,7 +14,12 @@ import { liveQueryOptions } from '../../app/liveSync'
  * |-------------|---------------|-------------------------|--------------------------|
  * | `anonymous` | **render**    | → `/pairing`            | → `/`                    |
  * | `pairing`   | → `/login`    | **render**              | → `/`                    |
- * | `household` | → `/login`    | → `/pairing`            | **render**               |
+ * | `household` | → `/login` ¹  | → `/pairing`            | **render**               |
+ *
+ * ¹ With one exception since [82]: a signed-out visitor at `/` exactly gets the **landing page**,
+ * not a login wall. The root URL is the one that gets shared, and a stranger following it should
+ * see what the app is before being asked for a password. Deeper paths keep the redirect — a link
+ * to `/store` still means "log in, then the store".
  *
  * One component rather than three guards because all three are the same decision from different
  * starting points, and because each would otherwise fetch `/api/auth/me` separately.
@@ -39,6 +45,8 @@ export function AuthGate({ access }: { access: Access }) {
 
   if (!isSignedIn) {
     if (access === 'anonymous') return <Outlet />
+    // The [82] exception — see footnote ¹ on the table above.
+    if (access === 'household' && location.pathname === '/') return <LandingPage />
     /**
      * `from` so the user lands where they asked for. Without it, following a link to `/store` while
      * signed out silently becomes the dashboard.

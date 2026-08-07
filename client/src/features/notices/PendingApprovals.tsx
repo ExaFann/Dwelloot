@@ -50,6 +50,12 @@ export function PendingApprovals() {
   const items = data?.items ?? []
   const selected = items.filter((item) => selectedIds.includes(item.id))
   const onlySelected = selected.length === 1 ? selected[0] : null
+  /**
+   * Measured against `items`, not `selectedIds` — the poll can remove a row that is still in
+   * `selectedIds` (the partner's log got decided elsewhere), and "all" means all of what is on
+   * screen now, not all of what was once clicked.
+   */
+  const allSelected = items.length > 0 && items.every((item) => selectedIds.includes(item.id))
 
   function toggle(id: number) {
     setSelectedIds((current) =>
@@ -104,11 +110,32 @@ export function PendingApprovals() {
         <h2 id="pending-heading" className="text-lg">
           Waiting on you
         </h2>
-        {items.length > 0 && (
-          <span className="rounded-base border-2 border-ink-accent bg-warning px-2 py-0.5 font-display text-xs font-bold text-warning-fg">
-            {items.length}
-          </span>
-        )}
+        <span className="flex items-baseline gap-3">
+          {/*
+           * Select all — [82], owner's ask. The common case is "yes to everything my partner
+           * logged", and it used to cost one tap per row. One control, two meanings: with any row
+           * unselected it selects the lot, with all selected it clears — the flipping label is
+           * what says which, and `aria-pressed` says it to a screen reader.
+           *
+           * Rows mid-rejection are not special-cased: selection and rejection are independent, and
+           * a row being rejected keeps its place in `items` until the server answers.
+           */}
+          {items.length > 1 && (
+            <button
+              type="button"
+              aria-pressed={allSelected}
+              onClick={() => setSelectedIds(allSelected ? [] : items.map((log) => log.id))}
+              className="focus-ring font-display text-sm font-semibold text-primary transition-colors hover:text-body"
+            >
+              {allSelected ? 'Clear all' : 'Select all'}
+            </button>
+          )}
+          {items.length > 0 && (
+            <span className="rounded-base border-2 border-ink-accent bg-warning px-2 py-0.5 font-display text-xs font-bold text-warning-fg">
+              {items.length}
+            </span>
+          )}
+        </span>
       </div>
 
       <div className={SECTION_BODY}>

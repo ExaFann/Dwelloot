@@ -118,13 +118,30 @@ afterEach(() => {
 // ─── Column 1: not signed in ──────────────────────────────────────────────────
 
 describe('not signed in', () => {
-  it.each(['/', '/log', '/notices', '/store', '/me'])('%s redirects to /login', async (path) => {
+  it.each(['/log', '/notices', '/store', '/me'])('%s redirects to /login', async (path) => {
     stubMe('never')
     const { router } = renderAt(path)
 
     await waitFor(() => expect(at(router)).toBe('/login'))
     // The other half: the protected screen must not have rendered on the way past.
     expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument()
+  })
+
+  /**
+   * `/` is the [82] exception — footnote ¹ on the gate's table. The root URL is the one that gets
+   * shared, so a stranger following it sees the pitch, not a password field. The URL must not
+   * change (this *is* the front door), and the app shell must not leak around it.
+   */
+  it('/ renders the landing page, at /', async () => {
+    stubMe('never')
+    const { router } = renderAt('/')
+
+    expect(await screen.findByText(/chores, but make it a duel/i)).toBeInTheDocument()
+    expect(at(router)).toBe('/')
+    expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument()
+    // And both doors in: the page exists to route people to these two.
+    expect(screen.getAllByRole('link', { name: /start a household/i }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('link', { name: /log in/i }).length).toBeGreaterThan(0)
   })
 
   it('/pairing redirects to /login', async () => {
@@ -244,9 +261,20 @@ describe('when /me returns 401', () => {
   /** No branch in AuthGate handles this — `baseApi` signs the user out and the gate re-renders. */
   it('signs the user out and lands on /login', async () => {
     stubMe({ status: 401, body: { error: 'Authentication is required.', errors: null } })
-    const { router, store } = renderAt('/', { signedInAs: true })
+    // `/store`, not `/`: since [82] a signed-out `/` is the landing page, so the login redirect is
+    // asserted where it still applies — any deeper path.
+    const { router, store } = renderAt('/store', { signedInAs: true })
 
     await waitFor(() => expect(at(router)).toBe('/login'))
+    expect(store.getState().auth.token).toBeNull()
+  })
+
+  /** And at the root, the signed-out state shows the front door rather than the login wall. */
+  it('a dead session at / becomes the landing page', async () => {
+    stubMe({ status: 401, body: { error: 'Authentication is required.', errors: null } })
+    const { store } = renderAt('/', { signedInAs: true })
+
+    expect(await screen.findByText(/chores, but make it a duel/i)).toBeInTheDocument()
     expect(store.getState().auth.token).toBeNull()
   })
 })

@@ -14,6 +14,8 @@ import {
   LogoMark,
   PeriodIcon,
   PointsMark,
+  PrizeBoxMark,
+  RedeemMark,
   StoreIcon,
   StreakMark,
   ThemeIcon,
@@ -220,6 +222,32 @@ describe('the marks carry the sprite’s strokes and the tokens’ fills — [75
       }
     },
   )
+
+  /**
+   * The feed's outcome marks ([82]) — owner-additions, so pinned literally like the bolt. The
+   * two-tone swap is the load-bearing half: yellow out (Coins spent), orange back (loot), and a
+   * refactor that flattened it to one fill would still render a perfectly plausible icon.
+   */
+  it('the redeem mark swaps yellow out for orange back, ink-stroked', () => {
+    const paths = renderedPathAttrs(<RedeemMark />)
+    expect(paths.map((p) => p.fill)).toEqual(['var(--mark-coins)', 'var(--mark-flame)'])
+    expect(paths.every((p) => p.stroke === 'var(--ink-surface)' && p.strokeWidth === '1.4')).toBe(
+      true,
+    )
+  })
+
+  it('the prize box is loot-orange with the ink stroke, all three parts', () => {
+    const paths = renderedPathAttrs(<PrizeBoxMark />)
+    expect(paths).toHaveLength(3)
+    expect(
+      paths.every(
+        (p) =>
+          p.fill === 'var(--mark-flame)' &&
+          p.stroke === 'var(--ink-surface)' &&
+          p.strokeWidth === '1.4',
+      ),
+    ).toBe(true)
+  })
 
   it('the bolt: ink stroke, --mark-bolt fill, and the mitre limit that keeps it sharp', () => {
     /**

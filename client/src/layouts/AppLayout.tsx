@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router'
 import { BottomNav } from '../components/BottomNav'
+import { BadgeCelebration } from '../features/progression/BadgeCelebration'
 
 /**
  * The signed-in app shell: content plus the persistent navigation.
@@ -45,6 +46,12 @@ export function AppLayout() {
         </div>
       </main>
       <BottomNav />
+      {/*
+       * [82] — the badge-earned celebration lives in the shell, not on the Me screen, because a
+       * badge unlocks when your partner approves your chore: a moment you are on any tab at all.
+       * Outside the keyed page container above, so a route change cannot remount its baseline.
+       */}
+      <BadgeCelebration />
     </div>
   )
 }
