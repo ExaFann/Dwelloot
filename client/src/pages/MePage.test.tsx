@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { MemoryRouter } from 'react-router'
 import { makeStore } from '../app/store'
 import { signedIn } from '../features/auth/authSlice'
+import { badgeWallGeometry } from '../features/progression/badgeWallGeometry'
 import { MePage } from './MePage'
 
 const ME = {
@@ -139,8 +140,6 @@ function renderPage() {
   )
 }
 
-const badgeCard = (name: string) => screen.getByText(name).closest('li')!
-
 beforeEach(() => localStorage.clear())
 afterEach(() => {
   cleanup()
@@ -178,28 +177,36 @@ describe('the profile', () => {
 
 // ─── Badges ──────────────────────────────────────────────────────────────────
 
-describe('the badge shelf', () => {
-  it('shows every badge, locked ones included', async () => {
+describe('the badge wall', () => {
+  it('shows every badge as an openable cell, locked ones included', async () => {
     stub()
     renderPage()
 
-    await screen.findByText('First chore')
+    await screen.findByRole('button', { name: 'First chore, unlocked' })
     for (const badge of BADGES) {
-      expect(screen.getByText(badge.name)).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', {
+          name: `${badge.name}, ${badge.unlocked ? 'unlocked' : 'locked'}`,
+        }),
+      ).toBeInTheDocument()
     }
   })
 
   /**
-   * The reason `criteria` is in the payload at all ([27]). A locked badge without it is a grey
-   * square, and a client-side copy of these strings would be free to drift from the thresholds
+   * The reason `criteria` is in the payload at all ([27]). Since [76b] a locked badge's sentence
+   * surfaces through the **tip**, not the overlay — this is where the no-local-copy obligation is
+   * now visible: a client-side copy of these strings would be free to drift from the thresholds
    * log `026` pins against this same seeded text.
    */
-  it('shows the server’s criteria on a locked badge', async () => {
+  it('serves the server’s criteria through a locked badge’s tip', async () => {
     stub()
     renderPage()
 
-    await screen.findByText('3-day win streak')
-    expect(badgeCard('3-day win streak')).toHaveTextContent(
+    fireEvent.click(await screen.findByRole('button', { name: '3-day win streak, locked' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    // Scoped to the Badges region: the page carries other live regions (settings notices).
+    const wall = screen.getByRole('region', { name: 'Badges' })
+    expect(within(wall).getByRole('status')).toHaveTextContent(
       'Win the daily duel three days in a row.',
     )
   })
@@ -208,33 +215,32 @@ describe('the badge shelf', () => {
     stub()
     renderPage()
 
-    await screen.findByText('First chore')
-    expect(badgeCard('First chore')).toHaveTextContent('Unlocked')
-    expect(badgeCard('3-day win streak')).toHaveTextContent('Locked')
+    // The state is a word in the accessible name; the unlocked overlay repeats it visibly.
+    fireEvent.click(await screen.findByRole('button', { name: 'First chore, unlocked' }))
+    expect(screen.getByRole('dialog')).toHaveTextContent('Unlocked')
   })
 
   it('counts the progress from the list', async () => {
     stub()
     renderPage()
-    // Twice since [76]: the shelf (below md) and the wall (md+) are both in the DOM, split by
-    // CSS jsdom cannot evaluate. Both must agree on the count.
-    expect(await screen.findAllByText('3 of 6 unlocked')).toHaveLength(2)
+    // Exactly once since [76a]: the wall is the only badge surface at every width.
+    expect(await screen.findAllByText('3 of 6 unlocked')).toHaveLength(1)
   })
 
   /**
-   * **The order is the server's.** [27] sorts by id and chose that over unlocked-first, because a
-   * grid that reshuffles when you unlock something is a worse grid. The fixture is returned out of
-   * id order so any client-side sort — by id or by unlocked — fails this.
+   * **Placement is by id, not by response order.** [27] sorts by id and chose that over
+   * unlocked-first because a wall that reshuffles when you unlock something is a worse wall; the
+   * honeycomb hard-codes each id's cell, so an out-of-order response must land identically.
    */
-  it('preserves the order the server sent', async () => {
+  it('places badges by id whatever order the server sent', async () => {
     stub({ badges: { items: [BADGES[5], BADGES[0], BADGES[3]] } })
     renderPage()
 
-    await screen.findByText('Big spender')
-    const names = [...document.querySelectorAll('li')]
-      .map((li) => li.querySelector('p')?.textContent ?? '')
-      .filter((text) => BADGES.some((badge) => badge.name === text))
-    expect(names).toEqual(['Big spender', 'First chore', '7-day win streak'])
+    const first = await screen.findByRole('button', { name: 'First chore, unlocked' })
+    const geometry = badgeWallGeometry(130)
+    // CELL_ORDER puts id 1 at row 0, column 0.
+    expect(first.style.left).toBe(`${geometry.cellAt(0, 0).left}px`)
+    expect(first.style.top).toBe(`${geometry.cellAt(0, 0).top}px`)
   })
 })
 

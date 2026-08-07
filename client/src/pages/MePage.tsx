@@ -4,7 +4,6 @@ import { SignOutButton } from '../features/auth/SignOutButton'
 import { Avatar } from '../components/ui/Avatar'
 import { AvatarPicker } from '../features/auth/AvatarPicker'
 import { CoinMark, PointsMark, StreakMark } from '../components/ui/icons'
-import { BadgeShelf } from '../features/progression/BadgeShelf'
 import { BadgeWall } from '../features/progression/BadgeWall'
 import { HouseholdSettings } from '../features/household/HouseholdSettings'
 import { ThemeToggle } from '../features/theme/ThemeToggle'
@@ -89,8 +88,8 @@ export function MePage() {
            * The three stats, beside the avatar rather than in tiles below it — owner's call. The
            * coloured squares dominated the card and swallowed their own marks: each mark inherited
            * the tile's black foreground, so the very icons that distinguish the currencies rendered
-           * as three black shapes. On the card ground each mark now wears its own hue, which is the
-           * first time the brand colours actually do the telling-apart.
+           * as three black shapes. Since [75a] the hues are intrinsic — the marks carry fixed brand
+           * fills and an ink stroke ([75b]) — so no `text-*` class is needed (or heeded) here.
            *
            * `dl` still, and `dt` still precedes `dd` in the DOM — "Coins, 13" to a screen reader,
            * never a bare number — with the visual order handled by flex direction, exactly as the
@@ -100,12 +99,12 @@ export function MePage() {
             <Stat
               label="Coins"
               value={me.coins}
-              mark={<CoinMark className="size-4 text-warning" />}
+              mark={<CoinMark className="size-6" />}
             />
             <Stat
               label="Lifetime pts"
               value={me.lifetimePoints}
-              mark={<PointsMark className="size-4 text-points" />}
+              mark={<PointsMark className="size-6" />}
             />
             {/*
              * The **current** streak. `users.longest_win_streak` exists but `/api/auth/me` does not
@@ -115,7 +114,7 @@ export function MePage() {
             <Stat
               label="Streak"
               value={me.currentWinStreak}
-              mark={<StreakMark className="size-4 text-flame" />}
+              mark={<StreakMark className="size-6" />}
             />
           </dl>
         </div>
@@ -137,17 +136,12 @@ export function MePage() {
        */}
       <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
         {/*
-         * [76]'s split, on [58]'s bar-to-rail boundary. The honeycomb is fixed-pixel absolute
-         * positioning and cannot reflow, so phones keep the shelf — which also keeps every criteria
-         * sentence visible where there is no hover for a tooltip. Both subscribe to the same badges
-         * cache entry, so mounting both costs one request, not two.
+         * [76a] retired the shelf and the `md` split with it — the wall measures its container and
+         * reflows, and the criteria live in its click overlay, which were the two jobs the shelf
+         * existed to do. It also ended the era of the owner reviewing a surface ([76]'s honeycomb)
+         * they had never actually seen: their window sat under the old `md` gate.
          */}
-        <div className="md:hidden">
-          <BadgeShelf />
-        </div>
-        <div className="hidden md:block">
-          <BadgeWall />
-        </div>
+        <BadgeWall />
 
         <div className="flex flex-col gap-6">
           {/*
@@ -191,13 +185,19 @@ function Stat({
     /*
      * `dt` before `dd` in the DOM so a screen reader hears "Coins, 13", with `flex-row-reverse`
      * putting the number first visually — the same order trick the old tiles used vertically.
+     *
+     * The mark sits in the `dd` beside the number, `items-center` — [75b]'s number+mark pattern.
+     * It used to sit in the `dt`, where the container's `items-baseline` aligned the tiny label's
+     * baseline against the xl number's and hoisted the mark visibly high (owner-caught, [75c]).
      */
     <div className="flex flex-row-reverse items-baseline gap-1.5">
-      <dt className="flex items-center gap-1 font-display text-[0.7rem] font-semibold uppercase tracking-[0.06em] text-muted">
-        {mark}
+      <dt className="font-display text-[0.7rem] font-semibold uppercase tracking-[0.06em] text-muted">
         {label}
       </dt>
-      <dd className="font-display text-xl font-bold">{value}</dd>
+      <dd className="flex items-center gap-1 font-display text-xl font-bold">
+        {value}
+        {mark}
+      </dd>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ApproveIcon } from '../../components/ui/icons'
+import { ApproveIcon, PointsMark } from '../../components/ui/icons'
 import {
   useBulkApproveMutation,
   usePendingApprovalsQuery,
@@ -195,16 +195,11 @@ export function PendingApprovals() {
                         </span>
                       </span>
                     </span>
-                    {/* Blue is Points, yellow is Coins — see the note on the same badge in the Log tab. */}
-                    <span
-                      className={[
-                        'shrink-0 rounded-base border-2 border-ink-accent px-2 py-0.5 font-display text-xs font-bold',
-                        selectedIds.includes(log.id)
-                          ? 'bg-card text-body'
-                          : 'bg-points text-points-fg',
-                      ].join(' ')}
-                    >
-                      {log.pointsAwarded} pts
+                    {/* The Points mark names the currency — [75b], same note as the Log tab's rows. */}
+                    <span className="flex shrink-0 items-center gap-1 font-display text-sm font-bold">
+                      {log.pointsAwarded}
+                      <PointsMark className="size-4" />
+                      <span className="sr-only"> pts</span>
                     </span>
                   </button>
                 </li>

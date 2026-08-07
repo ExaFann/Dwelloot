@@ -14,7 +14,7 @@ and this file disagree, this file wins.
 | Decision | Chosen | Rejected, and why |
 |---|---|---|
 | **Logo** | **L1-A** — a loot box with the lid ajar. Purple body, green lid, yellow band, orange burst, blue diamond. | Purple/green swapped (L1-B): reads as "the *opponent's* box", which inverts the product rule. Isometric / roof-lid / star-backed / letter-D variants: see `explorations/round2.html`. |
-| **Mark treatment** | **Flat fill, no stroke, no shadow** (matches today's `marks.tsx`). | Black stroke, hard shadow, stroke+shadow. Reasons in §4. |
+| **Mark treatment** | **Flat fill + 1.7–1.8px black stroke, no shadow.** *(Revised — see §4.)* | Flat-no-stroke (the original pick, reversed after in-app testing); anything carrying a hard shadow. |
 | **Coins shape** | **Circle with a square hole.** | The existing octagon. This deliberately **retires the "no curves" rule** — for Coins only. |
 | **Badge frame** | Pointy-top hexagon, purple fill, 3px black stroke. | — |
 | **Badge count** | **12** | — |
@@ -102,30 +102,58 @@ Stroke is `7` on the box and lid, `6` on the two small pieces, `stroke-miterlimi
 
 ## 4. The three currency marks
 
-24×24, **flat fill, no stroke, no shadow**, `fill-rule="evenodd"` where there is a hole.
+24×24, **flat fill + black stroke, no shadow**, `fill-rule="evenodd"` where there is a hole.
 
-| Mark | Shape | Colour |
-|---|---|---|
-| Points | diamond with a diamond hole | `--brand-points` |
-| Coins | circle with a square hole | `--brand-warning` |
-| Streak | 8-point burst with a diamond core | `--brand-flame` + `--brand-warning` core |
+> **Owner revision, 2026-08-07 ([75b]):** in the implementation the stroke is **ink, not literal
+> black** — `var(--ink-surface)`, black in light and `#F0EBFF` in dark — because a black outline
+> disappears against the dark ground. The sprite stays the light-mode drawing (`stroke="#000"` is
+> `--ink-surface`'s light value; the fidelity test pins that correspondence). The badges' strokes
+> stay literal black, deliberately.
 
-Paths are in `icons-source.svg` under `#mark-points`, `#mark-coins`, `#mark-streak`.
+| Mark | Shape | Fill | Stroke |
+|---|---|---|---|
+| Points | diamond with a diamond hole | `--brand-points` | `1.8`, on the whole `evenodd` path (so the hole is outlined too) |
+| Coins | circle with a square hole | `--brand-warning` | `1.8`, likewise |
+| Streak | 8-point burst + a yellow diamond core | `--brand-flame`, core `--brand-warning` | `1.4`, **on the outer star only — the core is unstroked** |
 
-### Why flat, and not the Neobrutalism stroke+shadow
+Paths are in `icons-source.svg` under `#mark-points`, `#mark-coins`, `#mark-streak`. Take them
+verbatim: the outlines are **inset** so that the stroke lands inside the 24 viewBox instead of being
+clipped, and the diamond/coin holes are sized so the inner stroke does not close them up.
 
-Three findings from `explorations/round3.html`, all of which the implementation must respect:
+Two things about the streak mark that are deliberate and easy to "fix" by mistake:
 
-1. **Shadows invert in dark mode.** `--ink-shadow` is near-white (`#F0EBFF`) in dark. `ui-exp01`
-   already deleted 20 container shadows for exactly this reason. A mark carrying a hard shadow either
-   flips to a white edge (noisy) or stays black (invisible on a dark surface).
-2. **A hard-coded black stroke fights `currentColor`.** These marks are used inside buttons, where
-   they inherit white. A black outline around a white glyph on a purple button looks broken.
-3. **The burst dies at 20px with a stroke.** Its spikes are thin; a 1.6px black outline eats the
-   orange almost entirely. Diamonds and circles survive it; the star does not.
+- **The core is a separate, strokeless path drawn on top of the star.** Outlining it as well turns
+  the middle into a black ring and the mark stops reading as one object.
+- **Its stroke is `1.4`, not `1.8`.** The star's spikes are far thinner than a diamond or a circle,
+  so the same numeric width reads much heavier on it. These three are matched **optically**, not
+  numerically. Verified at 56 / 32 / 24 / 20 / 16px, on white and on `--brand-primary`.
 
-If a *display* surface later wants the heavier treatment (loot-box reveal, a large stat), add it as a
-**wrapper** — an offset duplicate behind the mark — rather than baking a stroke into the path.
+### 4.1 This section was reversed, on purpose
+
+The first pass specified flat fills with no stroke, for three stated reasons. The owner then put both
+treatments in front of the running app and **the stroked marks matched the rest of the UI better** —
+every surface in `ui-exp01` carries a 2px `border-ink`, and an unstroked mark sitting on one of those
+cards reads as a sticker rather than part of the system. Real use beats the argument. What follows is
+what happened to each of the three original objections, because two of them still constrain the
+implementation:
+
+1. **Shadows invert in dark mode — still true, still binding.** `--ink-shadow` is near-white
+   (`#F0EBFF`) in dark, which is why `ui-exp01` deleted 20 container shadows. **Stroke only. Never
+   add a hard shadow to a mark.** The reversal is about the outline, not the shadow.
+2. **The `currentColor` conflict — does not apply to these three.** It would, if the marks inherited
+   their colour: a hard black outline around a white glyph on a purple button looks broken. But these
+   three carry **fixed brand colours** (a Point is always `--brand-points`), so nothing inherits and
+   nothing clashes. **The 20 UI icons in §5 are the ones that inherit — they keep `currentColor` and
+   stay strokeless.** Do not "make it consistent" by adding strokes to those.
+3. **The burst was the real risk — handled by a thinner stroke, not by changing the shape.** A first
+   attempt fattened the star (inner radius `4.6` → `6.4`) and dropped the yellow core, on the theory
+   that thin spikes could not survive an outline. The owner rejected it: the slim star and the core
+   are what make a *streak* look like a spark rather than a badge. Keeping both and taking the stroke
+   down to `1.4` gets the same legibility without touching the silhouette. **The star's geometry and
+   its core are now fixed — only the stroke width was ever negotiable.**
+
+`explorations/round3-treatments-and-badges.html` shows an intermediate version of this comparison.
+That page is a record of the process, not a spec; `icons-source.svg` is correct.
 
 ---
 

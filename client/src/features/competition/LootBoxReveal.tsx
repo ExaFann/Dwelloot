@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { BurstIcon, RewardIcon } from '../../components/ui/icons'
+import { useEffect, useRef, useState } from 'react'
+import { BurstIcon, LogoMark, RewardIcon } from '../../components/ui/icons'
 import { useMeQuery } from '../auth/authApi'
 import { useCurrentCompetitionQuery } from './competitionApi'
 import { useOpenLootBoxMutation, type OpenLootBoxResult } from './lootBoxApi'
@@ -34,6 +34,8 @@ export function LootBoxReveal() {
   const [openLootBox, { isLoading }] = useOpenLootBoxMutation()
   const [revealed, setRevealed] = useState<OpenLootBoxResult | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
+  /** Where focus lands after the reveal closes — the button that opened it went with the box. */
+  const sectionRef = useRef<HTMLElement>(null)
 
   const box = competition?.unopenedLootBox ?? null
 
@@ -47,10 +49,17 @@ export function LootBoxReveal() {
     }
   }
 
+  const dismiss = () => {
+    setRevealed(null)
+    sectionRef.current?.focus()
+  }
+
   if (!revealed && !box) return null
 
   return (
     <section
+      ref={sectionRef}
+      tabIndex={-1}
       aria-labelledby="loot-box-heading"
       className="rounded-base border-2 border-ink bg-card p-5"
     >
@@ -61,40 +70,48 @@ export function LootBoxReveal() {
         </h2>
       </div>
 
-      {revealed ? (
-        <Revealed result={revealed} onDismiss={() => setRevealed(null)} />
-      ) : (
-        box && (
-          <>
-            <p className="mt-2 font-display text-sm font-bold">
-              {describeWin(box.periodType, box.isWinWin)}
-            </p>
-            <p className="mt-1 text-sm text-muted">There is a box waiting to be opened.</p>
+      {box && !revealed && (
+        <>
+          <p className="mt-2 font-display text-sm font-bold">
+            {describeWin(box.periodType, box.isWinWin)}
+          </p>
+          <p className="mt-1 text-sm text-muted">There is a box waiting to be opened.</p>
 
-            {failure && (
-              <p
-                role="alert"
-                className="mt-3 rounded-base border-2 border-ink-accent bg-danger px-3 py-2 font-display text-sm font-bold text-danger-fg"
-              >
-                {failure}
-              </p>
-            )}
-
-            <Button
-              className="mt-4 w-full"
-              pending={isLoading}
-              pendingLabel="Opening…"
-              onClick={() => void open()}
+          {failure && (
+            <p
+              role="alert"
+              className="mt-3 rounded-base border-2 border-ink-accent bg-danger px-3 py-2 font-display text-sm font-bold text-danger-fg"
             >
-              Open it
-            </Button>
-          </>
-        )
+              {failure}
+            </p>
+          )}
+
+          <Button
+            className="mt-4 w-full"
+            pending={isLoading}
+            pendingLabel="Opening…"
+            onClick={() => void open()}
+          >
+            Open it
+          </Button>
+        </>
       )}
+
+      {revealed && <Revealed result={revealed} onDismiss={dismiss} />}
     </section>
   )
 }
 
+/**
+ * The opening, centre stage — task [53a]. The owner's verdict on the in-card version was exact:
+ * "根本没有箱子" — a prize that just appears is not an *opening*. So the box appears first: the
+ * logo (which is the brand's loot box) rattles, bursts, and the prize lands in its place — a pure
+ * CSS timeline (`theme.css`), running on a result that is already known, so nothing waits on it.
+ *
+ * Same dismissal contract as the badge overlay: any click, or Escape/Enter/Space. Focus lands on
+ * the dialog while it is up (the keydown handler needs it, and a screen reader should hear it) and
+ * the section takes it back afterwards.
+ */
 function Revealed({
   result,
   onDismiss,
@@ -103,32 +120,66 @@ function Revealed({
   onDismiss: () => void
 }) {
   const prize = describePrize(result)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    dialogRef.current?.focus()
+  }, [])
 
   return (
-    <>
+    <div
+      ref={dialogRef}
+      tabIndex={-1}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Loot box"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+      onClick={onDismiss}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onDismiss()
+        }
+      }}
+    >
       {/*
-       * `role="status"` because opening replaces a button with a result: without a live region the
-       * prize is announced to nobody, and the only feedback a screen-reader user gets is that the
-       * control they just pressed has gone.
+       * Box and prize share one grid cell — stacked by layout, never by transforms, so reduced
+       * motion (which hides the box stage and skips the entrance) leaves the prize exactly where
+       * it always was (log `045`'s rule).
        */}
-      <div role="status" className="mt-3 flex flex-col items-center gap-1 py-2">
-        <span
-          className={[
-            'loot-pop flex items-center gap-2 rounded-base border-2 border-ink-accent px-4 py-2 font-display text-2xl font-bold',
-            // Yellow is Coins and loot, and only those — design-tokens.md §2.1. A bonus reward is
-            // loot too, so both prizes wear it.
-            'bg-warning text-warning-fg',
-          ].join(' ')}
-        >
-          <BurstIcon className="size-5" />
-          {prize.headline}
-        </span>
-        <p className="text-sm text-muted">{prize.detail}</p>
-      </div>
+      <div className="grid place-items-center">
+        <div aria-hidden="true" className="box-rattle col-start-1 row-start-1">
+          <LogoMark className="size-40" />
+        </div>
 
-      <Button variant="neutral" className="mt-3 w-full" onClick={onDismiss}>
-        Nice
-      </Button>
-    </>
+        {/*
+         * `role="status"` because opening replaces a button with a result: without a live region
+         * the prize is announced to nobody, and the only feedback a screen-reader user gets is
+         * that the control they just pressed has gone.
+         */}
+        <div
+          role="status"
+          className="prize-arrive col-start-1 row-start-1 flex flex-col items-center gap-1 py-2"
+        >
+          <span
+            className={[
+              'flex items-center gap-2 rounded-base border-2 border-ink-accent px-4 py-2 font-display text-2xl font-bold',
+              // Yellow is Coins and loot, and only those — design-tokens.md §2.1. A bonus reward
+              // is loot too, so both prizes wear it.
+              'bg-warning text-warning-fg',
+            ].join(' ')}
+          >
+            <BurstIcon className="size-5" />
+            {prize.headline}
+          </span>
+          {/* The scrim is dark in both schemes, so the detail line is fixed near-white. */}
+          <p className="text-sm" style={{ color: '#F0EBFF' }}>
+            {prize.detail}
+          </p>
+          <Button variant="neutral" className="mt-2" onClick={onDismiss}>
+            Nice
+          </Button>
+        </div>
+      </div>
+    </div>
   )
 }

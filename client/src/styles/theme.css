@@ -144,6 +144,17 @@
    */
   --deco-red: #FF5C5C;
   --deco-blue: #3B6BFF;
+
+  /*
+   * The three currency marks' fills — [75d], the lever [75c] named. Light values ARE the sprite's
+   * literals (light mode is already right); dark values are the same hues genuinely deepened, so
+   * the marks' near-white ink stroke has something to bite against. NOT the `--brand-*` family:
+   * those lighten in dark because they carry text-grade AA on their own, and a mark bounded by an
+   * ink outline is exactly the thing that does not.
+   */
+  --mark-points: #4CC9F0;
+  --mark-coins: #FFE14A;
+  --mark-flame: #FF8A3D;
 }
 
 [data-theme='dark'] {
@@ -172,6 +183,11 @@
   --ink-accent: #000000;
   --ink-surface: #f0ebff;
   --ink-shadow: #f0ebff;
+
+  /* Deepened, not lightened — see the light block's note. */
+  --mark-points: #2B9DC7;
+  --mark-coins: #EAB308;
+  --mark-flame: #E56B14;
 }
 
 /*
@@ -355,6 +371,120 @@
 
 @utility loot-pop {
   animation: dwelloot-loot-pop 320ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/*
+ * A badge spinning into the wall's overlay — task [76a].
+ *
+ * Two full turns about the y axis with loot-pop's overshoot at the end. Discrete `scale` and
+ * `rotate` properties, never `transform`, for the standing reason (log `045`, and the notes on the
+ * spark above): the element's position must not depend on the animation running, because
+ * `prefers-reduced-motion` switches the animation off — under it the badge simply appears.
+ */
+@keyframes dwelloot-badge-reveal {
+  0% {
+    scale: 0.5;
+    rotate: y 0turn;
+  }
+  70% {
+    scale: 1.06;
+    rotate: y 1.6turn;
+  }
+  100% {
+    scale: 1;
+    rotate: y 2turn;
+  }
+}
+
+@utility badge-reveal {
+  animation: dwelloot-badge-reveal 900ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/*
+ * The loot box opening, centre-screen — task [53a]. Three animations, one fixed timeline: the box
+ * rattles with growing amplitude (~900ms), bursts (220ms, `forwards` holds it gone), and the prize
+ * arrives as the burst fades (delay 1050ms). The roll is already known when this mounts — the
+ * sequence is theatre, so it needs no JS timeline.
+ *
+ * Discrete `scale`/`rotate`, never `transform` (log `045`'s standing rule), and the box and prize
+ * overlap via grid cells rather than positioning transforms — so under `prefers-reduced-motion`
+ * nothing is stranded: the box stage is simply not shown, and the prize's **natural** state is
+ * visible (its entrance uses `backwards` fill purely to hide it through the delay).
+ */
+@keyframes dwelloot-box-rattle {
+  0%,
+  100% {
+    rotate: 0deg;
+    scale: 1;
+  }
+  15% {
+    rotate: -7deg;
+  }
+  30% {
+    rotate: 6deg;
+    scale: 1.03;
+  }
+  45% {
+    rotate: -6deg;
+  }
+  60% {
+    rotate: 5deg;
+    scale: 1.06;
+  }
+  75% {
+    rotate: -3deg;
+  }
+  90% {
+    rotate: 2deg;
+    scale: 1.1;
+  }
+}
+
+@keyframes dwelloot-box-burst {
+  to {
+    scale: 1.5;
+    opacity: 0;
+  }
+}
+
+@utility box-rattle {
+  animation:
+    dwelloot-box-rattle 900ms ease-in-out,
+    dwelloot-box-burst 220ms ease-in 900ms forwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    display: none;
+  }
+}
+
+@keyframes dwelloot-prize-arrive {
+  0% {
+    opacity: 0;
+    scale: 0.5;
+    rotate: -6deg;
+  }
+  70% {
+    opacity: 1;
+    scale: 1.1;
+    rotate: 2deg;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+
+@utility prize-arrive {
+  animation: dwelloot-prize-arrive 380ms ease-out 1050ms backwards;
 
   @media (prefers-reduced-motion: reduce) {
     animation: none;

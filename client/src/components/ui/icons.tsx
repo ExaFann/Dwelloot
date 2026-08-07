@@ -11,16 +11,23 @@
  * or rounded; `icons.test.tsx` parses the sprite from disk and asserts the paths match, so a
  * well-meaning cleanup shows up as a red test rather than a slowly drifting icon set.
  *
- * ### Colour rules, and one resolved contradiction
+ * ### Colour rules
  *
  * - **UI icons**: single path, `currentColor`, no stroke. Five carry `fill-rule="evenodd"` for
  *   interior holes (`store`, `period`, `archive`, `invite`, `theme`) — without the attribute those
  *   shapes fill solid.
- * - **Marks**: `currentColor` too. The spec's sprite header says marks "carry literal brand
- *   colours", but §4's own argument — marks are used where they inherit, and a literal blue mark on
- *   the blue Points tile vanishes — wins at real call sites. The paths changed; the colour contract
- *   did not. The streak's two-colour core becomes an `evenodd` hole for the same reason, the one
- *   deliberate deviation from verbatim (log `075`).
+ * - **Marks**: fixed brand **tokens** + a black stroke (BRAND-ICONS.md §4, revised — §4.1 records
+ *   the owner reversing the original flat-no-stroke call after comparing both in the app, log
+ *   `075a`). Points/Coins stroke the whole `evenodd` path at 1.8; the streak strokes only its outer
+ *   star, at 1.4, and its yellow core is a strokeless second path — these are optically matched,
+ *   deliberately unequal widths. Do not normalise them, and never add a shadow (§4.1 point 1).
+ *   Fills ride the `--mark-*` tokens ([75d]): light values are the sprite's literals, dark values
+ *   the same hues genuinely **deepened** — not the `--brand-*` family, whose dark variants lighten
+ *   for text-grade AA and washed out beside the stroke ([75c]); an outlined mark does not carry AA
+ *   alone. The stroke is `var(--ink-surface)` — black in light, `#F0EBFF` in dark, the ink every
+ *   border and the lock chip ride — an owner override of §4's literal black ([75b]): a black
+ *   outline vanishes against the dark ground. The badges keep literal `#000` strokes, deliberately;
+ *   they are verbatim literal-colour drawings.
  * - **Badges**: literal colours verbatim, including `--deco-red`/`--deco-blue`'s values on
  *   `collector`. Badges sit on cards, never on matching fills, so literals are safe there.
  *
@@ -56,40 +63,98 @@ function Svg({
   )
 }
 
+/* ────────────────────────── the logo ────────────────────────── */
+
+/**
+ * The brand's loot box, lid ajar — the sprite's `#logo`, verbatim ([53a]). Transcribed for the
+ * reveal's centre-screen opening: it *is* the box being opened, so the reveal animates the real
+ * thing rather than a stand-in glyph. Literal colours like the badges; the fidelity test pins its
+ * paths against the sprite.
+ */
+export function LogoMark({ className, style }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 128 128"
+      aria-hidden="true"
+      focusable="false"
+      className={className}
+      style={style}
+    >
+      <g stroke="#000" strokeWidth="7" strokeLinejoin="miter" strokeMiterlimit={2}>
+        <path
+          d="M94 9 98.2 23.8 111.7 16.3 104.2 29.8 119 34 104.2 38.2 111.7 51.7 98.2 44.2 94 59 89.8 44.2 76.3 51.7 83.8 38.2 69 34 83.8 29.8 76.3 16.3 89.8 23.8Z"
+          fill="#FF8A3D"
+          strokeWidth="6"
+        />
+        <path d="M24 21 37 34 24 47 11 34Z" fill="#4CC9F0" strokeWidth="6" />
+        <g transform="rotate(-7 64 52)">
+          <path d="M18 64H110L94 36H34Z" fill="#3DDC97" />
+        </g>
+        <rect x="26" y="72" width="76" height="44" fill="#7C4DFF" />
+        <rect x="56" y="72" width="16" height="44" fill="#FFE14A" />
+      </g>
+    </svg>
+  )
+}
+
 /* ────────────────────────── currency marks ────────────────────────── */
 
-/** Points: a diamond with a diamond hole. */
+/** Points: a diamond with a diamond hole, outlined — the stroke rides the whole `evenodd` path. */
 export function PointsMark({ className }: IconProps) {
   return (
     <Svg className={className}>
-      <path d="M12 1 23 12 12 23 1 12ZM12 8 8 12l4 4 4-4Z" fillRule="evenodd" />
+      <path
+        d="M12 1.9 22.1 12 12 22.1 1.9 12ZM12 8.2 8.2 12l3.8 3.8L15.8 12Z"
+        fill="var(--mark-points)"
+        fillRule="evenodd"
+        stroke="var(--ink-surface)"
+        strokeWidth="1.8"
+        strokeLinejoin="miter"
+        strokeMiterlimit={2}
+      />
     </Svg>
   )
 }
 
 /**
  * Coins: a circle with a square hole. The one place the "no curves" rule is deliberately retired —
- * BRAND-ICONS.md §0 records the decision and what it rejected (the octagon this replaces).
+ * BRAND-ICONS.md §0 records the decision and what it rejected (the octagon this replaces). The
+ * sprite carries no miterlimit on this one; transcribed exactly, not normalised.
  */
 export function CoinMark({ className }: IconProps) {
   return (
     <Svg className={className}>
-      <path d="M12 1A11 11 0 1 0 12 23 11 11 0 1 0 12 1ZM8.8 8.8h6.4v6.4H8.8Z" fillRule="evenodd" />
+      <path
+        d="M12 1.9A10.1 10.1 0 1 0 12 22.1 10.1 10.1 0 1 0 12 1.9ZM9 9h6v6H9Z"
+        fill="var(--mark-coins)"
+        fillRule="evenodd"
+        stroke="var(--ink-surface)"
+        strokeWidth="1.8"
+        strokeLinejoin="miter"
+      />
     </Svg>
   )
 }
 
 /**
- * Streak: the 8-point burst. The sprite's yellow diamond core is rendered as a hole rather than a
- * second colour, so the mark can keep inheriting `currentColor` — the deviation log `075` flags.
+ * Streak: the 8-point burst with its yellow diamond core — two colours again, now that the fills
+ * are fixed (log `075`'s evenodd-hole deviation is retired by `075a`). Only the outer star is
+ * stroked, and thinner than the other two marks (1.4 vs 1.8): its spikes are far narrower than a
+ * diamond or a circle, so the widths are matched optically, not numerically (§4.1 point 3).
+ * Outlining the core as well turns the middle into a black ring — do not "fix" that.
  */
 export function StreakMark({ className }: IconProps) {
   return (
     <Svg className={className}>
       <path
-        d="M12 1 13.8 7.8 19.8 4.2 16.2 10.2 23 12 16.2 13.8 19.8 19.8 13.8 16.2 12 23 10.2 16.2 4.2 19.8 7.8 13.8 1 12 7.8 10.2 4.2 4.2 10.2 7.8ZM12 8 16 12 12 16 8 12Z"
-        fillRule="evenodd"
+        d="M12.0 1.6 13.66 7.98 19.35 4.65 16.02 10.34 22.4 12.0 16.02 13.66 19.35 19.35 13.66 16.02 12.0 22.4 10.34 16.02 4.65 19.35 7.98 13.66 1.6 12.0 7.98 10.34 4.65 4.65 10.34 7.98Z"
+        fill="var(--mark-flame)"
+        stroke="var(--ink-surface)"
+        strokeWidth="1.4"
+        strokeLinejoin="miter"
+        strokeMiterlimit={2}
       />
+      <path d="M12 8.4 15.6 12 12 15.6 8.4 12Z" fill="var(--mark-coins)" />
     </Svg>
   )
 }
@@ -264,6 +329,11 @@ export function ThemeIcon({ className }: IconProps) {
  * Stands in where lucide had `Zap` and `Sparkles` (the tug spark, the reveal's dressing). There is
  * no bolt in the brand set, and both uses are decorative and already coloured by their context, so
  * the burst carries them — a judgement call recorded in log `075` rather than made silently.
+ *
+ * **Keeps the pre-`075a` full-bleed star.** The sprite's `#mark-streak` was inset (1 → 1.6) purely
+ * to make room for a stroke this unstroked glyph does not carry; adopting the inset path would just
+ * render the spark smaller. That makes this no longer sprite-verbatim — exempt by construction,
+ * like `BoltIcon` below.
  */
 export function BurstIcon({ className }: IconProps) {
   return (
@@ -280,11 +350,21 @@ export function BurstIcon({ className }: IconProps) {
  * owner wanted the bolt back, just sharper — no rounded joins, drawn to the same flat-fill rules as
  * everything else here. The fidelity test only pins sprite-sourced icons, so this one is exempt by
  * construction rather than by an ignore.
+ *
+ * Stroked at 1.4 — the thin-spike width the streak's star settled on ([75d]); a bolt is all
+ * spikes. Literal `#000`, not ink: this glyph only ever rides the tug bar's colour fills, where
+ * black is the border colour everything else on a fill uses (the `--ink-accent` reasoning).
  */
 export function BoltIcon({ className }: IconProps) {
   return (
     <Svg className={className}>
-      <path d="M14 1 3 14h6l-2 9L20 9h-6l3-8z" />
+      <path
+        d="M14 1 3 14h6l-2 9L20 9h-6l3-8z"
+        stroke="#000"
+        strokeWidth="1.4"
+        strokeLinejoin="miter"
+        strokeMiterlimit={2}
+      />
     </Svg>
   )
 }
@@ -503,6 +583,26 @@ export function BadgeMark({ id, className, style }: IconProps & { id: number }) 
         </Badge>
       )
   }
+}
+
+/**
+ * An unseeded badge-wall cell ([76a]): the locked chip's dark hexagon without its padlock. Not in
+ * the sprite (it is a subset of `#badge-locked`), so exempt by construction. The stroke is literal
+ * `#000` like the badges' own — owner's call ([76b], reversing [76a]'s ink stroke), accepting that
+ * on the dark page the placeholder all but recedes: it is background, not content.
+ */
+export function BadgeSlotMark({ className, style }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      aria-hidden="true"
+      focusable="false"
+      className={className}
+      style={style}
+    >
+      <path d={HEX_FRAME} fill="#1E1830" stroke="#000" strokeWidth="3" />
+    </svg>
+  )
 }
 
 /** The locked chip, whole — dark hexagon, white padlock. Task [76] places it bottom-right. */

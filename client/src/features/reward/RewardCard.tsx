@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { EditIcon } from '../../components/ui/icons'
+import { CoinMark, EditIcon } from '../../components/ui/icons'
 import { useRedeemRewardMutation, type Reward } from './rewardApi'
 import { toApiError } from '../../api/apiError'
 import { Button } from '../../components/ui/Button'
@@ -58,9 +58,11 @@ export function RewardCard({ reward, balance, onEdit, onRedeemed, onFailed }: Pr
     <li className="rounded-base border-2 border-ink bg-card p-3">
       <div className="flex items-start justify-between gap-3">
         <h3 className="min-w-0 font-display text-sm font-semibold">{reward.title}</h3>
-        {/* Yellow is Coins and loot, and only those — `design-tokens.md` §2.1. */}
-        <span className="shrink-0 rounded-base border-2 border-ink-accent bg-warning px-2 py-0.5 font-display text-xs font-bold text-warning-fg">
-          {reward.coinCost} Coins
+        {/* The coin mark names the currency — [75b] retired the yellow price chip. */}
+        <span className="flex shrink-0 items-center gap-1 font-display text-sm font-bold">
+          {reward.coinCost}
+          <CoinMark className="size-4" />
+          <span className="sr-only"> Coins</span>
         </span>
       </div>
 

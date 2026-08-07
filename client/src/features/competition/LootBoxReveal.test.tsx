@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { makeStore } from '../../app/store'
@@ -155,6 +155,43 @@ describe('when a box is waiting', () => {
 })
 
 describe('the reveal', () => {
+  it('opens centre-screen with the box before the prize — [53a]', async () => {
+    stub()
+    renderReveal()
+    await userEvent.setup().click(await screen.findByRole('button', { name: /open it/i }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog).toHaveFocus()
+    // The rattling box is the logo — decorative theatre beside the announced prize, so hidden.
+    const box = dialog.querySelector('.box-rattle')
+    expect(box).not.toBeNull()
+    expect(box).toHaveAttribute('aria-hidden', 'true')
+    expect(box!.querySelector('svg')).not.toBeNull()
+    // The prize is the live region, exactly as before the redesign.
+    expect(dialog.querySelector('[role="status"]')).not.toBeNull()
+  })
+
+  it('dismisses on a click anywhere', async () => {
+    stub({ boxes: [BOX, null] })
+    renderReveal()
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: /open it/i }))
+    await user.click(await screen.findByRole('dialog'))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
+  it('dismisses on Escape', async () => {
+    stub({ boxes: [BOX, null] })
+    renderReveal()
+
+    await userEvent.setup().click(await screen.findByRole('button', { name: /open it/i }))
+    fireEvent.keyDown(await screen.findByRole('dialog'), { key: 'Escape' })
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
   it('shows the Coin amount the server rolled', async () => {
     stub()
     renderReveal()

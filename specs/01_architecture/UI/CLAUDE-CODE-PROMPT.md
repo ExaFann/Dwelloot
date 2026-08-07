@@ -32,9 +32,12 @@ as [64] [65] [66] before you start, using the same format as the existing entrie
   - Replace client/src/components/ui/marks.tsx with icons.tsx: 3 currency marks, 20 UI icons,
     12 badge motifs, 1 lock. Copy the path data verbatim out of icons-source.svg — do not redraw,
     do not "improve", do not round the numbers.
-  - Marks and UI icons are flat fills with NO stroke and NO shadow. BRAND-ICONS.md §4 explains why;
-    if you think a stroke would look better, read §4 again rather than adding one.
-  - UI icons use currentColor. Five of them need fill-rule="evenodd" — §5 lists which.
+  - The 3 currency marks are flat fill + a black stroke, NO shadow. Points/Coins stroke 1.8 on the
+    whole evenodd path; Streak strokes ONLY the outer star at 1.4 and leaves its yellow core
+    unstroked. The 20 UI icons are flat fill with NO stroke and currentColor. Those differences are
+    deliberate and optically tuned — BRAND-ICONS.md §4 and §4.1. Do not normalise the stroke widths
+    and do not outline the streak's core.
+  - Five UI icons need fill-rule="evenodd" — §5 lists which.
   - Update every import site. Remove any remaining lucide usage from client/src.
   - Keep BadgeMark's id-based switch AND its default: fallback, AND the comment saying the lookup is
     presentation-only. Badges 7–12 are not seeded on the backend yet.

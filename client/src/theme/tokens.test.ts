@@ -142,6 +142,8 @@ describe('the dark scheme is complete', () => {
       name.startsWith('--brand-') ||
       name.startsWith('--surface-') ||
       name.startsWith('--text-') ||
+      // The marks' fills deepen in dark ([75d]) — a forgotten override silently stays light.
+      name.startsWith('--mark-') ||
       name === '--ink-surface' ||
       name === '--ink-shadow',
   )

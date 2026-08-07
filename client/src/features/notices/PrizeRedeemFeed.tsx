@@ -8,6 +8,7 @@ import { periodLabel } from '../competition/standing'
 import { toApiError } from '../../api/apiError'
 import { SkeletonList } from '../../components/ui/Skeleton'
 import { SECTION_BODY, SECTION_SHELL } from './sectionLayout'
+import { CoinMark } from '../../components/ui/icons'
 import { liveQueryOptions } from '../../app/liveSync'
 
 /**
@@ -157,9 +158,12 @@ export function PrizeRedeemFeed() {
                  * was won, and inventing a figure would imply one.
                  */}
                 {entry.coins !== null && (
-                  <span className="shrink-0 font-display text-base font-bold">
+                  /* Signed number + the coin mark ([75b]) — the sign stays the point (see above). */
+                  <span className="flex shrink-0 items-center gap-1 font-display text-base font-bold">
                     {entry.direction === 'won' ? '+' : '−'}
                     {entry.coins}
+                    <CoinMark className="size-4.5" />
+                    <span className="sr-only"> Coins</span>
                   </span>
                 )}
               </li>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AddIcon } from '../components/ui/icons'
+import { AddIcon, CoinMark } from '../components/ui/icons'
 import { useRewardsQuery } from '../features/reward/rewardApi'
 import { RewardCard } from '../features/reward/RewardCard'
 import { RewardEditor } from '../features/reward/RewardEditor'
@@ -110,8 +110,11 @@ export function StorePage() {
           >
             Your Coins
           </h2>
-          <span className="rounded-base border-2 border-ink-accent bg-warning px-3 py-1 font-display text-2xl font-bold text-warning-fg">
+          {/* Number + coin mark, not a yellow slab — [75b]'s rule, at balance size. */}
+          <span className="flex items-center gap-1.5 font-display text-2xl font-bold">
             {balance}
+            <CoinMark className="size-6" />
+            <span className="sr-only"> Coins</span>
           </span>
         </div>
         {balance === 0 && (

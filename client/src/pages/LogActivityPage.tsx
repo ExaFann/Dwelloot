@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { AddIcon, ApproveIcon, EditIcon, UndoIcon } from '../components/ui/icons'
+import { AddIcon, ApproveIcon, EditIcon, PointsMark, UndoIcon } from '../components/ui/icons'
 import { useActivitiesQuery, type Activity } from '../features/activity/activityApi'
 import { ChoreEditor } from '../features/activity/ChoreEditor'
 import { useDeferredLog } from '../features/activity/useDeferredLog'
@@ -319,18 +319,16 @@ function ChoreRow({
           <span className="truncate">{activity.title}</span>
         </span>
         {/*
-         * **Blue, because this is Points.** The currency a badge names is what decides its colour:
-         * yellow is Coins (the Store's prices, the balance, the Coins stat) and blue is Points (this,
-         * and the Lifetime pts stat). Both badges were yellow until `ui-exp01`, which quietly said
-         * "chores are worth Coins" — they are not, and the two currencies are never interchangeable.
+         * **The mark names the currency** ([75b] retired the filled chip): the number plus the
+         * Points mark, whose fixed blue fill is what says "Points" — the same telling-apart the
+         * blue `bg-points` chip used to do, without a box competing with the row's own border. On
+         * the selected purple row the mark's ink stroke is what keeps it legible. The sr-only unit
+         * (leading space included) keeps the accessible text exactly "N pts".
          */}
-        <span
-          className={[
-            'shrink-0 rounded-base border-2 border-ink-accent px-2 py-0.5 text-xs font-bold',
-            isSelected ? 'bg-card text-body' : 'bg-points text-points-fg',
-          ].join(' ')}
-        >
-          {activity.points} pts
+        <span className="flex shrink-0 items-center gap-1 font-bold">
+          {activity.points}
+          <PointsMark className="size-4" />
+          <span className="sr-only"> pts</span>
         </span>
       </button>
     </li>
