@@ -221,10 +221,20 @@ describe('the marks carry the sprite’s strokes and the tokens’ fills — [75
     },
   )
 
-  it('the bolt carries its thin outline — [75d]; not sprite-derived, so pinned literally', () => {
-    const [bolt] = renderedPathAttrs(<BoltIcon />)
-    expect(bolt.stroke).toBe('#000')
-    expect(bolt.strokeWidth).toBe('1.4')
+  it('the bolt: ink stroke, --mark-bolt fill, and the mitre limit that keeps it sharp', () => {
+    /**
+     * Not sprite-derived, so pinned literally. The mitre limit is load-bearing ([75e]): [75d]
+     * copied the star's limit 2 and it bevelled the bolt's tips clean off — a mitre needs
+     * `1/sin(θ/2)`, and a bolt is nothing but acute tips. 10 keeps points down to ~11.5°.
+     */
+    const { container } = render(<BoltIcon />)
+    const bolt = container.querySelector('path')!
+    expect(bolt.getAttribute('stroke')).toBe('var(--ink-surface)')
+    expect(bolt.getAttribute('fill')).toBe('var(--mark-bolt)')
+    expect(bolt.getAttribute('stroke-width')).toBe('1.4')
+    expect(bolt.getAttribute('stroke-miterlimit')).toBe('10')
+    // And the fill pair exists with a genuinely deepened dark half, like the other marks.
+    expect(darkTokenValue('--mark-bolt')).not.toBe(lightTokenValue('--mark-bolt'))
   })
 })
 

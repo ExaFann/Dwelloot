@@ -155,6 +155,12 @@
   --mark-points: #4CC9F0;
   --mark-coins: #FFE14A;
   --mark-flame: #FF8A3D;
+  /*
+   * The tug bolt ([75e]). Same values as --mark-coins today, deliberately its own name: this
+   * yellow means *energy/contention*, not Coins — tune one and the other must not move with it
+   * (the --deco-* reasoning).
+   */
+  --mark-bolt: #FFE14A;
 }
 
 [data-theme='dark'] {
@@ -188,6 +194,7 @@
   --mark-points: #2B9DC7;
   --mark-coins: #EAB308;
   --mark-flame: #E56B14;
+  --mark-bolt: #EAB308;
 }
 
 /*
@@ -409,15 +416,17 @@
 }
 
 /*
- * The loot box opening, centre-screen — task [53a]. Three animations, one fixed timeline: the box
- * rattles with growing amplitude (~900ms), bursts (220ms, `forwards` holds it gone), and the prize
- * arrives as the burst fades (delay 1050ms). The roll is already known when this mounts — the
- * sequence is theatre, so it needs no JS timeline.
+ * The loot chest opening, centre-screen — [53a] built the timeline, [53b] gave it a real chest.
+ * One fixed sequence: the chest rattles (~900ms), its lid swings open (900ms), the coins fountain
+ * from the mouth (950ms, coins prize only), the chest fades down (1500ms) and the prize arrives
+ * (1600ms). The roll is already known when this mounts — the sequence is theatre, so it needs no
+ * JS timeline.
  *
- * Discrete `scale`/`rotate`, never `transform` (log `045`'s standing rule), and the box and prize
- * overlap via grid cells rather than positioning transforms — so under `prefers-reduced-motion`
- * nothing is stranded: the box stage is simply not shown, and the prize's **natural** state is
- * visible (its entrance uses `backwards` fill purely to hide it through the delay).
+ * Discrete `scale`/`rotate`/`translate`, never `transform` (log `045`'s standing rule), and the
+ * stages overlap via grid cells rather than positioning transforms — so under
+ * `prefers-reduced-motion` nothing is stranded: the chest-and-coins stage is simply not shown,
+ * and the prize's **natural** state is visible (its entrance uses `backwards` fill purely to hide
+ * it through the delay).
  */
 @keyframes dwelloot-box-rattle {
   0%,
@@ -448,17 +457,73 @@
   }
 }
 
-@keyframes dwelloot-box-burst {
+@keyframes dwelloot-chest-fade {
   to {
-    scale: 1.5;
+    scale: 0.9;
     opacity: 0;
   }
 }
 
-@utility box-rattle {
+/* The whole chest stage: rattle, then fade down once the coins are past. */
+@utility chest-open {
   animation:
     dwelloot-box-rattle 900ms ease-in-out,
-    dwelloot-box-burst 220ms ease-in 900ms forwards;
+    dwelloot-chest-fade 300ms ease-in 1500ms forwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    display: none;
+  }
+}
+
+@keyframes dwelloot-lid-pop {
+  to {
+    rotate: -40deg;
+  }
+}
+
+/*
+ * The lid's swing — applied to a `<g>` inside `ChestMark` via its `lidClassName` hook.
+ * `transform-box: fill-box` makes the origin the lid's own box (SVG default is the viewport,
+ * which would swing it around the canvas corner). The origin is the lid's bottom-LEFT corner —
+ * the hinge — and the pose is rotation only: adding a translate detaches the lid from the box
+ * (measured, not guessed: -40° reads as open-and-attached, -70° as flying off). The chest svg
+ * must be `overflow-visible` or the swung lid is clipped at the viewBox. No reduced-motion rule
+ * of its own: the whole stage is hidden by chest-open.
+ */
+@utility lid-pop {
+  transform-box: fill-box;
+  transform-origin: 0% 100%;
+  animation: dwelloot-lid-pop 380ms cubic-bezier(0.2, 0.8, 0.3, 1.2) 900ms forwards;
+}
+
+@keyframes dwelloot-coin-fly {
+  0% {
+    translate: 0 0;
+    scale: 0.4;
+    rotate: 0deg;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    scale: 1;
+  }
+  40% {
+    translate: var(--fly-x, 0px) -64px;
+  }
+  100% {
+    translate: calc(var(--fly-x, 0px) * 1.8) 96px;
+    rotate: var(--fly-r, 180deg);
+    opacity: 0;
+  }
+}
+
+/*
+ * One keyframe, eight coins: each carries its own `--fly-x` / `--fly-r` and an inline
+ * `animation-delay` (inline wins over the shorthand's 950ms), so the fountain scatters without
+ * eight keyframe blocks. `both` so a coin is invisible until its delay elapses.
+ */
+@utility coin-fly {
+  animation: dwelloot-coin-fly 820ms ease-in 950ms both;
 
   @media (prefers-reduced-motion: reduce) {
     display: none;
@@ -484,7 +549,7 @@
 }
 
 @utility prize-arrive {
-  animation: dwelloot-prize-arrive 380ms ease-out 1050ms backwards;
+  animation: dwelloot-prize-arrive 380ms ease-out 1600ms backwards;
 
   @media (prefers-reduced-motion: reduce) {
     animation: none;

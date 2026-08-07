@@ -97,6 +97,45 @@ export function LogoMark({ className, style }: IconProps) {
   )
 }
 
+/**
+ * The loot chest — the thing the reveal opens ([53b]). **Owner-addition, not in the sprite**,
+ * exempt from fidelity by construction like `BoltIcon`: the owner rejected reusing the logo as
+ * the reveal's box ("借鉴颜色,不要挪用 Logo"), so this borrows the palette without the logo's
+ * composition — blue trapezoid lid, purple body, a yellow strap over both, yellow clasp, dark
+ * diamond keyhole. Flat fills, black strokes, no curves.
+ *
+ * `lidClassName` is the animation hook: the lid is its own `<g>` so the reveal can swing it open
+ * as a separate layer — the difference between "a drawing shakes" and "a chest opens". The art
+ * itself carries no animation.
+ */
+export function ChestMark({
+  className,
+  style,
+  lidClassName,
+}: IconProps & { lidClassName?: string }) {
+  return (
+    <svg
+      viewBox="0 0 96 96"
+      aria-hidden="true"
+      focusable="false"
+      className={className}
+      style={style}
+    >
+      <g stroke="#000" strokeWidth="4" strokeLinejoin="miter" strokeMiterlimit={2}>
+        {/* The lid, drawn first so it swings up behind the body's rim. */}
+        <g className={lidClassName}>
+          <path d="M12 42 18 18h60l6 24Z" fill="#4CC9F0" />
+          <rect x="42" y="18" width="12" height="24" fill="#FFE14A" />
+        </g>
+        <rect x="14" y="42" width="68" height="38" fill="#7C4DFF" />
+        <rect x="42" y="42" width="12" height="38" fill="#FFE14A" />
+        <rect x="39" y="38" width="18" height="18" fill="#FFE14A" />
+        <path d="M48 43 52 47 48 51 44 47Z" fill="#1E1830" stroke="none" />
+      </g>
+    </svg>
+  )
+}
+
 /* ────────────────────────── currency marks ────────────────────────── */
 
 /** Points: a diamond with a diamond hole, outlined — the stroke rides the whole `evenodd` path. */
@@ -351,19 +390,22 @@ export function BurstIcon({ className }: IconProps) {
  * everything else here. The fidelity test only pins sprite-sourced icons, so this one is exempt by
  * construction rather than by an ignore.
  *
- * Stroked at 1.4 — the thin-spike width the streak's star settled on ([75d]); a bolt is all
- * spikes. Literal `#000`, not ink: this glyph only ever rides the tug bar's colour fills, where
- * black is the border colour everything else on a fill uses (the `--ink-accent` reasoning).
+ * Stroked at 1.4 (the thin-spike width, streak's precedent) with **mitre limit 10, not 2** —
+ * [75d] copied the star's limit and it bevelled the tips off (a mitre needs `1/sin(θ/2)`, and a
+ * bolt is nothing but acute tips); the sharpness is the whole point ([75e]). Scheme-aware like
+ * the marks: ink stroke, `--mark-bolt` fill — its own token, same values as `--mark-coins`
+ * today, separate name because this yellow means *energy*, not Coins.
  */
 export function BoltIcon({ className }: IconProps) {
   return (
     <Svg className={className}>
       <path
         d="M14 1 3 14h6l-2 9L20 9h-6l3-8z"
-        stroke="#000"
+        fill="var(--mark-bolt)"
+        stroke="var(--ink-surface)"
         strokeWidth="1.4"
         strokeLinejoin="miter"
-        strokeMiterlimit={2}
+        strokeMiterlimit={10}
       />
     </Svg>
   )
@@ -605,7 +647,12 @@ export function BadgeSlotMark({ className, style }: IconProps) {
   )
 }
 
-/** The locked chip, whole — dark hexagon, white padlock. Task [76] places it bottom-right. */
+/**
+ * The locked chip, whole — dark hexagon, grey padlock. [76] drew it; [76b] centres it on the
+ * badge. The padlock is `#C9C2D8` rather than the sprite's white — owner's call ([76c]): pure
+ * white on the desaturated artwork was too stark. A deliberate deviation from `#badge-locked`,
+ * recorded here because the fidelity test compares paths, not fills.
+ */
 export function BadgeLockedChip({ className, style }: IconProps) {
   return (
     <svg
@@ -616,7 +663,7 @@ export function BadgeLockedChip({ className, style }: IconProps) {
       style={style}
     >
       <path d={HEX_FRAME} fill="#1E1830" stroke="var(--ink-surface)" strokeWidth="3" />
-      <g fill="#fff">
+      <g fill="#C9C2D8">
         <path d="M15 24V13h18v11h-5.2v-6.2h-7.6V24Z" />
         <rect x="12" y="24" width="24" height="15" />
       </g>

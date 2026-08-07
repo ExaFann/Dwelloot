@@ -155,20 +155,56 @@ describe('when a box is waiting', () => {
 })
 
 describe('the reveal', () => {
-  it('opens centre-screen with the box before the prize — [53a]', async () => {
+  it('opens centre-screen with the chest before the prize — [53a]/[53b]', async () => {
     stub()
     renderReveal()
     await userEvent.setup().click(await screen.findByRole('button', { name: /open it/i }))
 
     const dialog = await screen.findByRole('dialog')
     expect(dialog).toHaveFocus()
-    // The rattling box is the logo — decorative theatre beside the announced prize, so hidden.
-    const box = dialog.querySelector('.box-rattle')
-    expect(box).not.toBeNull()
-    expect(box).toHaveAttribute('aria-hidden', 'true')
-    expect(box!.querySelector('svg')).not.toBeNull()
+    // The chest stage is decorative theatre beside the announced prize, so hidden — and its lid
+    // is a separate layer carrying the swing hook, which is what makes it an *opening*.
+    const chest = dialog.querySelector('.chest-open')
+    expect(chest).not.toBeNull()
+    expect(chest).toHaveAttribute('aria-hidden', 'true')
+    expect(chest!.querySelector('.lid-pop')).not.toBeNull()
     // The prize is the live region, exactly as before the redesign.
     expect(dialog.querySelector('[role="status"]')).not.toBeNull()
+  })
+
+  it('a Coins prize fountains the eight coins; the slab says it with the mark — [53b]', async () => {
+    stub()
+    renderReveal()
+    await userEvent.setup().click(await screen.findByRole('button', { name: /open it/i }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog.querySelectorAll('.coin-fly')).toHaveLength(8)
+    // "+22" plus the coin mark plus a sr-only unit — textContent stays exactly "+22 Coins".
+    const prize = dialog.querySelector('[role="status"]')!
+    expect(prize).toHaveTextContent('+22 Coins')
+    expect(prize.querySelector('svg')).not.toBeNull()
+  })
+
+  it('a bonus reward gets the gift glyph and no coin fountain', async () => {
+    stub({
+      open: {
+        status: 200,
+        body: {
+          competitionId: 453,
+          result: 'bonusReward',
+          coinsAwarded: null,
+          reward: { id: 7, title: 'Foot massage' },
+        },
+      },
+    })
+    renderReveal()
+    await userEvent.setup().click(await screen.findByRole('button', { name: /open it/i }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog.querySelectorAll('.coin-fly')).toHaveLength(0)
+    const prize = dialog.querySelector('[role="status"]')!
+    expect(prize).toHaveTextContent('Foot massage')
+    expect(prize.querySelector('svg')).not.toBeNull()
   })
 
   it('dismisses on a click anywhere', async () => {

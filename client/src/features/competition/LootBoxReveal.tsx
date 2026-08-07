@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { BurstIcon, LogoMark, RewardIcon } from '../../components/ui/icons'
+import { ChestMark, CoinMark, RewardIcon } from '../../components/ui/icons'
 import { useMeQuery } from '../auth/authApi'
 import { useCurrentCompetitionQuery } from './competitionApi'
 import { useOpenLootBoxMutation, type OpenLootBoxResult } from './lootBoxApi'
@@ -103,10 +103,27 @@ export function LootBoxReveal() {
 }
 
 /**
- * The opening, centre stage — task [53a]. The owner's verdict on the in-card version was exact:
- * "根本没有箱子" — a prize that just appears is not an *opening*. So the box appears first: the
- * logo (which is the brand's loot box) rattles, bursts, and the prize lands in its place — a pure
- * CSS timeline (`theme.css`), running on a result that is already known, so nothing waits on it.
+ * How far and how fast each coin of the fountain flies ([53b]) — per-coin custom properties fed
+ * to the single `dwelloot-coin-fly` keyframe; the stagger is an inline `animation-delay` on top
+ * of the utility's 950ms base. Eight, asymmetric on purpose: a symmetric spray reads as a
+ * particle effect, an uneven one as spilling.
+ */
+const COIN_FLIGHTS = [
+  { x: '-72px', r: '-260deg', delay: 0 },
+  { x: '44px', r: '200deg', delay: 60 },
+  { x: '-30px', r: '-160deg', delay: 130 },
+  { x: '76px', r: '300deg', delay: 90 },
+  { x: '8px', r: '160deg', delay: 190 },
+  { x: '-52px', r: '-300deg', delay: 240 },
+  { x: '60px', r: '240deg', delay: 300 },
+  { x: '-14px', r: '-200deg', delay: 350 },
+]
+
+/**
+ * The opening, centre stage — [53a] built the dialog, [53b] made it an *opening*: the chest
+ * rattles, its lid swings up, the coins fountain out (coins prize only), and the prize lands as
+ * the chest fades — a pure CSS timeline (`theme.css`), running on a result that is already known,
+ * so nothing waits on it.
  *
  * Same dismissal contract as the badge overlay: any click, or Escape/Enter/Space. Focus lands on
  * the dialog while it is up (the keydown handler needs it, and a screen reader should hear it) and
@@ -142,13 +159,31 @@ function Revealed({
       }}
     >
       {/*
-       * Box and prize share one grid cell — stacked by layout, never by transforms, so reduced
-       * motion (which hides the box stage and skips the entrance) leaves the prize exactly where
-       * it always was (log `045`'s rule).
+       * Chest and prize share one grid cell — stacked by layout, never by transforms, so reduced
+       * motion (which hides the chest stage and skips the entrance) leaves the prize exactly
+       * where it always was (log `045`'s rule).
        */}
       <div className="grid place-items-center">
-        <div aria-hidden="true" className="box-rattle col-start-1 row-start-1">
-          <LogoMark className="size-40" />
+        <div aria-hidden="true" className="chest-open relative col-start-1 row-start-1">
+          {/* overflow-visible: the swung-open lid leaves the viewBox and must not be clipped. */}
+          <ChestMark className="size-44 overflow-visible" lidClassName="lid-pop" />
+          {/* The fountain — coins prize only; a won reward is one thing, not a shower of them. */}
+          {prize.kind === 'coins' &&
+            COIN_FLIGHTS.map((flight, i) => (
+              <span
+                key={i}
+                className="coin-fly absolute left-1/2 top-1/3 -ml-3"
+                style={
+                  {
+                    '--fly-x': flight.x,
+                    '--fly-r': flight.r,
+                    animationDelay: `${950 + flight.delay}ms`,
+                  } as React.CSSProperties
+                }
+              >
+                <CoinMark className="size-6" />
+              </span>
+            ))}
         </div>
 
         {/*
@@ -168,8 +203,20 @@ function Revealed({
               'bg-warning text-warning-fg',
             ].join(' ')}
           >
-            <BurstIcon className="size-5" />
-            {prize.headline}
+            {prize.kind === 'coins' ? (
+              /* The mark is the word ([53b]): "+N ⓒ", with the unit for a screen reader only. */
+              <>
+                +{prize.amount}
+                <CoinMark className="size-6" />
+                <span className="sr-only"> Coins</span>
+              </>
+            ) : (
+              /* A won reward wears the gift glyph — it has the bow. */
+              <>
+                <RewardIcon className="size-6" />
+                {prize.headline}
+              </>
+            )}
           </span>
           {/* The scrim is dark in both schemes, so the detail line is fixed near-white. */}
           <p className="text-sm" style={{ color: '#F0EBFF' }}>

@@ -419,7 +419,8 @@ function PeriodPanel({
              * bolt read as its contents. A bare mark spinning on the rope is the thing being
              * fought over; the box was a container for it.
              */
-            className="spark absolute top-1/2 z-10 block text-warning transition-[left] duration-500"
+            /* No `text-warning` since [75e]: the bolt carries its own `--mark-bolt` fill. */
+            className="spark absolute top-1/2 z-10 block transition-[left] duration-500"
             style={{ left: `${mine}%` }}
           >
             <BoltIcon className="size-6.5" />
