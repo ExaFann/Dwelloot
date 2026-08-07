@@ -38,8 +38,27 @@ public record RenameHouseholdRequest(
 /// <c>AvatarKey</c> since [72]: the head-to-head card draws both partners, and without it the
 /// other person's chosen avatar would be invisible to you — which is most of the point of choosing
 /// one. Null means they have not picked, and the client draws the generated identicon.
+/// <para>
+/// The three standing totals since [79], so the Me screen can show what your partner has to their
+/// name. <b>This is a deliberate disclosure, not an oversight.</b> A household is exactly two people
+/// who have agreed to compete: <c>LifetimePoints</c> is already the visible score, and
+/// <c>CurrentWinStreak</c> is derived from duels you both took part in. <c>Coins</c> is the one that
+/// is genuinely new — a spendable balance — and it is shared for the same reason the Store is:
+/// the catalogue, the prices and every redemption are already household-wide, so a hidden balance
+/// would be the only private number in an otherwise joint economy.
+/// </para>
+/// <para>
+/// No migration and no query change: <c>Household.Members</c> already loads <c>User</c> rows, and
+/// all three are columns on them.
+/// </para>
 /// </remarks>
-public record HouseholdMemberResponse(int Id, string Name, string? AvatarKey);
+public record HouseholdMemberResponse(
+    int Id,
+    string Name,
+    string? AvatarKey,
+    int LifetimePoints,
+    int Coins,
+    int CurrentWinStreak);
 
 /// <summary>Shape of <c>GET /api/households/{id}</c>.</summary>
 public record HouseholdDetailsResponse(

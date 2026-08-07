@@ -3,7 +3,11 @@ import {
   useGetHouseholdQuery,
   useLeaveHouseholdMutation,
   useRenameHouseholdMutation,
+  type HouseholdMember,
 } from './householdApi'
+import { Avatar } from '../../components/ui/Avatar'
+import { StandingTotals } from '../../components/ui/StandingTotals'
+import { InviteIcon } from '../../components/ui/icons'
 import { MAX_NAME_LENGTH, validateHouseholdName } from './householdValidation'
 import { fieldError, toApiError, type ApiError } from '../../api/apiError'
 import { Button } from '../../components/ui/Button'
@@ -46,9 +50,18 @@ export function HouseholdSettings({
   const [copied, setCopied] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
+  /** Which member's totals are open — one at a time, and closed by default ([79]). */
+  const [openMemberId, setOpenMemberId] = useState<number | null>(null)
+  const [showCode, setShowCode] = useState(false)
 
   const nameRef = useRef<HTMLInputElement>(null)
   const partner = data?.members.find((member) => member.id !== selfId)
+  /**
+   * Two is the cap, enforced server-side — a household is *exactly* two people, and a third join is
+   * a 409. So "two members" is not "a lot of members", it is **full**, and that is what decides
+   * whether the invite code is still worth its space.
+   */
+  const isFull = (data?.members.length ?? 0) >= 2
 
   useEffect(() => {
     if (isEditing) nameRef.current?.focus()
@@ -171,43 +184,61 @@ export function HouseholdSettings({
             </div>
           )}
 
-          <div className="mt-4 rounded-base border-2 border-ink bg-page p-3">
-            <p className="font-display text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-              Invite code
-            </p>
-            {/*
-             * Selectable text, not only a copy button: `navigator.clipboard` needs a secure context
-             * and can be refused. The generator already drops I, L, O, 0 and 1 because this gets
-             * read out loud and typed by hand, and cramped text would give that back.
-             */}
-            <p className="mt-1 font-display text-2xl font-bold tracking-[0.15em]">
-              {data.inviteCode}
-            </p>
-            <div className="mt-2 flex items-center gap-3">
-              <Button variant="neutral" onClick={() => void copyCode()}>
-                {copied ? 'Copied' : 'Copy code'}
-              </Button>
-              <span role="status" className="text-sm text-muted">
-                {copied ? 'Copied to clipboard' : ''}
-              </span>
-            </div>
-          </div>
-
+          {/*
+           * **Members first, and the invite code only while it is still worth something** — [79].
+           *
+           * The code used to be the largest thing on the card: a 2xl block with its own panel,
+           * permanently, in a household that can only ever hold two people. Once the second person
+           * has joined it is dead weight — there is nobody left to invite, and the server refuses a
+           * third. So a full household gets a one-line disclosure instead, and the space goes to the
+           * people, which is what the card is actually about.
+           *
+           * It is a disclosure rather than a deletion because the household can empty again: a
+           * partner who leaves makes the code live once more, and hiding it outright would leave no
+           * way back.
+           */}
           <div className="mt-4">
             <p className="font-display text-xs font-semibold uppercase tracking-[0.08em] text-muted">
               Members
             </p>
-            <ul className="mt-1 flex flex-wrap gap-2">
+            <ul className="mt-2 flex flex-wrap gap-2">
               {data.members.map((member) => (
-                <li
+                <MemberCard
                   key={member.id}
-                  className="rounded-base border-2 border-ink px-2.5 py-1 font-display text-sm font-semibold"
-                >
-                  {member.name}
-                </li>
+                  member={member}
+                  isYou={member.id === selfId}
+                  isOpen={openMemberId === member.id}
+                  onToggle={() =>
+                    setOpenMemberId((current) => (current === member.id ? null : member.id))
+                  }
+                />
               ))}
             </ul>
           </div>
+
+          {isFull ? (
+            <div className="mt-4">
+              <button
+                type="button"
+                aria-expanded={showCode}
+                onClick={() => setShowCode((open) => !open)}
+                className="focus-ring inline-flex items-center gap-1.5 font-display text-sm font-semibold text-primary transition-colors hover:text-body"
+              >
+                <InviteIcon className="size-3.5" />
+                {showCode ? 'Hide invite code' : 'Show invite code'}
+              </button>
+              {/* Both of you are here — say why it is tucked away rather than leaving it a mystery. */}
+              {!showCode && (
+                <p className="mt-1 text-xs text-muted">
+                  Your household is full, so nobody needs this right now.
+                </p>
+              )}
+              {showCode && <InviteCode code={data.inviteCode} copied={copied} onCopy={copyCode} />}
+            </div>
+          ) : (
+            /* Solo: this is the one action that matters, so it keeps the full-size treatment. */
+            <InviteCode code={data.inviteCode} copied={copied} onCopy={copyCode} />
+          )}
 
           {/*
            * Only while you are alone. A paired household is not yours alone to abandon — that is
@@ -272,5 +303,105 @@ export function HouseholdSettings({
         </>
       )}
     </section>
+  )
+}
+
+/**
+ * One member: avatar, name, and their three standing totals on demand — [79].
+ *
+ * The owner's ask was that the members become the substantial thing on this card, and a name in a
+ * bordered pill was not that. Opening one shows the **same three numbers, in the same component**,
+ * that your own card shows at the top of the page (`StandingTotals`) — the comparison is the point,
+ * so the two must not be two different renderings.
+ *
+ * Collapsed by default: two open cards would push Leave off the fold on a phone, and the totals are
+ * a thing you go and look at rather than a thing you need on arrival.
+ */
+function MemberCard({
+  member,
+  isYou,
+  isOpen,
+  onToggle,
+}: {
+  member: HouseholdMember
+  isYou: boolean
+  isOpen: boolean
+  onToggle: () => void
+}) {
+  return (
+    <li className="min-w-0">
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        onClick={onToggle}
+        /*
+         * No press physics: this discloses, it does not act — the rule the Log tab's rows and the
+         * approval queue both settled on. The border and the hover carry the affordance.
+         */
+        className={[
+          'focus-ring flex w-full items-center gap-2.5 rounded-base border-2 px-2.5 py-2 text-left transition-colors',
+          isOpen ? 'border-ink-accent bg-page' : 'border-ink bg-card hover:border-primary',
+        ].join(' ')}
+      >
+        <Avatar
+          userId={member.id}
+          name={member.name}
+          /* Purple is you, green is your opponent — the same role language as everywhere else. */
+          role={isYou ? 'self' : 'opponent'}
+          avatarKey={member.avatarKey}
+          size="sm"
+        />
+        <span className="min-w-0 truncate font-display text-sm font-semibold">
+          {member.name}
+          {isYou && <span className="text-muted"> (you)</span>}
+        </span>
+      </button>
+
+      {isOpen && (
+        <div className="mt-2 rounded-base border-2 border-ink bg-page px-3 py-2">
+          <StandingTotals
+            coins={member.coins}
+            lifetimePoints={member.lifetimePoints}
+            currentWinStreak={member.currentWinStreak}
+          />
+        </div>
+      )}
+    </li>
+  )
+}
+
+/**
+ * The invite code panel. Extracted in [79] so the full and solo households can render the *same*
+ * panel in two places rather than growing two copies that drift.
+ */
+function InviteCode({
+  code,
+  copied,
+  onCopy,
+}: {
+  code: string
+  copied: boolean
+  onCopy: () => Promise<void>
+}) {
+  return (
+    <div className="mt-3 rounded-base border-2 border-ink bg-page p-3">
+      <p className="font-display text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+        Invite code
+      </p>
+      {/*
+       * Selectable text, not only a copy button: `navigator.clipboard` needs a secure context
+       * and can be refused. The generator already drops I, L, O, 0 and 1 because this gets
+       * read out loud and typed by hand, and cramped text would give that back.
+       */}
+      <p className="mt-1 font-display text-2xl font-bold tracking-[0.15em]">{code}</p>
+      <div className="mt-2 flex items-center gap-3">
+        <Button variant="neutral" onClick={() => void onCopy()}>
+          {copied ? 'Copied' : 'Copy code'}
+        </Button>
+        <span role="status" className="text-sm text-muted">
+          {copied ? 'Copied to clipboard' : ''}
+        </span>
+      </div>
+    </div>
   )
 }

@@ -115,6 +115,30 @@ export function LootBoxReveal() {
  */
 const ON_SCRIM = '#F0EBFF'
 
+/**
+ * The confetti for a bonus reward — [79]. Thirty pieces, each with its own column, drift, spin,
+ * duration, delay, colour and shape, generated once at module load rather than per render.
+ *
+ * Deterministic on purpose: `Math.random()` here would mean the burst differed every time the
+ * component re-rendered mid-fall — a poll lands every 20s — and pieces would jump. A fixed spread
+ * that *looks* scattered beats a random one that cannot hold still.
+ *
+ * The palette is the decorative ramp plus the brand hues, which is what `--deco-*` exists for: a
+ * celebration wants more colours than the semantic palette is allowed to supply.
+ */
+const CONFETTI_COLOURS = ['#7C4DFF', '#3DDC97', '#FFE14A', '#FF8A3D', '#4CC9F0', '#FF5C5C']
+
+const CONFETTI = Array.from({ length: 30 }, (_, i) => ({
+  left: `${(i * 97) % 100}%`,
+  drift: `${(((i * 37) % 41) - 20) * 3}px`,
+  spin: `${360 + ((i * 53) % 5) * 180}deg`,
+  fall: `${2200 + ((i * 29) % 9) * 130}ms`,
+  delay: `${(i * 43) % 700}ms`,
+  colour: CONFETTI_COLOURS[i % CONFETTI_COLOURS.length],
+  // A third of them are tall ribbons rather than squares — one shape reads as a texture, not paper.
+  tall: i % 3 === 0,
+}))
+
 const COIN_FLIGHTS = [
   { x: '-72px', r: '-260deg', delay: 0 },
   { x: '44px', r: '200deg', delay: 60 },
@@ -165,6 +189,35 @@ function Revealed({
         }
       }}
     >
+      {/*
+       * Full-screen confetti, bonus reward only ([79]). Outside the grid and `pointer-events-none`
+       * so it cannot swallow the click that dismisses the dialog, and `overflow-hidden` on the
+       * wrapper so pieces falling past the bottom do not lengthen the page.
+       */}
+      {prize.kind === 'reward' && (
+        <div aria-hidden="true" className="pointer-events-none fixed inset-0 overflow-hidden">
+          {CONFETTI.map((piece, i) => (
+            <span
+              key={i}
+              className={[
+                'confetti-piece absolute top-0 block border border-ink-accent',
+                piece.tall ? 'h-4 w-1.5' : 'size-2.5',
+              ].join(' ')}
+              style={
+                {
+                  left: piece.left,
+                  backgroundColor: piece.colour,
+                  '--drift': piece.drift,
+                  '--spin': piece.spin,
+                  '--fall': piece.fall,
+                  '--delay': piece.delay,
+                } as React.CSSProperties
+              }
+            />
+          ))}
+        </div>
+      )}
+
       {/*
        * Chest and prize share one grid cell — stacked by layout, never by transforms, so reduced
        * motion (which hides the chest stage and skips the entrance) leaves the prize exactly

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { EditIcon, UndoIcon } from '../../components/ui/icons'
+import { EditIcon, LogIcon, UndoIcon } from '../../components/ui/icons'
 import { useActivitiesQuery } from './activityApi'
 import { liveQueryOptions } from '../../app/liveSync'
 import { useDeferredLog } from './useDeferredLog'
@@ -28,6 +28,16 @@ const TILTS = ['-rotate-2', 'rotate-1', '-rotate-1', 'rotate-2', 'rotate-0', '-r
 function tiltOf(id: number): string {
   return TILTS[Math.abs(Math.trunc(id)) % TILTS.length]
 }
+
+/**
+ * The two header actions, as one class so they cannot drift apart again ([79]).
+ *
+ * Written out rather than composed, because Tailwind scans source text and would emit nothing for
+ * an assembled string. `hover:text-body` rather than an underline: the tiles below already
+ * straighten on hover, so the header answering a pointer the same way keeps the section consistent.
+ */
+const HEADER_ACTION =
+  'focus-ring inline-flex items-center gap-1.5 rounded-control font-display text-sm font-semibold text-primary transition-colors hover:text-body'
 
 export function QuickLogTiles() {
   const { data, isLoading, isError, error, refetch } = useActivitiesQuery(
@@ -60,20 +70,28 @@ export function QuickLogTiles() {
          * already know about in order to go looking for it. A list you can curate needs a visible
          * way to curate it, beside the list.
          */}
+        {/*
+         * **One shape for both** ([79]). They were a bare icon-button and an underlined link — two
+         * different-looking controls sitting side by side doing comparable things, and neither
+         * reacted to a pointer. Same class, same icon+label construction, same hover; what differs
+         * is only that one is a `<button>` that expands in place and one is a `<Link>` that
+         * navigates, which is a difference in behaviour and not one to dress up.
+         *
+         * "Choose" is now **Customise**: the owner's word, and the old one never said what was
+         * being chosen — it read as picking a chore to log rather than editing which chores appear.
+         */}
         <div className="flex shrink-0 items-center gap-3">
           <button
             type="button"
             aria-expanded={isManaging}
             onClick={() => setIsManaging((open) => !open)}
-            className="focus-ring inline-flex items-center gap-1.5 font-display text-sm font-semibold text-primary"
+            className={HEADER_ACTION}
           >
             <EditIcon className="size-3.5" />
-            Choose
+            Customise
           </button>
-          <Link
-            to="/log"
-            className="focus-ring font-display text-sm font-semibold text-primary underline"
-          >
+          <Link to="/log" className={HEADER_ACTION}>
+            <LogIcon className="size-3.5" />
             All chores
           </Link>
         </div>

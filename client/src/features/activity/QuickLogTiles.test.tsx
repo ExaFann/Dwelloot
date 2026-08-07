@@ -276,7 +276,8 @@ describe('the wall asks for the shortlist', () => {
  * screen. Discoverability is the feature here, so the assertions are about what is *visible*.
  */
 describe('choosing what is on the wall', () => {
-  const chooser = () => screen.getByRole('button', { name: /choose/i })
+  /** Renamed from "Choose" in [79] — it read as picking a chore to log, not editing the wall. */
+  const chooser = () => screen.getByRole('button', { name: /customise/i })
 
   it('offers a control beside the wall', async () => {
     stub()

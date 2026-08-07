@@ -207,6 +207,43 @@ describe('the reveal', () => {
     expect(prize.querySelector('svg')).not.toBeNull()
   })
 
+  /**
+   * [79]. The bonus drop is the rare one (10%), so it gets the loud reaction — and only it. Two
+   * full-screen effects on the common outcome would make the rare one feel ordinary, which is the
+   * assertion in the second half here rather than an unstated intention.
+   */
+  it('showers confetti for a bonus reward, and none for Coins', async () => {
+    stub({
+      open: {
+        status: 200,
+        body: {
+          competitionId: 453,
+          result: 'bonusReward',
+          coinsAwarded: null,
+          reward: { id: 7, title: 'Foot massage' },
+        },
+      },
+    })
+    renderReveal()
+    await userEvent.setup().click(await screen.findByRole('button', { name: /open it/i }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog.querySelectorAll('.confetti-piece').length).toBeGreaterThan(20)
+    // Decorative, and it must not eat the click that dismisses the dialog.
+    const layer = dialog.querySelector('.confetti-piece')!.parentElement!
+    expect(layer).toHaveAttribute('aria-hidden', 'true')
+    expect(layer.className).toContain('pointer-events-none')
+  })
+
+  it('does not shower confetti on a Coins prize', async () => {
+    stub()
+    renderReveal()
+    await userEvent.setup().click(await screen.findByRole('button', { name: /open it/i }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog.querySelectorAll('.confetti-piece')).toHaveLength(0)
+  })
+
   it('dismisses on a click anywhere', async () => {
     stub({ boxes: [BOX, null] })
     renderReveal()

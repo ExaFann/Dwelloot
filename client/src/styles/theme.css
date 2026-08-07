@@ -579,6 +579,47 @@
 }
 
 /*
+ * Confetti — [79], and **only for a bonus reward**.
+ *
+ * A won reward is the rare drop (10%), so it gets the loud reaction; Coins already have their own
+ * fountain and two full-screen effects on the common outcome would make the rare one feel ordinary.
+ *
+ * One keyframe for every piece, with each piece's drift, spin, delay and colour passed in as custom
+ * properties from the component — the same trick the coin fountain uses. `translate`/`rotate` rather
+ * than `transform`, per log `045`'s standing rule.
+ */
+@keyframes dwelloot-confetti-fall {
+  0% {
+    translate: 0 -8vh;
+    rotate: 0deg;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    translate: var(--drift, 0px) 104vh;
+    rotate: var(--spin, 540deg);
+    opacity: 0;
+  }
+}
+
+@utility confetti-piece {
+  animation: dwelloot-confetti-fall var(--fall, 2600ms) linear var(--delay, 0ms) both;
+
+  /*
+   * Nothing is positioned by this animation — the pieces are decorative and `aria-hidden`, and the
+   * prize underneath is laid out by the grid — so hiding the whole layer strands nothing.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    display: none;
+  }
+}
+
+/*
  * A single visible focus indicator, added in task [40] — the first task with anything focusable.
  *
  * `:focus-visible` rather than `:focus`, so a mouse click on a button does not leave a ring behind

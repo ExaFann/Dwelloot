@@ -115,7 +115,13 @@ public class HouseholdsController(IHouseholdService households) : ControllerBase
             household.InviteCode,
             [.. household.Members
                 .OrderBy(m => m.Id)
-                .Select(m => new HouseholdMemberResponse(m.Id, m.Name, m.AvatarKey))]));
+                .Select(m => new HouseholdMemberResponse(
+                    m.Id,
+                    m.Name,
+                    m.AvatarKey,
+                    m.LifetimePoints,
+                    m.Coins,
+                    m.CurrentWinStreak))]));
     }
 
     [HttpPatch("{id:int}")]

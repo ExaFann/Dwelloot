@@ -202,6 +202,30 @@ describe('removing a pending chore', () => {
     expect(screen.getByRole('button', { name: /remove dishes/i })).toBeInTheDocument()
   })
 
+  /**
+   * [79]. Hover is a desktop hint and a phone has none, so tapping the row itself has to open the
+   * same confirm — otherwise deleting is unreachable on the device the app is mostly used on.
+   */
+  it('opens the confirm from a tap anywhere on the row', () => {
+    const onRemove = vi.fn()
+    render(<RecentChoresColumn chores={chores} align="left" emptyLabel="—" onRemove={onRemove} />)
+
+    // The row, not the trigger — the title span is what a thumb actually lands on.
+    fireEvent.click(screen.getByText('Dishes'))
+
+    expect(screen.getByRole('button', { name: 'Delete Dishes' })).toBeInTheDocument()
+    expect(onRemove).not.toHaveBeenCalled()
+  })
+
+  /** And only where there is something to confirm: an approved chore is not yours to delete. */
+  it('does not open a confirm from a row that is not removable', () => {
+    render(<RecentChoresColumn chores={chores} align="left" emptyLabel="—" onRemove={() => {}} />)
+
+    fireEvent.click(screen.getByText('Vacuum'))
+
+    expect(screen.queryByRole('button', { name: /^delete/i })).not.toBeInTheDocument()
+  })
+
   /** Otherwise cancelling drops focus on `<body>` and a keyboard user restarts from the top. */
   it('returns focus to the row it opened from', () => {
     render(<RecentChoresColumn chores={chores} align="left" emptyLabel="—" onRemove={() => {}} />)

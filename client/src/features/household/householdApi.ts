@@ -26,6 +26,15 @@ export type HouseholdMember = {
   name: string
   /** Chosen preset avatar, or null for the generated identicon — task [72]. */
   avatarKey: string | null
+  /**
+   * The three standing totals, since [79] — what the Me screen shows when you open a member.
+   *
+   * The same three `GET /api/auth/me` returns for you, so the partner's card and your own are the
+   * same card. Shared deliberately: see the note on `HouseholdMemberResponse` in the API.
+   */
+  lifetimePoints: number
+  coins: number
+  currentWinStreak: number
 }
 export type HouseholdResponse = {
   id: number

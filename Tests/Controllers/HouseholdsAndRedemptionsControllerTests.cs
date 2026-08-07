@@ -26,7 +26,22 @@ public class HouseholdsAndRedemptionsControllerTests
             Name = "Our place",
             InviteCode = "7F3K9Q",
             IsFull = false,
-            Members = [new User { Id = 1, Name = "Alex", Email = "a@e.com", UserName = "a@e.com" }]
+            Members =
+            [
+                new User
+                {
+                    Id = 1,
+                    Name = "Alex",
+                    Email = "a@e.com",
+                    UserName = "a@e.com",
+                    AvatarKey = "fox",
+                    // Distinct values ([79]): three fields projected in a row are three chances to
+                    // repeat one, and equal fixtures would agree with a mistake.
+                    LifetimePoints = 120,
+                    Coins = 13,
+                    CurrentWinStreak = 2
+                }
+            ]
         };
 
         public Task<CreateHouseholdResult> CreateAsync(int userId, string name, CancellationToken ct = default)
@@ -105,6 +120,31 @@ public class HouseholdsAndRedemptionsControllerTests
         Assert.Equal(expected, (await new HouseholdsController(service).WithUser().Details(10, default)).StatusOf());
         Assert.Equal(expected, (await new HouseholdsController(service).WithUser().Rename(10, new RenameHouseholdRequest("The Nest"), default)).StatusOf());
         Assert.Equal(expected, (await new HouseholdsController(service).WithUser().Leave(10, default)).StatusOf());
+    }
+
+    /// <summary>
+    /// Task [79] — the Me screen shows what your partner has to their name, so the details response
+    /// carries their three standing totals.
+    /// </summary>
+    /// <remarks>
+    /// Asserted field by field against distinct values rather than "the member is present": three
+    /// ints projected in a row from the same object is exactly where a copy-paste puts Coins into
+    /// LifetimePoints, and no other test in the suite would see it.
+    /// </remarks>
+    [Fact]
+    public async Task Household_details_carry_each_member_s_standing_totals()
+    {
+        var result = await new HouseholdsController(new StubHouseholdService()).WithUser().Details(10, default);
+
+        var body = Assert.IsType<HouseholdDetailsResponse>(
+            Assert.IsType<OkObjectResult>(result.Result).Value);
+
+        var member = Assert.Single(body.Members);
+        Assert.Equal("Alex", member.Name);
+        Assert.Equal("fox", member.AvatarKey);
+        Assert.Equal(120, member.LifetimePoints);
+        Assert.Equal(13, member.Coins);
+        Assert.Equal(2, member.CurrentWinStreak);
     }
 
     [Fact]

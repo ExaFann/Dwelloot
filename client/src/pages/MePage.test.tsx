@@ -65,14 +65,33 @@ const BADGES = [
   },
 ]
 
+/**
+ * Members carry their totals since [79], and the two are **deliberately different from each other
+ * and from `ME`** — three ints projected side by side is where a copy-paste puts one person's
+ * Coins under the other's name, and equal fixtures would agree with it.
+ */
+const MEMBER_ME = {
+  id: 80,
+  name: 'Alex',
+  avatarKey: 'fox',
+  lifetimePoints: 120,
+  coins: 13,
+  currentWinStreak: 2,
+}
+const MEMBER_PARTNER = {
+  id: 81,
+  name: 'Sam',
+  avatarKey: 'star',
+  lifetimePoints: 64,
+  coins: 7,
+  currentWinStreak: 5,
+}
+
 const HOUSEHOLD = {
   id: 45,
   name: 'Duel House',
   inviteCode: 'BNC4NN',
-  members: [
-    { id: 80, name: 'Alex' },
-    { id: 81, name: 'Sam' },
-  ],
+  members: [MEMBER_ME, MEMBER_PARTNER],
 }
 
 type Overrides = {
@@ -263,15 +282,60 @@ describe('the badge wall', () => {
 // ─── Household settings ──────────────────────────────────────────────────────
 
 describe('household settings', () => {
-  it('shows the name, the invite code and both members', async () => {
+  it('shows the name and both members', async () => {
     stub()
     renderPage()
 
     expect(await screen.findByText('Duel House')).toBeInTheDocument()
+    const household = screen.getByText('Duel House').closest('section')!
+    expect(within(household).getByRole('button', { name: /sam/i })).toBeInTheDocument()
+    expect(within(household).getByRole('button', { name: /alex/i })).toBeInTheDocument()
+  })
+
+  /**
+   * [79]. A household holds exactly two people, so once the second has joined the code invites
+   * nobody — it was the biggest thing on the card and the least useful. Hidden behind a disclosure
+   * rather than deleted, because a partner leaving makes it live again.
+   */
+  it('tucks the invite code away once the household is full', async () => {
+    stub()
+    renderPage()
+
+    await screen.findByText('Duel House')
+    expect(screen.queryByText('BNC4NN')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /show invite code/i }))
     expect(screen.getByText('BNC4NN')).toBeInTheDocument()
-    const household = screen.getByText('BNC4NN').closest('section')!
-    expect(within(household).getByText('Sam')).toBeInTheDocument()
-    expect(within(household).getByText('Alex')).toBeInTheDocument()
+  })
+
+  /** The other direction: alone, inviting someone is the whole point of the screen. */
+  it('shows the invite code outright while you are alone', async () => {
+    stub({ household: { id: 42, name: 'Duel House', inviteCode: 'BNC4NN', members: [MEMBER_ME] } })
+    renderPage()
+
+    expect(await screen.findByText('BNC4NN')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /show invite code/i })).not.toBeInTheDocument()
+  })
+
+  /**
+   * The owner's ask: the members become the substantial thing on the card, and opening one shows
+   * what they have to their name — the same three totals your own card carries at the top.
+   */
+  it('opens a member to reveal their standing totals', async () => {
+    stub()
+    renderPage()
+
+    const partner = await screen.findByRole('button', { name: /sam/i })
+    expect(partner).toHaveAttribute('aria-expanded', 'false')
+
+    fireEvent.click(partner)
+
+    expect(partner).toHaveAttribute('aria-expanded', 'true')
+    const totals = partner.parentElement!
+    expect(totals).toHaveTextContent('64')
+    expect(totals).toHaveTextContent('Lifetime pts')
+    expect(totals).toHaveTextContent('Coins')
+    expect(totals).toHaveTextContent('Streak')
   })
 
   it('renames with the trimmed name', async () => {

@@ -3,7 +3,7 @@ import { useMeQuery } from '../features/auth/authApi'
 import { SignOutButton } from '../features/auth/SignOutButton'
 import { Avatar } from '../components/ui/Avatar'
 import { AvatarPicker } from '../features/auth/AvatarPicker'
-import { CoinMark, PointsMark, StreakMark } from '../components/ui/icons'
+import { StandingTotals } from '../components/ui/StandingTotals'
 import { BadgeWall } from '../features/progression/BadgeWall'
 import { HouseholdSettings } from '../features/household/HouseholdSettings'
 import { ThemeToggle } from '../features/theme/ThemeToggle'
@@ -91,32 +91,15 @@ export function MePage() {
            * as three black shapes. Since [75a] the hues are intrinsic — the marks carry fixed brand
            * fills and an ink stroke ([75b]) — so no `text-*` class is needed (or heeded) here.
            *
-           * `dl` still, and `dt` still precedes `dd` in the DOM — "Coins, 13" to a screen reader,
-           * never a bare number — with the visual order handled by flex direction, exactly as the
-           * tiles did it.
+           * The row itself moved to `StandingTotals` in [79], when the household card started
+           * showing your partner's three — the two must stay the same card.
            */}
-          <dl className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-6 gap-y-1">
-            <Stat
-              label="Coins"
-              value={me.coins}
-              mark={<CoinMark className="size-6" />}
-            />
-            <Stat
-              label="Lifetime pts"
-              value={me.lifetimePoints}
-              mark={<PointsMark className="size-6" />}
-            />
-            {/*
-             * The **current** streak. `users.longest_win_streak` exists but `/api/auth/me` does not
-             * return it, and the wireframe asks for "win streak" — satisfied. Recorded rather than
-             * worked around.
-             */}
-            <Stat
-              label="Streak"
-              value={me.currentWinStreak}
-              mark={<StreakMark className="size-6" />}
-            />
-          </dl>
+          <StandingTotals
+            coins={me.coins}
+            lifetimePoints={me.lifetimePoints}
+            currentWinStreak={me.currentWinStreak}
+            className="ml-auto shrink-0 justify-end"
+          />
         </div>
 
         {isPickingAvatar && (
@@ -171,41 +154,3 @@ export function MePage() {
   )
 }
 
-function Stat({
-  label,
-  value,
-  mark,
-}: {
-  label: string
-  value: number
-  /** Wears its currency's own colour — the marks are what tell the three numbers apart. */
-  mark: React.ReactNode
-}) {
-  return (
-    /*
-     * `dt` before `dd` in the DOM so a screen reader hears "Coins, 13", with `flex-row-reverse`
-     * putting the number first visually — the same order trick the old tiles used vertically.
-     *
-     * The mark sits in the `dd` beside the number, `items-center` — [75b]'s number+mark pattern.
-     * It used to sit in the `dt`, where the container's `items-baseline` aligned the tiny label's
-     * baseline against the xl number's and hoisted the mark visibly high (owner-caught, [75c]).
-     */
-    <div className="flex flex-row-reverse items-baseline gap-1.5">
-      {/*
-       * **`sr-only sm:not-sr-only`, never `hidden sm:inline`** — [78]. Below 640px the mark and the
-       * number carry the stat on their own (owner's call: three labels crowd a phone), but the
-       * label must still exist. `hidden` would take it out of the accessibility tree *and* out of
-       * `textContent`, so a screen reader would hear a bare "13" and the tests that read
-       * "13 … Coins" as one string would break; `sr-only` hides it from eyes only. jsdom does no
-       * media matching, so these base classes are also exactly what the tests see.
-       */}
-      <dt className="sr-only font-display text-[0.7rem] font-semibold uppercase tracking-[0.06em] text-muted sm:not-sr-only">
-        {label}
-      </dt>
-      <dd className="flex items-center gap-1 font-display text-xl font-bold">
-        {value}
-        {mark}
-      </dd>
-    </div>
-  )
-}

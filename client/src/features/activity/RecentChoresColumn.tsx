@@ -149,9 +149,21 @@ export function RecentChoresColumn({
         return (
           <li
             key={chore.id}
+            /*
+             * **The whole row opens the confirm, not only the glyph** ([79]).
+             *
+             * Hover is the desktop hint, and a phone has none — the owner's point. The glyph stays
+             * a real `<button>` because that is what keyboard and screen-reader users need, and it
+             * is not wrapped in another button (nested interactive elements are invalid HTML and
+             * produce an ambiguous accessible name). Instead the row carries a click as an
+             * *enlarged target*: a tap anywhere on it opens the same confirm the glyph does. The
+             * glyph's own click bubbles here and sets the same id, which is idempotent.
+             */
+            onClick={removable ? () => setConfirmingId(chore.id) : undefined}
             className={[
               // `group` is what lets the trigger hide until this row is hovered or focused.
               'group flex items-center gap-1.5 text-xs',
+              removable ? 'cursor-pointer' : '',
               align === 'right' ? 'flex-row-reverse text-right' : '',
             ].join(' ')}
           >
