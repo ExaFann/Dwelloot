@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router'
-import { Bell, House, PlusSquare, Store, User } from 'lucide-react'
+import { HouseholdIcon, LogIcon, MeIcon, NoticesIcon, StoreIcon } from './ui/icons'
 import { usePendingCount } from '../features/notices/usePendingCount'
 
 /**
@@ -13,11 +13,12 @@ import { usePendingCount } from '../features/notices/usePendingCount'
  * stays highlighted on all five screens.
  */
 const tabs = [
-  { to: '/', label: 'Home', Icon: House, end: true },
-  { to: '/log', label: 'Log', Icon: PlusSquare, end: false },
-  { to: '/notices', label: 'Notices', Icon: Bell, end: false },
-  { to: '/store', label: 'Store', Icon: Store, end: false },
-  { to: '/me', label: 'Me', Icon: User, end: false },
+  // The house, not the dashboard glyph — Home is the household, owner's call.
+  { to: '/', label: 'Home', Icon: HouseholdIcon, end: true },
+  { to: '/log', label: 'Log', Icon: LogIcon, end: false },
+  { to: '/notices', label: 'Notices', Icon: NoticesIcon, end: false },
+  { to: '/store', label: 'Store', Icon: StoreIcon, end: false },
+  { to: '/me', label: 'Me', Icon: MeIcon, end: false },
 ]
 
 /**
@@ -54,7 +55,7 @@ export function BottomNav() {
               className="focus-ring relative flex flex-col items-center gap-1 px-2 py-2.5 font-display text-xs font-semibold text-muted aria-[current=page]:bg-primary aria-[current=page]:text-primary-fg md:flex-row md:justify-start md:gap-3 md:rounded-base md:border-2 md:border-transparent md:px-3 md:text-sm md:aria-[current=page]:border-ink-accent"
             >
               <span className="relative">
-                <Icon aria-hidden="true" size={20} strokeWidth={2.5} />
+                <Icon className="size-5" />
                 {/*
                  * The count rides the **icon**, not the tab, so it sits in the same place whether the
                  * nav is a bottom bar or a left rail.

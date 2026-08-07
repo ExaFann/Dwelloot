@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Zap } from 'lucide-react'
+import { BoltIcon } from '../../components/ui/icons'
 import { Avatar } from '../../components/ui/Avatar'
 import { RecentChoresColumn } from '../activity/RecentChoresColumn'
 import { EmptyAvatar, PartnerSlot } from './PartnerSlot'
@@ -422,7 +422,7 @@ function PeriodPanel({
             className="spark absolute top-1/2 z-10 block text-warning transition-[left] duration-500"
             style={{ left: `${mine}%` }}
           >
-            <Zap size={26} strokeWidth={2.5} fill="currentColor" stroke="var(--ink-accent)" />
+            <BoltIcon className="size-6.5" />
           </span>
         )}
       </div>

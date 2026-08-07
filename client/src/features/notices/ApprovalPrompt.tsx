@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { Bell } from 'lucide-react'
+import { NoticesIcon } from '../../components/ui/icons'
 import { useOverdueApprovals } from './useOverdueApprovals'
 
 /**
@@ -41,7 +41,7 @@ export function ApprovalPrompt() {
       className="rounded-base border-2 border-ink-accent bg-warning p-4 text-warning-fg"
     >
       <div className="flex items-start gap-3">
-        <Bell aria-hidden="true" size={20} strokeWidth={3} className="mt-0.5 shrink-0" />
+        <NoticesIcon className="mt-0.5 size-5 shrink-0" />
         <div className="min-w-0">
           <h2 id="approval-prompt-heading" className="font-display text-base font-bold">
             {overdue === 1

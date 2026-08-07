@@ -1,5 +1,4 @@
-import { Lock } from 'lucide-react'
-import { BadgeMark } from '../../components/ui/marks'
+import { BadgeMark, LockIcon } from '../../components/ui/icons'
 import { useBadgesQuery } from './badgeApi'
 import { liveQueryOptions } from '../../app/liveSync'
 import { describeBadge, describeProgress } from './badgeDisplay'
@@ -82,12 +81,7 @@ export function BadgeShelf() {
                       className={badge.unlocked ? 'size-7' : 'size-7 text-muted opacity-40'}
                     />
                     {!badge.unlocked && (
-                      <Lock
-                        size={12}
-                        strokeWidth={3}
-                        aria-hidden="true"
-                        className="absolute -bottom-0.5 -right-1 bg-page text-muted"
-                      />
+                      <LockIcon className="absolute -bottom-0.5 -right-1 size-3 bg-page text-muted" />
                     )}
                   </span>
                   <div className="min-w-0">

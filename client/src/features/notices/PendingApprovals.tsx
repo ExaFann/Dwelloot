@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check } from 'lucide-react'
+import { ApproveIcon } from '../../components/ui/icons'
 import {
   useBulkApproveMutation,
   usePendingApprovalsQuery,
@@ -184,7 +184,7 @@ export function PendingApprovals() {
                           selectedIds.includes(log.id) ? 'bg-card text-primary' : 'bg-transparent',
                         ].join(' ')}
                       >
-                        {selectedIds.includes(log.id) && <Check size={14} strokeWidth={4} />}
+                        {selectedIds.includes(log.id) && <ApproveIcon className="size-3.5" />}
                       </span>
                       <span className="min-w-0">
                         <span className="block truncate font-display text-sm font-semibold">

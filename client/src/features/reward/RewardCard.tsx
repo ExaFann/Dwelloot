@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pencil } from 'lucide-react'
+import { EditIcon } from '../../components/ui/icons'
 import { useRedeemRewardMutation, type Reward } from './rewardApi'
 import { toApiError } from '../../api/apiError'
 import { Button } from '../../components/ui/Button'
@@ -130,7 +130,7 @@ export function RewardCard({ reward, balance, onEdit, onRedeemed, onFailed }: Pr
              * behave like one; here the row is not a button, and this is.
              */}
             <Button variant="neutral" aria-label={`Edit ${reward.title}`} onClick={onEdit}>
-              <Pencil size={16} strokeWidth={3} aria-hidden="true" />
+              <EditIcon className="size-4" />
             </Button>
           </div>
         </div>

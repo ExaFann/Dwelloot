@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { SlidersHorizontal, Undo2 } from 'lucide-react'
+import { EditIcon, UndoIcon } from '../../components/ui/icons'
 import { useActivitiesQuery } from './activityApi'
 import { liveQueryOptions } from '../../app/liveSync'
 import { useDeferredLog } from './useDeferredLog'
@@ -67,7 +67,7 @@ export function QuickLogTiles() {
             onClick={() => setIsManaging((open) => !open)}
             className="focus-ring inline-flex items-center gap-1.5 font-display text-sm font-semibold text-primary"
           >
-            <SlidersHorizontal size={14} strokeWidth={3} aria-hidden="true" />
+            <EditIcon className="size-3.5" />
             Choose
           </button>
           <Link
@@ -169,7 +169,7 @@ export function QuickLogTiles() {
                 onClick={() => undo(item.key)}
                 className="focus-ring flex items-center gap-1 rounded-base border-2 border-ink-accent bg-card px-2 py-1 font-display text-xs font-bold text-body"
               >
-                <Undo2 size={12} strokeWidth={3} aria-hidden="true" />
+                <UndoIcon className="size-3" />
                 Undo
               </button>
             </li>

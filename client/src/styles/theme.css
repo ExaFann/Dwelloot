@@ -133,6 +133,17 @@
    */
   --geometry-radius-control: 8px;
   --press-travel: 2px;
+
+  /*
+   * Decorative ramp — badge artwork only, task [75]. `--deco-`, never `--brand-`: red and blue here
+   * carry NO meaning, and the prefix is what stops someone later assuming they do. They exist for
+   * the collector badge's rainbow rosette, which needs a red and a true blue that the semantic
+   * palette cannot supply without breaking "yellow means Coins" (BRAND-ICONS.md §1.1). Scheme-
+   * invariant, like the badge artwork that uses them — artwork does not re-tint in dark. Two values
+   * only; a fuller ramp waits for something that needs it.
+   */
+  --deco-red: #FF5C5C;
+  --deco-blue: #3B6BFF;
 }
 
 [data-theme='dark'] {

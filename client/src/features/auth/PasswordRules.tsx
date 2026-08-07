@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { ApproveIcon } from '../../components/ui/icons'
 import { checkPassword } from './passwordPolicy'
 
 /**
@@ -47,7 +47,7 @@ export function PasswordRules({ password, id }: { password: string; id: string }
               rule.met ? 'bg-success text-success-fg' : 'bg-transparent',
             ].join(' ')}
           >
-            {rule.met && <Check size={11} strokeWidth={4} />}
+            {rule.met && <ApproveIcon className="size-3" />}
           </span>
           {rule.label}
         </li>

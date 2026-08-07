@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { ApproveIcon } from '../../components/ui/icons'
 import { useActivitiesQuery, useUpdateActivityMutation } from './activityApi'
 import { liveQueryOptions } from '../../app/liveSync'
 import { toApiError } from '../../api/apiError'
@@ -102,7 +102,7 @@ export function QuickLogManager({ onClose }: { onClose: () => void }) {
                     chore.isQuick ? 'bg-card text-primary' : 'bg-transparent',
                   ].join(' ')}
                 >
-                  {chore.isQuick && <Check size={11} strokeWidth={4} />}
+                  {chore.isQuick && <ApproveIcon className="size-3" />}
                 </span>
                 <span className="truncate font-display font-semibold">{chore.title}</span>
               </button>

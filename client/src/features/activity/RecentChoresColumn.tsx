@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { RejectIcon } from '../../components/ui/icons'
 import { describeLogPoints } from './logDisplay'
 import type { ActivityLogStatus } from './activityApi'
 
@@ -101,7 +101,7 @@ export function RecentChoresColumn({
                 aria-label={`Remove ${chore.activityTitle}`}
                 className="focus-ring ml-auto shrink-0 rounded-control p-0.5 text-muted hover:text-danger disabled:opacity-50"
               >
-                <X size={12} strokeWidth={3} aria-hidden="true" />
+                <RejectIcon className="size-3" />
               </button>
             )}
           </li>

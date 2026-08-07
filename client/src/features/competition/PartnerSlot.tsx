@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { UserPlus } from 'lucide-react'
+import { InviteIcon } from '../../components/ui/icons'
 
 /**
  * The right-hand side of the head-to-head card **before a partner joins**.
@@ -62,7 +62,7 @@ export function PartnerSlot({ inviteCode }: { inviteCode: string }) {
         onClick={() => void copy()}
         className="focus-ring pressable-sm inline-flex items-center gap-1.5 rounded-control border-2 border-ink bg-card px-2.5 py-1 font-display text-xs font-bold"
       >
-        <UserPlus size={14} strokeWidth={3} aria-hidden="true" />
+        <InviteIcon className="size-3.5" />
         {copied ? 'Copied' : 'Copy code'}
       </button>
     </div>
@@ -81,7 +81,7 @@ export function EmptyAvatar() {
       aria-hidden="true"
       className="grid size-12 shrink-0 place-items-center border-2 border-dashed border-ink text-muted"
     >
-      <UserPlus size={20} strokeWidth={2.5} />
+      <InviteIcon className="size-5" />
     </span>
   )
 }

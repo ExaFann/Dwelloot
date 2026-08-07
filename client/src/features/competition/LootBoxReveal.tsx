@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Gift, Sparkles } from 'lucide-react'
+import { BurstIcon, RewardIcon } from '../../components/ui/icons'
 import { useMeQuery } from '../auth/authApi'
 import { useCurrentCompetitionQuery } from './competitionApi'
 import { useOpenLootBoxMutation, type OpenLootBoxResult } from './lootBoxApi'
@@ -55,7 +55,7 @@ export function LootBoxReveal() {
       className="rounded-base border-2 border-ink bg-card p-5"
     >
       <div className="flex items-center gap-2">
-        <Gift size={18} strokeWidth={3} aria-hidden="true" className="text-primary" />
+        <RewardIcon className="size-4.5 text-primary" />
         <h2 id="loot-box-heading" className="text-lg">
           Loot box
         </h2>
@@ -120,7 +120,7 @@ function Revealed({
             'bg-warning text-warning-fg',
           ].join(' ')}
         >
-          <Sparkles size={20} strokeWidth={3} aria-hidden="true" />
+          <BurstIcon className="size-5" />
           {prize.headline}
         </span>
         <p className="text-sm text-muted">{prize.detail}</p>

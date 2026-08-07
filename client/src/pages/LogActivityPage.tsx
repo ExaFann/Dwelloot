@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { Check, Pencil, Plus, Undo2 } from 'lucide-react'
+import { AddIcon, ApproveIcon, EditIcon, UndoIcon } from '../components/ui/icons'
 import { useActivitiesQuery, type Activity } from '../features/activity/activityApi'
 import { ChoreEditor } from '../features/activity/ChoreEditor'
 import { useDeferredLog } from '../features/activity/useDeferredLog'
@@ -159,7 +159,7 @@ export function LogActivityPage() {
           }}
           className="focus-ring flex items-center justify-center gap-2 rounded-base border-2 border-dashed border-ink bg-transparent px-3 py-2.5 font-display text-sm font-semibold text-primary"
         >
-          <Plus size={16} strokeWidth={3} aria-hidden="true" />
+          <AddIcon className="size-4" />
           New custom chore
         </button>
       )}
@@ -201,7 +201,7 @@ export function LogActivityPage() {
               onClick={() => undo(item.key)}
               className="focus-ring flex shrink-0 items-center gap-1 rounded-base border-2 border-ink-accent bg-card px-2 py-1 font-display text-xs font-bold text-body"
             >
-              <Undo2 size={12} strokeWidth={3} aria-hidden="true" />
+              <UndoIcon className="size-3" />
               Undo
             </button>
           </div>
@@ -235,7 +235,7 @@ export function LogActivityPage() {
                 setIsCreating(false)
               }}
             >
-              <Pencil size={16} strokeWidth={3} aria-hidden="true" />
+              <EditIcon className="size-4" />
             </Button>
           )}
         </div>
@@ -314,7 +314,7 @@ function ChoreRow({
               isSelected ? 'bg-card text-primary' : 'bg-transparent',
             ].join(' ')}
           >
-            {isSelected && <Check size={14} strokeWidth={4} />}
+            {isSelected && <ApproveIcon className="size-3.5" />}
           </span>
           <span className="truncate">{activity.title}</span>
         </span>

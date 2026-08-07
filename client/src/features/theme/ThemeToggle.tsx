@@ -1,7 +1,6 @@
-import { Monitor, Moon, Sun } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
 import { selectThemeMode, themeModeChanged } from './themeSlice'
-import { THEME_MODES, type ThemeMode } from '../../theme/themeMode'
+import { THEME_MODES } from '../../theme/themeMode'
 
 /**
  * The light/dark control — task [57], one of the three assessed advanced requirements.
@@ -16,12 +15,6 @@ import { THEME_MODES, type ThemeMode } from '../../theme/themeMode'
  * disagree about what the document should say.
  */
 
-const ICONS: Record<ThemeMode, typeof Sun> = {
-  light: Sun,
-  dark: Moon,
-  system: Monitor,
-}
-
 export function ThemeToggle() {
   const dispatch = useAppDispatch()
   const mode = useAppSelector(selectThemeMode)
@@ -34,13 +27,10 @@ export function ThemeToggle() {
       <h2 id="appearance-heading" className="text-lg">
         Appearance
       </h2>
-      <p className="mt-1 text-sm text-muted">
-        System follows your device, and changes with it.
-      </p>
+      <p className="mt-1 text-sm text-muted">System follows your device, and changes with it.</p>
 
       <div role="group" aria-label="Theme" className="mt-3 flex flex-wrap gap-2">
         {THEME_MODES.map((option) => {
-          const Icon = ICONS[option.value]
           const isActive = mode === option.value
           return (
             <button
@@ -53,7 +43,6 @@ export function ThemeToggle() {
                 isActive ? 'border-ink-accent bg-primary text-primary-fg' : 'border-ink bg-card',
               ].join(' ')}
             >
-              <Icon size={16} strokeWidth={3} aria-hidden="true" />
               {option.label}
             </button>
           )

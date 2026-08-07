@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus } from 'lucide-react'
+import { AddIcon } from '../components/ui/icons'
 import { useRewardsQuery } from '../features/reward/rewardApi'
 import { RewardCard } from '../features/reward/RewardCard'
 import { RewardEditor } from '../features/reward/RewardEditor'
@@ -307,7 +307,7 @@ export function StorePage() {
           }}
           className="focus-ring flex items-center justify-center gap-2 rounded-base border-2 border-dashed border-ink bg-transparent px-3 py-2.5 font-display text-sm font-semibold text-primary"
         >
-          <Plus size={16} strokeWidth={3} aria-hidden="true" />
+          <AddIcon className="size-4" />
           New reward
         </button>
       )}

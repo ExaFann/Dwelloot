@@ -159,7 +159,7 @@ describe('the profile', () => {
     const coins = await screen.findByText('13')
     expect(coins.closest('div')).toHaveTextContent('Coins')
     expect(screen.getByText('120').closest('div')).toHaveTextContent('Lifetime pts')
-    expect(screen.getByText('2').closest('div')).toHaveTextContent('Win streak')
+    expect(screen.getByText('2').closest('div')).toHaveTextContent('Streak')
   })
 
   it('names the signed-in user', async () => {
@@ -216,7 +216,9 @@ describe('the badge shelf', () => {
   it('counts the progress from the list', async () => {
     stub()
     renderPage()
-    expect(await screen.findByText('3 of 6 unlocked')).toBeInTheDocument()
+    // Twice since [76]: the shelf (below md) and the wall (md+) are both in the DOM, split by
+    // CSS jsdom cannot evaluate. Both must agree on the count.
+    expect(await screen.findAllByText('3 of 6 unlocked')).toHaveLength(2)
   })
 
   /**

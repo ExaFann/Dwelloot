@@ -3,8 +3,9 @@ import { useMeQuery } from '../features/auth/authApi'
 import { SignOutButton } from '../features/auth/SignOutButton'
 import { Avatar } from '../components/ui/Avatar'
 import { AvatarPicker } from '../features/auth/AvatarPicker'
-import { CoinMark, PointsMark, StreakMark } from '../components/ui/marks'
+import { CoinMark, PointsMark, StreakMark } from '../components/ui/icons'
 import { BadgeShelf } from '../features/progression/BadgeShelf'
+import { BadgeWall } from '../features/progression/BadgeWall'
 import { HouseholdSettings } from '../features/household/HouseholdSettings'
 import { ThemeToggle } from '../features/theme/ThemeToggle'
 import { toApiError } from '../api/apiError'
@@ -83,6 +84,40 @@ export function MePage() {
             </h2>
             <p className="truncate text-sm text-muted">{me.email}</p>
           </div>
+
+          {/*
+           * The three stats, beside the avatar rather than in tiles below it — owner's call. The
+           * coloured squares dominated the card and swallowed their own marks: each mark inherited
+           * the tile's black foreground, so the very icons that distinguish the currencies rendered
+           * as three black shapes. On the card ground each mark now wears its own hue, which is the
+           * first time the brand colours actually do the telling-apart.
+           *
+           * `dl` still, and `dt` still precedes `dd` in the DOM — "Coins, 13" to a screen reader,
+           * never a bare number — with the visual order handled by flex direction, exactly as the
+           * tiles did it.
+           */}
+          <dl className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-x-4 gap-y-1">
+            <Stat
+              label="Coins"
+              value={me.coins}
+              mark={<CoinMark className="size-4 text-warning" />}
+            />
+            <Stat
+              label="Lifetime pts"
+              value={me.lifetimePoints}
+              mark={<PointsMark className="size-4 text-points" />}
+            />
+            {/*
+             * The **current** streak. `users.longest_win_streak` exists but `/api/auth/me` does not
+             * return it, and the wireframe asks for "win streak" — satisfied. Recorded rather than
+             * worked around.
+             */}
+            <Stat
+              label="Streak"
+              value={me.currentWinStreak}
+              mark={<StreakMark className="size-4 text-flame" />}
+            />
+          </dl>
         </div>
 
         {isPickingAvatar && (
@@ -94,38 +129,6 @@ export function MePage() {
             <AvatarPicker />
           </div>
         )}
-
-        <dl className="mt-4 grid grid-cols-3 gap-2">
-          {/*
-           * All three carry a fill now (`ui-exp01`), and the three hues were chosen to avoid reading
-           * as a traffic light. Green is the *opponent's* colour and red is destructive, so
-           * yellow/green/red here would say "good, neutral, something is wrong" about three things
-           * that are all simply yours.
-           *
-           * Coins keep the yellow (loot). Points take **blue**, their own hue — purple was standing
-           * in for them, but purple already means *you*, so one token was carrying two unrelated
-           * jobs and that tile never looked like it belonged. The streak takes flame orange: a
-           * streak is a fire, and orange borrows no other meaning.
-           */}
-          <Stat label="Coins" value={me.coins} tone="loot" mark={<CoinMark className="size-4" />} />
-          <Stat
-            label="Lifetime pts"
-            value={me.lifetimePoints}
-            tone="points"
-            mark={<PointsMark className="size-4" />}
-          />
-          {/*
-           * The **current** streak. `users.longest_win_streak` exists but `/api/auth/me` does not
-           * return it, and the wireframe asks for "win streak" — satisfied. Recorded rather than
-           * worked around.
-           */}
-          <Stat
-            label="Win streak"
-            value={me.currentWinStreak}
-            tone="flame"
-            mark={<StreakMark className="size-4" />}
-          />
-        </dl>
       </section>
 
       {/*
@@ -133,7 +136,18 @@ export function MePage() {
        * two settings cards, which are short. `items-start` so neither column stretches to the other.
        */}
       <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
-        <BadgeShelf />
+        {/*
+         * [76]'s split, on [58]'s bar-to-rail boundary. The honeycomb is fixed-pixel absolute
+         * positioning and cannot reflow, so phones keep the shelf — which also keeps every criteria
+         * sentence visible where there is no hover for a tooltip. Both subscribe to the same badges
+         * cache entry, so mounting both costs one request, not two.
+         */}
+        <div className="md:hidden">
+          <BadgeShelf />
+        </div>
+        <div className="hidden md:block">
+          <BadgeWall />
+        </div>
 
         <div className="flex flex-col gap-6">
           {/*
@@ -166,37 +180,24 @@ export function MePage() {
 function Stat({
   label,
   value,
-  tone,
   mark,
 }: {
   label: string
   value: number
-  tone: 'loot' | 'points' | 'flame'
-  /** The mark sits *with the label*, so the number stays the biggest thing in the tile. */
+  /** Wears its currency's own colour — the marks are what tell the three numbers apart. */
   mark: React.ReactNode
 }) {
-  const FILL = {
-    loot: 'bg-warning text-warning-fg',
-    points: 'bg-points text-points-fg',
-    flame: 'bg-flame text-flame-fg',
-  } as const
   return (
     /*
-     * `dt` before `dd` in the DOM, which is the order the spec requires, with `flex-col-reverse`
-     * putting the number on top visually. Swapping them in the markup instead would read as
-     * "13, Coins" to a screen reader walking the list — a value with no term in front of it.
+     * `dt` before `dd` in the DOM so a screen reader hears "Coins, 13", with `flex-row-reverse`
+     * putting the number first visually — the same order trick the old tiles used vertically.
      */
-    <div
-      className={[
-        'flex flex-col-reverse rounded-base border-2 border-ink-accent px-2 py-2.5 text-center',
-        FILL[tone],
-      ].join(' ')}
-    >
-      <dt className="flex items-center justify-center gap-1 font-display text-[0.7rem] font-semibold uppercase tracking-[0.06em] opacity-80">
+    <div className="flex flex-row-reverse items-baseline gap-1.5">
+      <dt className="flex items-center gap-1 font-display text-[0.7rem] font-semibold uppercase tracking-[0.06em] text-muted">
         {mark}
         {label}
       </dt>
-      <dd className="font-display text-2xl font-bold">{value}</dd>
+      <dd className="font-display text-xl font-bold">{value}</dd>
     </div>
   )
 }

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dwelloot — Logo 概念对比 · Neobrutalism</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Public+Sans:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --c-ink:#000000;
+    --c-paper:#FFFFFF;
+    --c-purple:#7C4DFF;
+    --c-green:#3DDC97;
+    --c-yellow:#FFE14A;
+    --c-cyan:#4CC9F0;
+    --c-flame:#FF8A3D;
+    --page:#FFE14A;
+    --card:#FFFFFF;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:32px 20px 80px;
+    background:var(--page);
+    color:#000;
+    font-family:"Public Sans","Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;
+    font-weight:600;
+    line-height:1.55;
+  }
+  .wrap{max-width:1120px;margin:0 auto}
+  h1,h2,h3{font-family:"Archivo Black","Public Sans","Microsoft YaHei",sans-serif;font-weight:900;letter-spacing:-.01em;margin:0}
+  h1{font-size:clamp(34px,6vw,62px);line-height:1.02;text-transform:uppercase}
+  .card{background:var(--card);border:4px solid #000;box-shadow:8px 8px 0 #000;padding:24px}
+  .card + .card{margin-top:28px}
+  .hero{background:#fff;display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start;justify-content:space-between}
+  .tag{display:inline-block;background:var(--c-purple);color:#fff;border:3px solid #000;padding:4px 12px;font-weight:900;font-size:12px;letter-spacing:.14em;text-transform:uppercase;box-shadow:4px 4px 0 #000}
+  .tag.g{background:var(--c-green);color:#000}
+  .tag.y{background:var(--c-yellow);color:#000}
+  .tag.c{background:var(--c-cyan);color:#000}
+  .lede{max-width:640px;font-size:16px}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+  .rulebox{border:3px solid #000;padding:14px 16px;background:#fff}
+  .rulebox h3{font-size:15px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+  ul{margin:6px 0 0;padding-left:18px}
+  li{margin:4px 0;font-weight:400;font-size:14.5px}
+  li b{font-weight:800}
+
+  .concept{position:relative}
+  .concept .num{position:absolute;top:-22px;left:-22px;width:56px;height:56px;display:grid;place-items:center;
+    background:var(--c-yellow);border:4px solid #000;box-shadow:5px 5px 0 #000;
+    font-family:"Archivo Black",sans-serif;font-size:26px}
+  .chead{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-bottom:6px;padding-left:44px}
+  .chead h2{font-size:clamp(22px,3vw,32px);text-transform:uppercase}
+  .cn{font-size:15px;font-weight:900;background:#000;color:#fff;padding:3px 10px}
+  .body{display:grid;grid-template-columns:minmax(240px,300px) 1fr;gap:26px;margin-top:18px;align-items:start}
+  @media(max-width:760px){.body{grid-template-columns:1fr}.concept .num{left:-12px;top:-18px}.chead{padding-left:36px}}
+
+  .stage{border:4px solid #000;background:var(--page);display:grid;place-items:center;padding:26px;box-shadow:6px 6px 0 #000}
+  .stage svg{width:150px;height:150px;display:block;filter:drop-shadow(6px 6px 0 rgba(0,0,0,.28))}
+
+  .sizes{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-top:14px}
+  .tile{border:3px solid #000;display:grid;place-items:center;background:#F0EBFF}
+  .tile.dk{background:#171226}
+  .tile.pu{background:var(--c-purple)}
+  .tile.ye{background:var(--c-yellow)}
+  .t96{width:96px;height:96px} .t64{width:64px;height:64px}
+  .t40{width:40px;height:40px} .t24{width:24px;height:24px}
+  .t96 svg{width:76px;height:76px} .t64 svg{width:50px;height:50px}
+  .t40 svg{width:32px;height:32px} .t24 svg{width:19px;height:19px}
+  .cap{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-top:6px;opacity:.6}
+  .col{display:flex;flex-direction:column;align-items:center}
+
+  .dark{--c-paper:#F0EBFF;--c-purple:#A87BFF;--c-green:#57E6B0;--c-yellow:#FFEA6B}
+  .mono{--c-paper:#FFFFFF;--c-purple:#000000;--c-green:#FFFFFF;--c-yellow:#FFFFFF}
+  .monoInv{--c-paper:#000000;--c-purple:#FFFFFF;--c-green:#000000;--c-yellow:#000000;--c-ink:#FFFFFF}
+
+  .why{font-size:15px;font-weight:400}
+  .why b{font-weight:800}
+  .why p{margin:0 0 10px}
+  .kv{display:grid;grid-template-columns:104px 1fr;gap:6px 12px;margin-top:12px;font-size:14px;font-weight:400}
+  .kv dt{font-weight:900;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding-top:2px}
+  .kv dd{margin:0}
+  .shapes{font-size:22px;letter-spacing:.18em}
+  .score{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .pill{border:3px solid #000;padding:3px 10px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;background:#fff}
+  .pill.ok{background:var(--c-green)}
+  .pill.no{background:#FF7A70}
+  .pill.mid{background:var(--c-yellow)}
+  .rec{background:var(--c-purple);color:#fff}
+  .rec h2{color:#fff}
+  .rec .rulebox{background:#fff;color:#000}
+  .foot{margin-top:34px;font-size:13px;font-weight:700;text-align:center;opacity:.75}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ SYMBOL LIBRARY ══════════════ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- A · SPLIT RIDGE / 分脊屋 -->
+  <symbol id="mA" viewBox="0 0 128 128">
+    <g stroke="var(--c-ink)" stroke-width="7" stroke-linejoin="miter" stroke-miterlimit="2">
+      <rect x="27" y="62" width="74" height="50" fill="var(--c-paper)"/>
+      <path d="M64 12 14 62h50z" fill="var(--c-purple)"/>
+      <path d="M64 12 114 62H64z" fill="var(--c-green)"/>
+      <rect x="48" y="80" width="32" height="14" fill="var(--c-yellow)"/>
+    </g>
+  </symbol>
+
+  <!-- B · LID AJAR / 启箱 -->
+  <symbol id="mB" viewBox="0 0 128 128">
+    <g stroke="var(--c-ink)" stroke-width="7" stroke-linejoin="miter" stroke-miterlimit="2">
+      <path d="M96 2 102 20 118 10 109 27 127 33 109 39 118 56 102 46 96 64 90 46 74 56 83 39 65 33 83 27 74 10 90 20 Z" fill="var(--c-yellow)" stroke-width="6"/>
+      <g transform="rotate(-7 64 46)">
+        <path d="M14 58H110L94 28H30Z" fill="var(--c-green)"/>
+      </g>
+      <rect x="24" y="66" width="80" height="46" fill="var(--c-purple)"/>
+      <rect x="56" y="66" width="16" height="46" fill="var(--c-yellow)"/>
+    </g>
+  </symbol>
+
+  <!-- C · BACK-TO-BACK D / 双D -->
+  <symbol id="mC" viewBox="0 0 128 128">
+    <g stroke="var(--c-ink)" stroke-width="7" stroke-linejoin="miter" stroke-miterlimit="2">
+      <path d="M36 20h28v88H36L14 64z" fill="var(--c-purple)"/>
+      <path d="M92 20H64v88h28l22-44z" fill="var(--c-green)"/>
+      <path d="M56 45H72L83 56V72L72 83H56L45 72V56Z" fill="var(--c-yellow)"/>
+    </g>
+  </symbol>
+
+  <!-- D · PODIUM HOUSE / 计分屋 -->
+  <symbol id="mD" viewBox="0 0 128 128">
+    <g stroke="var(--c-ink)" stroke-width="9" stroke-linejoin="miter" stroke-miterlimit="2">
+      <path d="M12 56 64 20l52 36" fill="none"/>
+      <g stroke-width="7">
+        <rect x="22" y="62" width="38" height="52" fill="var(--c-purple)"/>
+        <rect x="22" y="62" width="38" height="16" fill="var(--c-yellow)"/>
+        <rect x="68" y="86" width="38" height="28" fill="var(--c-green)"/>
+      </g>
+    </g>
+  </symbol>
+</svg>
+
+<div class="wrap">
+
+<!-- ══════════════ HERO ══════════════ -->
+<div class="card hero">
+  <div>
+    <span class="tag">Brand exploration</span>
+    <span class="tag g">Neobrutalism</span>
+    <span class="tag y">4 concepts</span>
+    <h1 style="margin-top:14px">Dwelloot<br>Logo 概念对比</h1>
+    <p class="lede" style="margin-top:14px">
+      四个方向，全部用<b>纯几何图元拼合</b>（三角形 / 矩形 / 八边形 / 尖芒星），
+      零曲线、零渐变、平涂 + 黑描边 + 硬阴影 —— 与 <code>ui-exp01</code> 分支现有的
+      <code>marks.tsx</code> 同一套语言。每个方向都同时解释<b>产品含义</b>与<b>名字 Dwelloot 的关联</b>。
+    </p>
+  </div>
+  <div class="stage" style="background:#F0EBFF;min-width:190px">
+    <svg><use href="#mA"/></svg>
+  </div>
+</div>
+
+<!-- ══════════════ BRIEF ══════════════ -->
+<div class="card">
+  <h2>0 · 这个 Logo 必须扛住的三件事</h2>
+  <div class="grid2" style="margin-top:16px">
+    <div class="rulebox">
+      <h3>① 产品是什么</h3>
+      <ul>
+        <li><b>恰好两个人</b>的家务竞赛 app。记录家务 → <b>对方审批</b> → 得 Points → 一个周期里分高的人赢 <b>Loot Box</b> → 开出 Coins → Coins 换 Rewards。</li>
+        <li>Points <b>永不消费</b>；Coins 是唯一可花的货币，<b>只能靠赢得到</b>。</li>
+        <li>所以标志里必须有：<b>家</b>、<b>二元对抗</b>、<b>战利品</b>。</li>
+      </ul>
+    </div>
+    <div class="rulebox">
+      <h3>② 名字怎么拆</h3>
+      <ul>
+        <li><b>Dwell</b> = 居住 / 家 → 屋顶、方盒、门。</li>
+        <li><b>Loot</b> = 战利品 / 掉落 → 宝箱、开盖、金币、尖芒。</li>
+        <li>两词共用中间的 <b>“ll / oo”</b> —— 双写字母本身就是“两个人”的暗示，方案 C 直接用这一点。</li>
+      </ul>
+    </div>
+    <div class="rulebox">
+      <h3>③ Neobrutalism 硬规则（来自 PDF）</h3>
+      <ul>
+        <li><b>黑色无所畏惧</b>：描边 + 硬投影都是纯黑 <code>#000</code>。</li>
+        <li><b>投影有 X 和 Y、blur = 0、opacity = 100%</b>。</li>
+        <li><b>高饱和平涂，绝不用渐变。</b></li>
+        <li><b>粗糙未加工的原始图形</b>：矩形、三角、星形、多边形 —— “像 Windows 画图里拖出来的”。</li>
+        <li>字体：无衬线 + 极粗（Archivo Black / Lexend Mega / Public Sans Bold）。</li>
+      </ul>
+    </div>
+    <div class="rulebox">
+      <h3>④ 项目自己已有的约束</h3>
+      <ul>
+        <li><b>没有曲线</b>：<code>marks.tsx</code> 里“硬币是八边形”。Logo 必须遵守，否则和 app 内图标是两种语言。</li>
+        <li>色义已锁死：<span style="background:#7C4DFF;color:#fff;padding:0 5px">紫 = 你</span> <span style="background:#3DDC97;padding:0 5px">绿 = 对手</span> <span style="background:#FFE14A;padding:0 5px">黄 = Coins / 战利品</span> <span style="background:#4CC9F0;padding:0 5px">蓝 = Points</span>。</li>
+        <li>几何：<code>--geometry-radius: 0</code>（面）/ <code>8px</code>（可按压控件）。Logo 走 <b>0 圆角</b>。</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CONCEPT A ══════════════ -->
+<div class="card concept">
+  <div class="num">A</div>
+  <div class="chead">
+    <h2>Split Ridge</h2><span class="cn">分脊屋 · 共同的储金罐</span>
+  </div>
+  <div class="body">
+    <div>
+      <div class="stage" style="background:#F0EBFF"><svg><use href="#mA"/></svg></div>
+      <div class="sizes">
+        <div class="col"><div class="tile t96"><svg><use href="#mA"/></svg></div><div class="cap">96</div></div>
+        <div class="col"><div class="tile t40"><svg><use href="#mA"/></svg></div><div class="cap">40</div></div>
+        <div class="col"><div class="tile t24"><svg><use href="#mA"/></svg></div><div class="cap">24</div></div>
+        <div class="col"><div class="tile t40 dk dark"><svg><use href="#mA"/></svg></div><div class="cap">dark</div></div>
+        <div class="col"><div class="tile t40 mono" style="background:#fff"><svg><use href="#mA"/></svg></div><div class="cap">单色</div></div>
+      </div>
+    </div>
+    <div class="why">
+      <p><b>图形怎么拼：</b>一个正方形（家）+ 一个三角形屋顶，屋顶<b>沿正脊一刀劈成两半</b>，左紫右绿；屋身正中开一道黄色<b>投币口</b>。三个图元，就这些。</p>
+      <p><b>产品含义：</b>屋顶的两半 = 两个住在同一屋檐下的人，同一个家、两种颜色、共享一条脊。投币口把<b>房子本身变成了那个 Loot Box</b> —— 你们往里投的是家务，掉出来的是奖励。这正好是产品的核心循环。</p>
+      <p><b>和名字的关系：</b><i>Dwell</i>（屋形）与 <i>loot</i>（投币口 / 箱体）压在同一个形上，不是两个东西并排放。</p>
+      <dl class="kv">
+        <dt>图元</dt><dd class="shapes">▢ △ ▬</dd>
+        <dt>色义</dt><dd>紫=你 · 绿=对手 · 黄=Coins，与 app 内完全一致，零新增语义。</dd>
+        <dt>风险</dt><dd>“房子 + 屋顶”是家居 / 房产类 app 里最拥挤的图形，需要靠劈脊配色来做差异。</dd>
+      </dl>
+      <div class="score">
+        <span class="pill ok">24px 可读性 强</span><span class="pill ok">语义最完整</span>
+        <span class="pill ok">单色可用</span><span class="pill mid">独特性 中</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CONCEPT B ══════════════ -->
+<div class="card concept">
+  <div class="num">B</div>
+  <div class="chead">
+    <h2>Lid Ajar</h2><span class="cn">启箱 · 开奖的那一秒</span>
+  </div>
+  <div class="body">
+    <div>
+      <div class="stage" style="background:#F0EBFF"><svg><use href="#mB"/></svg></div>
+      <div class="sizes">
+        <div class="col"><div class="tile t96"><svg><use href="#mB"/></svg></div><div class="cap">96</div></div>
+        <div class="col"><div class="tile t40"><svg><use href="#mB"/></svg></div><div class="cap">40</div></div>
+        <div class="col"><div class="tile t24"><svg><use href="#mB"/></svg></div><div class="cap">24</div></div>
+        <div class="col"><div class="tile t40 dk dark"><svg><use href="#mB"/></svg></div><div class="cap">dark</div></div>
+        <div class="col"><div class="tile t40 mono" style="background:#fff"><svg><use href="#mB"/></svg></div><div class="cap">单色</div></div>
+      </div>
+    </div>
+    <div class="why">
+      <p><b>图形怎么拼：</b>矩形箱体 + 一条黄色<b>包裹束带</b>（直接呼应 <code>BadgeMark</code> 里的“首次兑换”包裹）+ 一个<b>被顶歪 11° 的三角屋顶</b>（它同时是箱盖）+ 一颗从缝里炸出来的<b>八角尖芒星</b>。</p>
+      <p><b>产品含义：</b>捕捉的是<b>动作发生的瞬间</b>，而不是一个静态物件。盖子歪着 = 刚刚开箱；尖芒 = 奖励弹出。整个产品的情绪高点就在这一帧。</p>
+      <p><b>和名字的关系：</b>屋顶 = <i>Dwell</i>，箱体 + 尖芒 = <i>loot</i>，两者是<b>同一个盒子的上下半</b>。掀开屋顶就是掀开宝箱 —— 名字的合成方式被画了出来。</p>
+      <dl class="kv">
+        <dt>图元</dt><dd class="shapes">▢ △ ✳ ▮</dd>
+        <dt>气质</dt><dd>四个方向里最“会动”、最有游戏感的一个，和 loot box 开箱动画天然是一家。</dd>
+        <dt>风险</dt><dd>元素最多。24px 下尖芒会糊成一团 —— 小尺寸需要<b>专门做一版删掉尖芒的简化 mark</b>（下方 24 格已可看出）。</dd>
+      </dl>
+      <div class="score">
+        <span class="pill ok">独特性 强</span><span class="pill ok">情绪 / 游戏感 强</span>
+        <span class="pill no">24px 需简化版</span><span class="pill mid">单色 一般</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CONCEPT C ══════════════ -->
+<div class="card concept">
+  <div class="num">C</div>
+  <div class="chead">
+    <h2>Back-to-Back D</h2><span class="cn">双D · 字母即对抗</span>
+  </div>
+  <div class="body">
+    <div>
+      <div class="stage" style="background:#F0EBFF"><svg><use href="#mC"/></svg></div>
+      <div class="sizes">
+        <div class="col"><div class="tile t96"><svg><use href="#mC"/></svg></div><div class="cap">96</div></div>
+        <div class="col"><div class="tile t40"><svg><use href="#mC"/></svg></div><div class="cap">40</div></div>
+        <div class="col"><div class="tile t24"><svg><use href="#mC"/></svg></div><div class="cap">24</div></div>
+        <div class="col"><div class="tile t40 dk dark"><svg><use href="#mC"/></svg></div><div class="cap">dark</div></div>
+        <div class="col"><div class="tile t40 mono" style="background:#fff"><svg><use href="#mC"/></svg></div><div class="cap">单色</div></div>
+      </div>
+    </div>
+    <div class="why">
+      <p><b>图形怎么拼：</b>把字母 <b>D 去掉所有曲线</b>，变成“矩形 + 尖角”的五边形。两个 D <b>背靠背镜像</b>，共用中间一条黑缝，合起来正好闭成一个<b>宝石 / 箱体</b>轮廓；缝上压一枚黄色<b>八边形硬币</b>（与 <code>CoinMark</code> 同一个八边形）。</p>
+      <p><b>产品含义：</b>两个人各占一半、背对背较劲，但<b>只有合起来才是一个完整的形</b> —— 这就是“竞争性合作”的家庭。硬币压在接缝上：奖池属于中间，谁赢了才归谁。</p>
+      <p><b>和名字的关系：</b>最直接 —— <b>D for Dwelloot</b>，而“双写”本身呼应 Dwe<b>ll</b>-l<b>oo</b>t 里那串双字母，也呼应“恰好两人”这条产品硬约束。</p>
+      <dl class="kv">
+        <dt>图元</dt><dd class="shapes">⬠ ⬠ ⯃</dd>
+        <dt>优势</dt><dd>唯一带<b>字母学</b>的方案，最容易被记成“那个双 D 的 app”；抽象度高，和竞品完全不撞。</dd>
+        <dt>风险</dt><dd>“家”的意象最弱，需要靠 wordmark 和 app 内语境补足；八边形硬币在 24px 下接近圆点。</dd>
+      </dl>
+      <div class="score">
+        <span class="pill ok">独特性 最强</span><span class="pill ok">名字关联 最强</span>
+        <span class="pill ok">24px 可读性 强</span><span class="pill no">“家”的意象弱</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CONCEPT D ══════════════ -->
+<div class="card concept">
+  <div class="num">D</div>
+  <div class="chead">
+    <h2>Podium House</h2><span class="cn">计分屋 · 屋檐下的比分</span>
+  </div>
+  <div class="body">
+    <div>
+      <div class="stage" style="background:#F0EBFF"><svg><use href="#mD"/></svg></div>
+      <div class="sizes">
+        <div class="col"><div class="tile t96"><svg><use href="#mD"/></svg></div><div class="cap">96</div></div>
+        <div class="col"><div class="tile t40"><svg><use href="#mD"/></svg></div><div class="cap">40</div></div>
+        <div class="col"><div class="tile t24"><svg><use href="#mD"/></svg></div><div class="cap">24</div></div>
+        <div class="col"><div class="tile t40 dk dark"><svg><use href="#mD"/></svg></div><div class="cap">dark</div></div>
+        <div class="col"><div class="tile t40 mono" style="background:#fff"><svg><use href="#mD"/></svg></div><div class="cap">单色</div></div>
+      </div>
+    </div>
+    <div class="why">
+      <p><b>图形怎么拼：</b>一个宽三角屋顶，屋檐下站着<b>两根不等高的柱子</b> —— 紫色那根更高，顶端戴着一顶<b>黄色的冠</b>。柱子既是墙，也是 head-to-head 的<b>柱状比分</b>。</p>
+      <p><b>产品含义：</b>把 <code>HeadToHeadCard</code> 直接抽象成了标志。一眼说清“这是一个在家里比分的 app”，而且黄冠明确了规则：<b>赢的人才拿到 Coins</b>。</p>
+      <p><b>和名字的关系：</b><i>Dwell</i> = 屋檐；<i>loot</i> = 黄冠（只戴在赢家头上）。名字的因果关系被画成了上下结构。</p>
+      <dl class="kv">
+        <dt>图元</dt><dd class="shapes">△ ▮ ▮</dd>
+        <dt>优势</dt><dd>抽象但仍然像房子；两根柱子的不等高在 24px 下依然清楚，是四个方案里最“稳”的小尺寸表现。</dd>
+        <dt>风险</dt><dd>最像一张<b>图表</b>，游戏感 / 战利品感最弱；容易被读成数据分析工具。</dd>
+      </dl>
+      <div class="score">
+        <span class="pill ok">24px 可读性 最强</span><span class="pill ok">竞赛感 强</span>
+        <span class="pill mid">独特性 中</span><span class="pill no">战利品感 弱</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ SIDE BY SIDE ══════════════ -->
+<div class="card">
+  <h2>四个方向并排 · 小尺寸压力测试</h2>
+  <p style="font-weight:400;font-size:14.5px;margin:8px 0 18px">
+    浏览器标签页的 favicon 实际显示尺寸只有 <b>16–20px</b>。下面第三行就是这个尺寸 —— 在这一行还能分辨出形状的，才真的能用。
+  </p>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;text-align:center">
+    <div><div class="tile t96 pu" style="margin:0 auto"><svg><use href="#mA"/></svg></div><div class="cap">A 分脊屋</div></div>
+    <div><div class="tile t96 pu" style="margin:0 auto"><svg><use href="#mB"/></svg></div><div class="cap">B 启箱</div></div>
+    <div><div class="tile t96 pu" style="margin:0 auto"><svg><use href="#mC"/></svg></div><div class="cap">C 双D</div></div>
+    <div><div class="tile t96 pu" style="margin:0 auto"><svg><use href="#mD"/></svg></div><div class="cap">D 计分屋</div></div>
+
+    <div><div class="tile t64 ye" style="margin:0 auto"><svg><use href="#mA"/></svg></div><div class="cap">黄底 64</div></div>
+    <div><div class="tile t64 ye" style="margin:0 auto"><svg><use href="#mB"/></svg></div><div class="cap">黄底 64</div></div>
+    <div><div class="tile t64 ye" style="margin:0 auto"><svg><use href="#mC"/></svg></div><div class="cap">黄底 64</div></div>
+    <div><div class="tile t64 ye" style="margin:0 auto"><svg><use href="#mD"/></svg></div><div class="cap">黄底 64</div></div>
+
+    <div><div class="tile t24" style="margin:0 auto"><svg><use href="#mA"/></svg></div><div class="cap">favicon</div></div>
+    <div><div class="tile t24" style="margin:0 auto"><svg><use href="#mB"/></svg></div><div class="cap">favicon</div></div>
+    <div><div class="tile t24" style="margin:0 auto"><svg><use href="#mC"/></svg></div><div class="cap">favicon</div></div>
+    <div><div class="tile t24" style="margin:0 auto"><svg><use href="#mD"/></svg></div><div class="cap">favicon</div></div>
+  </div>
+</div>
+
+<!-- ══════════════ RECOMMENDATION ══════════════ -->
+<div class="card rec">
+  <h2>我的建议</h2>
+  <div class="grid2" style="margin-top:16px">
+    <div class="rulebox">
+      <h3>首选 · C 双D</h3>
+      <p style="font-weight:400;font-size:14.5px;margin:6px 0 0">
+        它是唯一同时满足<b>「几何拼合」「产品功能含义」「与名字有联系」</b>三条要求，并且在 24px 仍然清楚的方案。
+        “两个背靠背的 D 合成一个箱子、硬币压在接缝上”这句话本身就是产品说明书，答辩时一句话讲得完。
+        抽象度也让它不会和任何家务 / 房产 app 撞脸。
+      </p>
+    </div>
+    <div class="rulebox">
+      <h3>备选 · A 分脊屋</h3>
+      <p style="font-weight:400;font-size:14.5px;margin:6px 0 0">
+        如果你更想让人<b>第一眼就知道这是家务 app</b>（对评委友好），选 A。它的语义最完整、最不会被误读，
+        代价是图形本身不够独特。B 太复杂、需要两套 mark 才能落地；D 会被读成图表工具。
+      </p>
+    </div>
+  </div>
+  <div class="rulebox" style="margin-top:18px">
+    <h3>选定后我会交付的整套 App 图标</h3>
+    <ul>
+      <li><b>favicon.svg</b>（替换现有那个 728B 的旧箱子）+ <b>favicon.ico</b> 多尺寸 16/32/48</li>
+      <li><b>apple-touch-icon.png</b> 180×180（含安全边距，iOS 会自己切圆角）</li>
+      <li><b>PWA</b> icon-192 / icon-512 / <b>maskable</b> 512（安全区内缩 20%）+ <code>manifest.webmanifest</code> 片段</li>
+      <li><b>OG / 分享图</b> 1200×630（Neobrutalism 版式：黄底 + 黑框 + wordmark）</li>
+      <li><b>wordmark lockup</b>（横排 + 竖排 + 单色 + 深色）给 README 和答辩 PPT</li>
+      <li>一份 <code>ICONS.md</code>，说明每个文件放哪、<code>index.html</code> 要加哪几行</li>
+    </ul>
+    <p style="font-weight:800;font-size:14px;margin:12px 0 0">
+      注：本轮完全没有改动 project folder 里的任何文件 —— 只读了 <code>project-state-handover.md</code>、
+      <code>marks.tsx</code>、<code>theme.css</code>、<code>favicon.svg</code>。
+    </p>
+  </div>
+</div>
+
+<div class="foot">Dwelloot · brand exploration · 遵循 Sepideh Yazdi《Neobrutalism UI (How to)》与 ui-exp01 设计令牌</div>
+</div>
+</body>
+</html>
