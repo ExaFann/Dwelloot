@@ -340,8 +340,15 @@ describe('the landing page', () => {
       screen.getByText(/you cannot approve your own chore — the app refuses it/i),
     ).toBeInTheDocument()
     expect(
-      screen.getByText(/a tie settles as a win-win and you each open a box/i),
+      screen.getByText(/it settles as a win-win and you each open a box/i),
     ).toBeInTheDocument()
+    /*
+     * [91b] — the qualifier is the assertion. `IsWinWin = top.Value > 0 && other.Value > 0`, so a
+     * 0–0 day is an equal score that pays nobody; without this sentence the page promised a box
+     * for a day neither of them played.
+     */
+    expect(screen.getByText(/if you both scored and finished level/i)).toBeInTheDocument()
+    expect(screen.getByText(/isn’t a tie; it just doesn’t count/i)).toBeInTheDocument()
   })
 
   it('closes with the project line and a link to the source', () => {

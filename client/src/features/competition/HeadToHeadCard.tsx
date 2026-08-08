@@ -358,8 +358,22 @@ export function HeadToHeadCard() {
               />
             ))}
           </div>
-          {/* Phone only: the ladder shows all three at once and needs no index. */}
-          <ScrollDots scroller={periodsEl} count={periods.length} className="mt-3 lg:hidden" />
+          {/*
+           * Phone only: the ladder shows all three at once and needs no index.
+           *
+           * The dots say *where you are*; they do not say *that you can move* — owner's report, and
+           * it is the standard failure of a carousel indicator. Below `lg` only Today is on screen,
+           * so a first-time user can reasonably conclude the app has no week or month at all. The
+           * words are the affordance; the dots stay because they are the position.
+           */}
+          <div className="mt-3 lg:hidden">
+            <ScrollDots scroller={periodsEl} count={periods.length} />
+            {periods.length > 1 && (
+              <p className="mt-1.5 text-center font-display text-xs font-semibold text-muted">
+                Swipe for week &amp; month
+              </p>
+            )}
+          </div>
         </>
       )}
     </Shell>

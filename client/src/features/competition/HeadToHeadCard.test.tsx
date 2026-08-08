@@ -399,3 +399,17 @@ describe('removing your own pending chore', () => {
     )
   })
 })
+
+describe('finding the other periods', () => {
+  /**
+   * [91b], owner's report. Below `lg` only Today is on screen and the three dots say *where you
+   * are*, not *that you can move* — so a first-time user can reasonably conclude the app has no week
+   * or month at all. The words are the affordance; the dots stay because they are the position.
+   */
+  it('says the other periods are a swipe away', async () => {
+    stub({})
+    renderCard()
+
+    expect(await screen.findByText(/swipe for week & month/i)).toBeInTheDocument()
+  })
+})

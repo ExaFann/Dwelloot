@@ -308,8 +308,17 @@ export function LandingPage() {
             Each other. Points only land once the other person approves, and you cannot approve your
             own chore — the app refuses it.
           </Question>
+          {/*
+           * Completed after checking `CompetitionSettlementService` — [91b]. The first version said
+           * "a tie settles as a win-win", which is true only when both of you scored:
+           * `IsWinWin = top.Value > 0 && other.Value > 0`, so a 0–0 day is an equal score that is
+           * deliberately *not* a win-win and pays nobody. The second sentence closes that gap
+           * rather than leaving the page promising a box for a day neither of you played.
+           */}
           <Question q="What if we tie?">
-            You both win. A tie settles as a win-win and you each open a box.
+            If you both scored and finished level, you both win — it settles as a win-win and you
+            each open a box. A day where neither of you logged anything isn&rsquo;t a tie; it just
+            doesn&rsquo;t count.
           </Question>
         </ul>
       </Band>
