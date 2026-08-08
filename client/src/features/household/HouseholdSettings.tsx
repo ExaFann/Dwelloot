@@ -198,8 +198,14 @@ export function HouseholdSettings({
            * way back.
            */}
           <div className="mt-4">
+            {/*
+             * "You two", not "Members" — [90], owner's wording. A household here holds exactly two
+             * people and the server refuses a third, so "Members" was a plural of an open-ended set
+             * describing something that is never open-ended. The entity stays `HouseholdMember` and
+             * the field stays `data.members`; only the label the two of them read changes.
+             */}
             <p className="font-display text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-              Members
+              You two
             </p>
             <ul className="mt-2 flex flex-wrap gap-2">
               {data.members.map((member) => (

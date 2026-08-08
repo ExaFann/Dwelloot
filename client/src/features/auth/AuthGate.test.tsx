@@ -140,7 +140,7 @@ describe('not signed in', () => {
     expect(at(router)).toBe('/')
     expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument()
     // And both doors in: the page exists to route people to these two.
-    expect(screen.getAllByRole('link', { name: /start a household/i }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('link', { name: /start a duel/i }).length).toBeGreaterThan(0)
     expect(screen.getAllByRole('link', { name: /log in/i }).length).toBeGreaterThan(0)
   })
 

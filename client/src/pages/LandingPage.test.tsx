@@ -66,12 +66,81 @@ describe('the landing page', () => {
       /chores, but make it a duel/i,
     )
     // Two of each — hero and footer — and every one goes to a real route.
-    const starts = screen.getAllByRole('link', { name: /start a household/i })
+    const starts = screen.getAllByRole('link', { name: /start a duel/i })
     const logins = screen.getAllByRole('link', { name: /log in/i })
     expect(starts).toHaveLength(2)
     expect(logins).toHaveLength(2)
     for (const link of starts) expect(link).toHaveAttribute('href', '/register')
     for (const link of logins) expect(link).toHaveAttribute('href', '/login')
+  })
+
+  /**
+   * [90] — the CTA is a *button label*, not a rename.
+   *
+   * The obvious way to get this task wrong is a find-and-replace across the file: the word
+   * *household* is still the name of the thing you create, and it survives in the footer CTA's own
+   * sentence, directly under the changed button. Nothing else on the page would catch that.
+   */
+  it('renames the button without renaming the household', () => {
+    renderPage()
+
+    expect(screen.queryByText(/start a household/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/one of you makes the household/i)).toBeInTheDocument()
+  })
+
+  /**
+   * The rewritten sentences, each pinned **both ways**. Three of these are partial rewrites that
+   * leave most of the old words in place, so a present-only assertion would pass against the
+   * version they replaced.
+   */
+  it('carries the [90] copy, and not what it replaced', () => {
+    renderPage()
+
+    const gone = [
+      /the other of you signs off/i,
+      /most points when the day ends takes a loot box/i,
+      /rewards you two invented/i,
+      /every flat has the same/i,
+      /points in the bank/i,
+      /most points when the day ends wins/i,
+    ]
+    for (const old of gone) expect(screen.queryByText(old)).not.toBeInTheDocument()
+
+    const now = [
+      /points land only when your partner signs off/i,
+      /whoever has more points when the day ends takes the box/i,
+      /rewards you two made up/i,
+      /every home has the same three arguments/i,
+      /points on the board/i,
+      /whoever has more when the day ends wins/i,
+    ]
+    for (const line of now) expect(screen.getByText(line)).toBeInTheDocument()
+
+    // Explicitly untouched by the brief.
+    expect(screen.getByText(/one box in ten hides a bonus reward/i)).toBeInTheDocument()
+    expect(screen.getByText('Head-to-head')).toBeInTheDocument()
+  })
+
+  /**
+   * The economy band is three steps in a fixed order — Points, the win, Coins. Order *is* the
+   * change: two cards side by side implied the currencies convert, and the middle step is the whole
+   * correction, so document order is what gets asserted rather than mere presence.
+   */
+  it('puts the win between Points and Coins, with drawn arrows', () => {
+    renderPage()
+
+    const band = screen.getByRole('heading', { name: /points keep score/i }).closest('section')!
+    const row = band.querySelector('h3')!.closest('div')!.parentElement!
+
+    // Each grid cell by its own heading — the arrows are bare `<svg>` and have none.
+    const labels = [...row.children].map(
+      (el) => (el.querySelector('h3') ?? el.querySelector('p'))?.textContent?.trim() ?? '',
+    )
+    expect(labels).toEqual(['Points', '', 'Win the day', '', 'Coins'])
+
+    // Drawn, not typed. Text arrows are what this replaces.
+    expect(row.querySelectorAll('svg[aria-hidden="true"]').length).toBeGreaterThanOrEqual(4)
+    expect(band.textContent).not.toMatch(/[→⟶➔➜▶►]|-&gt;|->/)
   })
 
   /** The two differentiators each hold a band — they are why this page says anything at all. */

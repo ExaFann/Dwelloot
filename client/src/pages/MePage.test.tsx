@@ -293,6 +293,22 @@ describe('household settings', () => {
   })
 
   /**
+   * [90] — the label above the two people is "You two", not "Members".
+   *
+   * Nothing pinned the old string, which is how a user-facing word gets changed by accident. The
+   * assertion is deliberately on the **label only**: `HouseholdMember` and `data.members` are
+   * untouched, and a test that reached for those would be pinning the rename this task did not do.
+   */
+  it('calls the two people "You two"', async () => {
+    stub()
+    renderPage()
+
+    const household = (await screen.findByText('Duel House')).closest('section')!
+    expect(within(household).getByText('You two')).toBeInTheDocument()
+    expect(within(household).queryByText('Members')).not.toBeInTheDocument()
+  })
+
+  /**
    * [79]. A household holds exactly two people, so once the second has joined the code invites
    * nobody — it was the biggest thing on the card and the least useful. Hidden behind a disclosure
    * rather than deleted, because a partner leaving makes it live again.

@@ -383,6 +383,31 @@ export function BurstIcon({ className }: IconProps) {
 }
 
 /**
+ * A chevron that means **"and then"** — the connector between the landing page's economy steps
+ * ([90]).
+ *
+ * **Not in the sprite, and exempt from the fidelity test by construction**, the same standing as
+ * `BoltIcon` and `BurstIcon`: the icon set was drawn for the product's own surfaces and has no
+ * sequence glyph, because nothing inside the app draws a flow. Recorded here rather than left for
+ * someone to discover as a gap in `icons.test.tsx`.
+ *
+ * Cut to the set's rules — one path, `currentColor`, no stroke, no curves, mitred ends parallel to
+ * the opposite arm. A solid triangle was the other candidate and was rejected: at connector size it
+ * reads as a play button, which is a different verb.
+ *
+ * **It only points right.** The stacked layout rotates it rather than swapping in a downward twin —
+ * two drawings of one idea is exactly the duplication [84] exists to stop, and the copy that drifts
+ * is always the one nobody looks at.
+ */
+export function ArrowIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M9 3 18 12 9 21 5 17 10 12 5 7Z" />
+    </Svg>
+  )
+}
+
+/**
  * Redeemed — two arrows passing in opposite directions, the universal "exchange" shape ([81]).
  *
  * **Owner-addition, not in the sprite**, exempt from fidelity by construction like `BoltIcon` and

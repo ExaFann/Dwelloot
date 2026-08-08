@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import {
   ApproveIcon,
+  ArrowIcon,
   BadgeMark,
   ChestMark,
   CoinMark,
@@ -86,7 +87,7 @@ export function LandingPage() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to="/register" className={CTA_PRIMARY}>
-                Start a household
+                Start a duel
               </Link>
               <Link to="/login" className={CTA_NEUTRAL}>
                 Log in
@@ -111,7 +112,7 @@ export function LandingPage() {
           <QuoteChip tilt="-rotate-1">&ldquo;It&rsquo;s your turn.&rdquo; &ldquo;No, yours.&rdquo;</QuoteChip>
         </div>
         <p className="mt-6 max-w-lg text-lg font-semibold">
-          Every flat has the same three arguments. Dwelloot swaps them for a scoreboard.
+          Every home has the same three arguments. Dwelloot swaps them for a scoreboard.
         </p>
       </Band>
 
@@ -127,13 +128,13 @@ export function LandingPage() {
             Tap the chore you actually did. No forms, no timers.
           </LoopTile>
           <LoopTile n={2} icon={<ApproveIcon className="size-7 text-success" />} title="Partner approves">
-            Points land only when the other of you signs off.
+            Points land only when your partner signs off.
           </LoopTile>
           <LoopTile n={3} icon={<ChestMark className="size-8" />} title="Win the day">
-            Most Points when the day ends takes a loot box.
+            Whoever has more Points when the day ends takes the box.
           </LoopTile>
           <LoopTile n={4} icon={<CoinMark className="size-7" />} title="Spend the loot">
-            Boxes hold Coins. Coins buy rewards you two invented.
+            Boxes hold Coins. Coins buy rewards you two made up.
           </LoopTile>
         </ol>
       </Band>
@@ -151,7 +152,7 @@ export function LandingPage() {
             <h2 className="text-3xl">Tap it. They okay it. It counts.</h2>
             <p className="mt-3 text-lg text-muted">
               Every chore you log pings your partner. Once they approve, you&rsquo;re good to go —
-              Points in the bank.
+              Points on the board.
             </p>
           </div>
           {/* A mock of the real approval row — same classes, fixture words, nothing clickable. */}
@@ -181,21 +182,38 @@ export function LandingPage() {
       <Band>
         {/* [83]: the loop in one breath each — the first version over-explained the rules. */}
         <h2 className="text-3xl">Points keep score. Coins buy rewards.</h2>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-base border-[3px] border-ink bg-card p-6">
-            <PointsMark className="size-10" />
-            <h3 className="mt-3 font-display text-xl font-bold">Points</h3>
-            <p className="mt-1 text-muted">
-              Do chores, earn Points. Most Points when the day ends wins.
+        {/*
+         * Three steps, not two cards — [90], owner's call, and the layout was quietly wrong before.
+         *
+         * Points and Coins sitting side by side as equal halves of one grid reads as *two forms of
+         * the same currency*: the arrangement implies they convert. They do not. Points are never
+         * spendable, and Coins only ever come out of a box you won by being ahead — so the win is
+         * not a detail between them, it is the only bridge there is. Drawing it is the fix; adding
+         * a sentence saying "they don't convert" would be the page explaining its own diagram.
+         *
+         * The middle step is deliberately **not** a card. Three cards would say "here are three
+         * things"; this is one thing that happens *between* two things, and the arrows only read as
+         * flow while what they connect looks different from what they pass through.
+         */}
+        <div className="mt-6 grid items-center gap-4 lg:grid-cols-[1fr_auto_auto_auto_1fr]">
+          <EconomyCard mark={<PointsMark className="size-10" />} title="Points">
+            Do chores, earn Points. Whoever has more when the day ends wins.
+          </EconomyCard>
+
+          <FlowArrow />
+
+          <div className="flex flex-col items-center gap-2 text-center lg:px-2">
+            <ChestMark className="size-14" />
+            <p className="font-display text-sm font-bold uppercase tracking-[0.06em]">
+              Win the day
             </p>
           </div>
-          <div className="rounded-base border-[3px] border-ink bg-card p-6">
-            <CoinMark className="size-10" />
-            <h3 className="mt-3 font-display text-xl font-bold">Coins</h3>
-            <p className="mt-1 text-muted">
-              Winning opens a loot box of Coins — spend them on whatever rewards you two set up.
-            </p>
-          </div>
+
+          <FlowArrow />
+
+          <EconomyCard mark={<CoinMark className="size-10" />} title="Coins">
+            Winning opens a loot box of Coins — spend them on whatever rewards you two set up.
+          </EconomyCard>
         </div>
       </Band>
 
@@ -239,7 +257,7 @@ export function LandingPage() {
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link to="/register" className={CTA_PRIMARY}>
-              Start a household
+              Start a duel
             </Link>
             <Link to="/login" className={CTA_NEUTRAL}>
               Log in
@@ -469,6 +487,36 @@ function LoopTile({
       <p className="mt-1 text-sm text-muted">{children}</p>
     </li>
   )
+}
+
+/** One end of the economy row. Extracted so the two cards cannot drift from each other ([84]). */
+function EconomyCard({
+  mark,
+  title,
+  children,
+}: {
+  mark: React.ReactNode
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="rounded-base border-[3px] border-ink bg-card p-6">
+      {mark}
+      <h3 className="mt-3 font-display text-xl font-bold">{title}</h3>
+      <p className="mt-1 text-muted">{children}</p>
+    </div>
+  )
+}
+
+/**
+ * The connector between the economy steps.
+ *
+ * One drawing, rotated — pointing down while the row is stacked and right once it is a row. The
+ * alternative, a second downward glyph, is two drawings of one idea and the copy that goes stale is
+ * always the one nobody looks at ([84]).
+ */
+function FlowArrow() {
+  return <ArrowIcon className="mx-auto size-7 rotate-90 text-muted lg:rotate-0" />
 }
 
 function InsideCard({ title, children }: { title: string; children: React.ReactNode }) {
