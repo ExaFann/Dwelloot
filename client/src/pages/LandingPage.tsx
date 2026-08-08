@@ -299,19 +299,20 @@ function HeroDuelCard() {
         </div>
 
         {/*
-         * The ladder, thin to thick — the same shape [83]/[84] gave the real dashboard, so the
-         * poster shows the product rather than its previous version.
+         * The ladder — day, week, month, thin to thick, the same shape [86] settled on for the
+         * real dashboard. The poster tracks the product; that is the whole point of it being
+         * assembled from the app's own parts ([84]).
          */}
         <div className="mt-5 flex flex-col gap-4">
-          <MockPeriod label="This month" score="310 — 288" mine={53} bar="h-4 border-2" bolt="size-4" />
+          <MockPeriod label="Today" score="25 — 15" mine={58} bar="h-4 border-2" bolt="size-4" />
           <MockPeriod label="This week" score="100 — 115" mine={44} bar="h-6 border-2" bolt="size-5" />
           <MockPeriod
-            label="Today"
-            score="25 — 15"
-            mine={58}
+            label="This month"
+            score="310 — 288"
+            mine={53}
             bar="h-10 border-[3px]"
             bolt="size-7"
-            verdict="Alex is ahead by 10."
+            verdict="Alex is ahead by 22."
           />
         </div>
       </div>

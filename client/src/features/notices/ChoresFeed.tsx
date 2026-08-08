@@ -9,6 +9,7 @@ import { useMeQuery } from '../auth/authApi'
 import { useGetHouseholdQuery } from '../household/householdApi'
 import { toApiError } from '../../api/apiError'
 import { SkeletonList } from '../../components/ui/Skeleton'
+import { ScrollArea } from '../../components/ui/ScrollArea'
 import { SECTION_BODY, SECTION_SHELL } from './sectionLayout'
 import { liveQueryOptions } from '../../app/liveSync'
 
@@ -85,7 +86,7 @@ export function ChoresFeed() {
         Chores feed
       </h2>
 
-      <div className={SECTION_BODY}>
+      <ScrollArea className={SECTION_BODY}>
         {error ? (
           <p role="alert" className="text-sm text-muted">
             {toApiError(error).message}
@@ -130,7 +131,7 @@ export function ChoresFeed() {
             })}
           </ul>
         )}
-      </div>
+      </ScrollArea>
     </section>
   )
 }

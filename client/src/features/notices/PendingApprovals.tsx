@@ -13,6 +13,7 @@ import { useTransientMessage } from '../../app/useTransientMessage'
 import { Button } from '../../components/ui/Button'
 import { TextInput } from '../../components/ui/TextInput'
 import { SkeletonList } from '../../components/ui/Skeleton'
+import { ScrollArea } from '../../components/ui/ScrollArea'
 import { SECTION_BODY, SECTION_SHELL } from './sectionLayout'
 import { liveQueryOptions } from '../../app/liveSync'
 
@@ -138,7 +139,7 @@ export function PendingApprovals() {
         </span>
       </div>
 
-      <div className={SECTION_BODY}>
+      <ScrollArea className={SECTION_BODY}>
         {isError ? (
           <p role="alert" className="text-muted">
             {toApiError(error).message}
@@ -258,7 +259,7 @@ export function PendingApprovals() {
             )}
           </ul>
         )}
-      </div>
+      </ScrollArea>
 
       {/*
        * Everything below the scroll region is pinned, so the action bar cannot be scrolled out of

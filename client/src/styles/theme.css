@@ -837,19 +837,46 @@
  */
 
 /*
- * Fades the top and bottom edges of a scroll box, so a cut-off row reads as "there is more" rather
- * than as a crop. `mask-image` affects painting only — nothing moves, nothing is clipped from the
+ * Fades the edge a scroll box continues past, so a cut-off row reads as "there is more" rather than
+ * as a crop. `mask-image` affects painting only — nothing moves, nothing is clipped from the
  * accessibility tree, and the element still scrolls normally.
  *
- * The fade is 16px and symmetric. It stays on at both ends deliberately: making it conditional on
- * scroll position needs a listener per box for a 16px difference nobody would notice.
+ * **Each edge is independent, and off by default** — [85]. [84] faded both ends unconditionally,
+ * with a comment claiming a conditional version needed "a listener per box for a 16px difference
+ * nobody would notice". The owner noticed within the day: at rest the top fade lands on the first
+ * row, so the thing most likely to be read is the thing washed out. `useScrollFade` sets the two
+ * lengths from scroll position, so an edge with nothing behind it fades by 0px — a no-op gradient
+ * stop rather than a special case.
  */
 @utility scroll-fade-y {
+  --fade-top: 0px;
+  --fade-bottom: 0px;
   mask-image: linear-gradient(
     to bottom,
     transparent 0,
-    #000 16px,
-    #000 calc(100% - 16px),
+    #000 var(--fade-top),
+    #000 calc(100% - var(--fade-bottom)),
     transparent 100%
   );
+}
+
+/*
+ * Hides a scroll box's own scrollbar — [85], owner's call.
+ *
+ * **Only ever on inner boxes, never the page.** These containers already say where you are by
+ * other means: vertical ones fade at the edge they continue past, and the one horizontal one has
+ * `ScrollDots`. What was left was a chunky platform scrollbar inside a 112px card, which is the
+ * loudest thing in it. The page's own scrollbar is untouched — that one is the document's, and
+ * hiding it would take away the only indicator the window has.
+ *
+ * Hiding, not styling: [83] tried to restyle the widget and the platform ignored everything but
+ * the colour. Width is the one property both engines honour.
+ */
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 }

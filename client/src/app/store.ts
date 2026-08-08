@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
 import { baseApi } from '../api/baseApi'
+import { sessionCacheReset } from './sessionCacheReset'
 import { authReducer } from '../features/auth/authSlice'
 import { themeReducer } from '../features/theme/themeSlice'
 
@@ -18,7 +19,11 @@ export function makeStore() {
       auth: authReducer,
       theme: themeReducer,
     },
-    middleware: (getDefault) => getDefault().concat(baseApi.middleware),
+    /*
+     * `sessionCacheReset` **before** `baseApi.middleware`: it dispatches `resetApiState`, which the
+     * api middleware has to see in order to tear down subscriptions and abort in-flight requests.
+     */
+    middleware: (getDefault) => getDefault().concat(sessionCacheReset, baseApi.middleware),
   })
 }
 

@@ -7,6 +7,7 @@ import { useHouseholdPrizesQuery } from '../competition/competitionApi'
 import { periodLabel } from '../competition/standing'
 import { toApiError } from '../../api/apiError'
 import { SkeletonList } from '../../components/ui/Skeleton'
+import { ScrollArea } from '../../components/ui/ScrollArea'
 import { SECTION_BODY, SECTION_SHELL } from './sectionLayout'
 import { CoinMark, PrizeBoxMark, RedeemMark } from '../../components/ui/icons'
 import { liveQueryOptions } from '../../app/liveSync'
@@ -129,7 +130,7 @@ export function PrizeRedeemFeed() {
         Prizes &amp; rewards
       </h2>
 
-      <div className={SECTION_BODY}>
+      <ScrollArea className={SECTION_BODY}>
         {error ? (
           <p role="alert" className="text-muted">
             {toApiError(error).message}
@@ -226,7 +227,7 @@ export function PrizeRedeemFeed() {
             ))}
           </ul>
         )}
-      </div>
+      </ScrollArea>
     </section>
   )
 }

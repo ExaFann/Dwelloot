@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { RejectIcon } from '../../components/ui/icons'
 import { STATUS_LABEL } from './logDisplay'
 import { ChoreCredit, ChoreStatusDot, ChoreTitle } from './choreStatusDisplay'
+import { useScrollFade } from '../../app/useScrollFade'
 import type { ActivityLogStatus } from './activityApi'
 
 /**
@@ -66,6 +67,8 @@ export function RecentChoresColumn({
    * and a keyboard user restarts the page from the top.
    */
   const refocusRef = useRef<number | null>(null)
+  /** Fades only the edge the list continues past — [85]. */
+  const { attach: attachList, fadeStyle } = useScrollFade()
 
   const cancelConfirm = (id: number) => {
     refocusRef.current = id
@@ -78,8 +81,15 @@ export function RecentChoresColumn({
 
   return (
     <ul
-      // `scroll-fade-y` — [84]: the cut-off row now fades rather than being sliced flat.
-      className="scroll-fade-y mt-3 flex max-h-28 flex-col gap-1.5 overflow-y-auto"
+      ref={attachList}
+      style={fadeStyle}
+      /*
+       * [85]: no scrollbar, and the fade only on an edge that continues — a chunky platform
+       * scrollbar inside a 112px box was the loudest thing in it, and [84]'s unconditional top
+       * fade was washing out the first row at rest. Not `ScrollArea`, because this is a `<ul>`:
+       * the list semantics have to stay on the element that scrolls.
+       */
+      className="scroll-fade-y scrollbar-none mt-3 flex max-h-28 flex-col gap-1.5 overflow-y-auto"
       // The card owns the score; this is supporting detail, so it is not a landmark.
       aria-label="Recent chores"
       /*

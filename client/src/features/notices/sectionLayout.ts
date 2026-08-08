@@ -43,7 +43,14 @@ export const SECTION_SHELL =
  * The scrolling region between them. `min-h-0` is the class that makes the overflow real; `flex-1`
  * is what makes it take the space the header and footer do not.
  */
-export const SECTION_BODY = 'scroll-fade-y mt-3 min-h-0 flex-1 overflow-y-auto'
+/**
+ * The scrolling region between them. `min-h-0` is the class that makes the overflow real; `flex-1`
+ * is what makes it take the space the header and footer do not.
+ *
+ * **Spread onto a `<ScrollArea>`, not a plain `<div>`** since [85] — that component owns the
+ * overflow, the hidden scrollbar and the edge fade, so those three are not retyped four times.
+ */
+export const SECTION_BODY = 'mt-3 min-h-0 flex-1'
 
 /**
  * The height of an `lg` grid row.

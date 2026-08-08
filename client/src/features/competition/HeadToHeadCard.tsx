@@ -333,11 +333,11 @@ export function HeadToHeadCard() {
            * to get wrong); a wide one shows all three at once, which is where the ladder earns its
            * keep.
            *
-           * `lg:flex-col-reverse` is doing the ordering work: **DOM order stays Today → Week →
-           * Month**, so the phone swipes into today first and a screen reader hears it first,
-           * while the desktop column renders bottom-up — thin month, medium week, thick today —
-           * the thin-to-thick reading the owner asked for. One container, two readings, and no
-           * duplicated markup to fall out of step.
+           * Order is Today → Week → Month everywhere ([86]): the phone swipes into today first,
+           * a screen reader hears it first, and the desktop column reads day, week, month down
+           * the page. [84] reversed the desktop column to get thin-to-thick out of the old
+           * weights; inverting the weights instead gets the same progression *and* keeps the
+           * natural order, so the reversal is gone.
            *
            * It also answers a question the old grid never did: all three periods really are
            * settled and paid ([23], [58a]) — a monthly bar you can watch fill is what says a
@@ -345,7 +345,8 @@ export function HeadToHeadCard() {
            */}
           <div
             ref={setPeriodsEl}
-            className="mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto lg:flex-col-reverse lg:gap-5 lg:overflow-visible"
+            // `scrollbar-none` — [85]: `ScrollDots` below is what says where you are.
+            className="scrollbar-none mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto lg:flex-col lg:gap-5 lg:overflow-visible"
           >
             {periods.map(({ key, data }) => (
               <PeriodPanel
@@ -366,31 +367,37 @@ export function HeadToHeadCard() {
 }
 
 /**
- * Each rung's visual weight — [83]. The point of the table is that the three are *deliberately
- * unequal*: equal bars stacked read as a list, and the day is the duel you are actually in right
- * now. Border thickness drops with the bar so the month reads as a slim gauge, not a thin button.
+ * Each rung's visual weight. The three are *deliberately unequal* — equal bars stacked read as a
+ * list, not a design.
+ *
+ * **The scale runs with the timespan: the day is the thinnest, the month the thickest** ([86],
+ * correcting [83]/[84]). It was the other way round on the reasoning that today is the duel you
+ * are standing in; the owner's call is the one the geometry already suggested — a longer period
+ * holds more, so it reads as the heavier bar, and scanning day → week → month goes thin to thick.
+ *
+ * Border thickness rides along, so the day is a slim gauge rather than a thin button.
  */
 const PERIOD_WEIGHT: Record<
   PeriodType,
   { bar: string; bolt: string; score: string; verdict: string }
 > = {
   Daily: {
-    bar: 'h-10 border-[3px]',
-    bolt: 'size-7',
-    score: 'text-2xl',
-    verdict: 'text-sm font-bold',
+    bar: 'h-4 border-2',
+    bolt: 'size-4',
+    score: 'text-base',
+    verdict: 'text-xs font-semibold text-muted',
   },
   Weekly: {
     bar: 'h-6 border-2',
     bolt: 'size-5',
     score: 'text-lg',
-    verdict: 'text-xs font-semibold text-muted',
+    verdict: 'text-sm font-semibold',
   },
   Monthly: {
-    bar: 'h-4 border-2',
-    bolt: 'size-4',
-    score: 'text-base',
-    verdict: 'text-xs font-semibold text-muted',
+    bar: 'h-10 border-[3px]',
+    bolt: 'size-7',
+    score: 'text-2xl',
+    verdict: 'text-sm font-bold',
   },
 }
 

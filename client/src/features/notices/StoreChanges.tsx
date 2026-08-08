@@ -12,6 +12,7 @@ import { liveQueryOptions } from '../../app/liveSync'
 import { Button } from '../../components/ui/Button'
 import { TextInput } from '../../components/ui/TextInput'
 import { SkeletonList } from '../../components/ui/Skeleton'
+import { ScrollArea } from '../../components/ui/ScrollArea'
 import { SECTION_BODY, SECTION_SHELL } from './sectionLayout'
 import { describeChange } from './storeChangeCopy'
 
@@ -96,7 +97,7 @@ export function StoreChanges() {
         )}
       </div>
 
-      <div className={SECTION_BODY}>
+      <ScrollArea className={SECTION_BODY}>
         {isError ? (
           <p role="alert" className="text-muted">
             {toApiError(error).message}
@@ -182,7 +183,7 @@ export function StoreChanges() {
             )}
           </ul>
         )}
-      </div>
+      </ScrollArea>
 
       {failure && (
         <p role="alert" className="mt-3 shrink-0 font-display text-sm font-bold text-danger">
