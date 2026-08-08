@@ -201,10 +201,29 @@
   --text-secondary: #b8aed6;
   --text-placeholder: #7d7397;
 
-  /* Borders on bright fills stay black; surfaces and shadows invert. */
+  /*
+   * Borders on bright fills stay black; surfaces and shadows invert.
+   *
+   * **Both inverted inks are muted, and the reason is that a contrast ratio is a floor, not a
+   * target.** They were the page's own near-white, `#F0EBFF`, which measured 8.59:1 against the
+   * lightest dark surface and 15.67:1 against the page — three to five times the 3:1 a border needs.
+   * The cost is paid on every card at once: a 2px outline on every surface plus a hard offset slab
+   * under everything pressable, all of it at near-maximum contrast, which is a field of glare rather
+   * than a set of edges. Meeting the requirement several times over is not a stronger result; past
+   * the floor the extra contrast buys nothing and costs legibility of the whole screen.
+   *
+   * Surface ink is now a lavender that still clears every dark surface — the binding constraints are
+   * the two person tints, `--surface-self` at 3.92:1 and `--surface-opponent` at 3.92:1, not the page.
+   * Shadow ink goes further because it answers to the page alone (4.00:1): a shadow is one element's
+   * depth cue, not a container edge, so it does not need to survive being drawn on a tint.
+   *
+   * A shadow *darker* than the page is impossible here rather than merely unconventional: the page
+   * is dark enough that no colour is 3:1 below it. Lighter-than-the-page is forced; how much lighter
+   * is the part that was chosen badly.
+   */
   --ink-accent: #000000;
-  --ink-surface: #f0ebff;
-  --ink-shadow: #f0ebff;
+  --ink-surface: #a79ad6;
+  --ink-shadow: #7a6cb0;
 
   /* Deepened, not lightened — see the light block's note. */
   --mark-points: #2B9DC7;
