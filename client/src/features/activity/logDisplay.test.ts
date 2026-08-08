@@ -1,56 +1,31 @@
 import { describe, expect, it } from 'vitest'
-import { choresForPeriod, describeLogPoints, relativeTime } from './logDisplay'
+import { STATUS_LABEL, choresForPeriod, relativeTime } from './logDisplay'
 
-describe('describeLogPoints', () => {
-  /**
-   * The finding this function exists for: `pointsAwarded` is what the chore was **worth**, not what
-   * was earned. It is populated on Pending rows (not credited yet) and Rejected rows (never will
-   * be) — measured in [46], a rejected "Clean the kitchen bench" still reports 5.
-   */
-  it('credits an approved log', () => {
-    expect(describeLogPoints('Approved', 10)).toEqual({
-      text: '+10 pts',
-      tone: 'approved',
-      label: 'Approved',
-    })
-  })
-
-  it('makes a pending log conditional, not a credit', () => {
-    const display = describeLogPoints('Pending', 25)
-    expect(display.tone).toBe('pending')
-    expect(display.text).toContain('25')
-    // The number is present but qualified — "+25 pts" would claim a balance the user does not have.
-    expect(display.text).not.toBe('+25 pts')
-    expect(display.text).toMatch(/if approved/i)
-  })
-
-  it('shows no figure at all for a rejected log', () => {
-    const display = describeLogPoints('Rejected', 5)
-    expect(display.tone).toBe('rejected')
-    // Any number here reads as a credit for points that will never be awarded.
-    expect(display.text).not.toContain('5')
-    expect(display.text).toMatch(/no points/i)
+/**
+ * `describeLogPoints`'s tests lived here and pinned `+10 pts` / `25 pts if approved` / `No points`.
+ * That notation was retired by [83] and its last consumer removed by [84]; an audit found the
+ * function and these assertions still standing — a tested definition of something the app no
+ * longer renders, which is the exact duplication [84] set out to end. The **rule** survives, in
+ * `ChoreCredit`, tested against the surfaces that show it.
+ *
+ * What is left here is the word, and it is worth its own test for one reason: it is spoken aloud.
+ */
+describe('STATUS_LABEL', () => {
+  it('names every status, and never leaks the API spelling', () => {
+    // "Pending" is the server's word; "Waiting" is the app's. The mapping is the whole point.
+    expect(STATUS_LABEL.Pending).toBe('Waiting')
+    expect(STATUS_LABEL.Approved).toBe('Approved')
+    expect(STATUS_LABEL.Rejected).toBe('Rejected')
   })
 
   /**
-   * Both directions: a formatter that always returned the "pending" wording would pass the pending
-   * case on its own. The three must be mutually distinguishable.
+   * Both directions: a map that returned one label for everything would pass a spot check. These
+   * words are the *only* status a screen reader gets — the dot is `aria-hidden` and a
+   * strikethrough is silent — so two statuses sharing a label would be two states it cannot tell
+   * apart.
    */
-  it('renders the three statuses differently from one another', () => {
-    const texts = (['Approved', 'Pending', 'Rejected'] as const).map(
-      (status) => describeLogPoints(status, 10).text,
-    )
-    expect(new Set(texts).size).toBe(3)
-  })
-
-  it('never prefixes a plus except when the points were actually awarded', () => {
-    expect(describeLogPoints('Pending', 10).text.startsWith('+')).toBe(false)
-    expect(describeLogPoints('Rejected', 10).text.startsWith('+')).toBe(false)
-    expect(describeLogPoints('Approved', 10).text.startsWith('+')).toBe(true)
-  })
-
-  it('handles a zero-point chore without a stray sign', () => {
-    expect(describeLogPoints('Approved', 0).text).toBe('+0 pts')
+  it('gives the three statuses three different words', () => {
+    expect(new Set(Object.values(STATUS_LABEL)).size).toBe(3)
   })
 })
 

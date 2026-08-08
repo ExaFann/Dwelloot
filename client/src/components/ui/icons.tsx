@@ -418,21 +418,28 @@ export function RedeemMark({ className }: IconProps) {
 }
 
 /**
- * A won prize's box — the `ui-lootbox` drawing at mark strength ([82]).
+ * A won prize's box — the `ui-lootbox` geometry wearing `ChestMark`'s colours ([83]).
  *
- * Same paths as `LootboxIcon`, different contract: the feed's outcome column is mark territory
- * (fixed fills + ink stroke, like `CoinMark` beside it), while the glyph stays `currentColor` for
- * anywhere that needs an inheriting icon. Orange because a bonus reward is loot, and orange is the
- * loot-adjacent hue the reveal's chest already burns.
+ * [82] filled all three parts orange and the owner's eye caught what the plain swatch missed: one
+ * hue makes it a stamp, not a chest. It now matches the chest the reveal actually opens — blue
+ * lid, purple body, yellow strap — so the feed's "won from a loot box" mark is a thumbnail of the
+ * thing that happened. Literal colours like the chest and the badges (artwork does not re-tint in
+ * dark); the ink stroke is what carries it across schemes, same as every mark.
  */
 export function PrizeBoxMark({ className }: IconProps) {
   return (
     <Svg className={className}>
-      {(['M2 4h20v5H2z', 'M3 10h18v11H3z', 'M10 4h4v17h-4z'] as const).map((d) => (
+      {(
+        [
+          ['M2 4h20v5H2z', '#4CC9F0'],
+          ['M3 10h18v11H3z', '#7C4DFF'],
+          ['M10 4h4v17h-4z', '#FFE14A'],
+        ] as const
+      ).map(([d, fill]) => (
         <path
           key={d}
           d={d}
-          fill="var(--mark-flame)"
+          fill={fill}
           stroke="var(--ink-surface)"
           strokeWidth="1.4"
           strokeLinejoin="miter"

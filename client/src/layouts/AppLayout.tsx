@@ -27,8 +27,12 @@ export function AppLayout() {
        * `max-w-2xl` is the reviewed phone-and-tablet column and stays the base. It widens only at
        * `lg`, which is where the screens below become two-column — below that a wider column would
        * just be longer lines of the same single-column content.
+       *
+       * `6xl`/`7xl` at the top end since [83]: the owner's desktop showed the app as a thin strip
+       * in the middle of the screen. The cards inside are already two-column at `lg`, so the width
+       * goes to them rather than to longer text lines.
        */}
-      <main id="main" className="mx-auto max-w-2xl px-4 pb-24 pt-6 md:pb-10 lg:max-w-5xl lg:px-6">
+      <main id="main" className="mx-auto max-w-2xl px-4 pb-24 pt-6 md:pb-10 lg:max-w-6xl lg:px-8 xl:max-w-7xl">
         {/*
          * [81] D — a 160ms fade-and-rise on each route change.
          *

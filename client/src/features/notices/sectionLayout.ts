@@ -43,11 +43,14 @@ export const SECTION_SHELL =
  * The scrolling region between them. `min-h-0` is the class that makes the overflow real; `flex-1`
  * is what makes it take the space the header and footer do not.
  */
-export const SECTION_BODY = 'mt-3 min-h-0 flex-1 overflow-y-auto'
+export const SECTION_BODY = 'scroll-fade-y mt-3 min-h-0 flex-1 overflow-y-auto'
 
 /**
- * The height of the `lg` grid row. Two stacked feeds plus the `gap-6` between them have to add up
- * to the same total as the single tall card beside them, which they do by construction here —
- * both columns are `h-full` inside a row of this height.
+ * The height of an `lg` grid row.
+ *
+ * `22rem` since [84], down from `34rem`. The old figure existed to make one tall card equal two
+ * stacked ones plus their gap; the layout is now **two rows of two**, so each row only has to be a
+ * comfortable card — and 34rem of card was most of a laptop screen for a queue that is usually two
+ * items long.
  */
-export const SECTION_ROW_HEIGHT = 'lg:h-[34rem]'
+export const SECTION_ROW_HEIGHT = 'lg:h-[22rem]'

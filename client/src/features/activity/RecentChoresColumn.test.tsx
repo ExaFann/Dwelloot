@@ -36,11 +36,13 @@ describe('the empty state', () => {
 
 describe('how points are rendered', () => {
   /**
-   * The rule from `describeLogPoints`, asserted here because this is where it reaches a screen.
-   * `pointsAwarded` is populated on all three statuses — measured in [46], a rejected chore still
-   * reports 5 — so the number alone is a lie on two of them.
+   * [83] replaced the `+N` / `(N)` / `—` notation: three states, three bits of typography to
+   * decode. Now the number appears **only** when it was actually earned — with the Points mark as
+   * its unit — a pending chore carries no figure at all, and a rejected one is struck through.
+   * `describeLogPoints`'s rule ("the number alone is a lie on two statuses") survives, enforced by
+   * omission instead of punctuation.
    */
-  it('credits an approved chore', () => {
+  it('credits an approved chore: the plain number and the mark', () => {
     render(
       <RecentChoresColumn
         chores={[chore({ status: 'Approved', pointsAwarded: 15 })]}
@@ -48,10 +50,14 @@ describe('how points are rendered', () => {
         emptyLabel="—"
       />,
     )
-    expect(within(list()).getByText('+15')).toBeInTheDocument()
+    const credit = within(list()).getByText('15')
+    expect(credit).toBeInTheDocument()
+    // The mark is the unit; the old `+` prefix is gone.
+    expect(credit.parentElement!.querySelector('svg')).not.toBeNull()
+    expect(within(list()).queryByText('+15')).not.toBeInTheDocument()
   })
 
-  it('brackets a pending chore rather than crediting it', () => {
+  it('shows no figure at all on a pending chore', () => {
     render(
       <RecentChoresColumn
         chores={[chore({ status: 'Pending', pointsAwarded: 15 })]}
@@ -60,23 +66,38 @@ describe('how points are rendered', () => {
       />,
     )
 
-    expect(within(list()).getByText('(15)')).toBeInTheDocument()
-    // Both directions: the credited form must be absent, not merely different.
-    expect(within(list()).queryByText('+15')).not.toBeInTheDocument()
+    // Neither the earned form nor any bracketed residue — a number here reads as already earned.
+    expect(within(list()).queryByText('15')).not.toBeInTheDocument()
+    expect(within(list()).queryByText('(15)')).not.toBeInTheDocument()
   })
 
-  it('shows no number at all for a rejected chore', () => {
+  it('strikes a rejected chore through, with no figure', () => {
     render(
       <RecentChoresColumn
-        chores={[chore({ status: 'Rejected', pointsAwarded: 15 })]}
+        chores={[chore({ status: 'Rejected', pointsAwarded: 15, activityTitle: 'Bins' })]}
         align="left"
         emptyLabel="—"
       />,
     )
 
-    expect(within(list()).getByText('—')).toBeInTheDocument()
-    expect(within(list()).queryByText('+15')).not.toBeInTheDocument()
-    expect(within(list()).queryByText('(15)')).not.toBeInTheDocument()
+    expect(within(list()).getByText('Bins').className).toContain('line-through')
+    expect(within(list()).queryByText('15')).not.toBeInTheDocument()
+  })
+
+  /** And only the rejected row is struck — a strike on everything would say nothing counted. */
+  it('leaves approved and pending titles unstruck', () => {
+    render(
+      <RecentChoresColumn
+        chores={[
+          chore({ id: 1, status: 'Approved', activityTitle: 'Vacuum' }),
+          chore({ id: 2, status: 'Pending', activityTitle: 'Dishes' }),
+        ]}
+        align="left"
+        emptyLabel="—"
+      />,
+    )
+    expect(within(list()).getByText('Vacuum').className).not.toContain('line-through')
+    expect(within(list()).getByText('Dishes').className).not.toContain('line-through')
   })
 
   /** The status reaches assistive tech as a word, since the visible marker is a coloured square. */
@@ -274,13 +295,19 @@ describe('removing a pending chore', () => {
    * the tab order and the accessibility tree for keyboard and screen-reader users. Whether hover
    * actually reveals it is verified in the browser.
    */
-  it('hides the trigger behind hover from sm up, without removing it', () => {
+  it('hides the trigger behind hover at every width, without removing it', () => {
     render(<RecentChoresColumn chores={chores} align="left" emptyLabel="—" onRemove={() => {}} />)
 
     const trigger = screen.getByRole('button', { name: /remove dishes/i })
-    expect(trigger.className).toContain('sm:opacity-0')
-    expect(trigger.className).toContain('sm:group-hover:opacity-100')
-    // Never `hidden`: below sm there is no hover, so the trigger has to stay plainly visible.
+    expect(trigger.className).toContain('opacity-0')
+    expect(trigger.className).toContain('group-hover:opacity-100')
+    /*
+     * **Unconditional, not `sm:`** — [84]. It used to rest visible below 640px on the theory that
+     * a phone cannot hover, which put a permanent destructive glyph on every touch row: the exact
+     * mis-tap target the confirm step exists to remove. Touch reaches it by tapping the row.
+     */
+    expect(trigger.className).not.toContain('sm:opacity-0')
+    // Never `hidden`: that would take it out of the tab order and the accessibility tree too.
     expect(trigger.className).not.toMatch(/\bhidden\b/)
   })
 
@@ -297,7 +324,7 @@ describe('removing a pending chore', () => {
     render(<RecentChoresColumn chores={chores} align="left" emptyLabel="—" onRemove={() => {}} />)
 
     const trigger = screen.getByRole('button', { name: /remove dishes/i })
-    expect(trigger.className).toContain('sm:focus-visible:opacity-100')
+    expect(trigger.className).toContain('focus-visible:opacity-100')
     expect(trigger.className).not.toContain('group-focus-within')
   })
 })

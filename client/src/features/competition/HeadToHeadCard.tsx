@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { BoltIcon } from '../../components/ui/icons'
 import { Avatar } from '../../components/ui/Avatar'
+import { TugBar } from './TugBar'
+import { ScrollDots } from '../../components/ui/ScrollDots'
 import { RecentChoresColumn } from '../activity/RecentChoresColumn'
 import { EmptyAvatar, PartnerSlot } from './PartnerSlot'
 import { choresForPeriod } from '../activity/logDisplay'
@@ -45,7 +46,14 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <section
       aria-labelledby="head-to-head-heading"
-      className="rounded-base border-2 border-ink bg-card p-5"
+      /*
+       * The dashboard's hero, and dressed as one since [84]: a 3px border, more padding and a hard
+       * shadow. Every other card on the app is a flat 2px outline, which is the style's resting
+       * state — this one is the screen's subject, and the owner's note was that it did not look
+       * like it. The shadow is the same `--shadow-hard-lg` a pressed control lifts to, used here
+       * statically: it is not pressable, it is raised.
+       */
+      className="rounded-base border-[3px] border-ink bg-card p-5 shadow-hard-lg sm:p-6"
     >
       {children}
     </section>
@@ -124,6 +132,15 @@ export function HeadToHeadCard() {
    */
   /** Task [71]. Owned here rather than in the column, which stays presentational. */
   const [removeLog, { isLoading: isRemoving }] = useDeleteActivityLogMutation()
+  /**
+   * The phone's period swiper, so `ScrollDots` can read where it is ([84]).
+   *
+   * **State via a callback ref, not `useRef`.** The scroller mounts behind a loading branch, so a
+   * ref object is still `null` when `ScrollDots` first runs its effect — and mutating `.current`
+   * later re-renders nothing, which left the dots frozen on the first panel forever. Found in the
+   * browser, not by a test.
+   */
+  const [periodsEl, setPeriodsEl] = useState<HTMLDivElement | null>(null)
   /**
    * A failed delete used to vanish ([78]). The call was `void removeLog({ id })` — fire and
    * forget — so a 404 or a lost connection left the row sitting there with no explanation, and the
@@ -221,12 +238,9 @@ export function HeadToHeadCard() {
   return (
     <Shell>
       <div className="flex items-baseline justify-between gap-3">
-        <h2 id="head-to-head-heading" className="text-lg">
+        <h2 id="head-to-head-heading" className="text-xl">
           Head-to-head
         </h2>
-        <span className="font-display text-xs font-semibold uppercase tracking-[0.08em] text-muted lg:hidden">
-          Swipe for week &amp; month
-        </span>
       </div>
 
       {!hasPartner ? (
@@ -311,14 +325,28 @@ export function HeadToHeadCard() {
           {removeFailure && <RemoveFailure message={removeFailure} />}
 
           {/*
-           * Three periods: today, this week, this month.
+           * Three duels — **swipe on a phone, a ladder from `lg`** ([84], correcting [83]).
            *
-           * **Swipe on a phone, all three at once on a wide window** — a horizontal snap-scroller
-           * that becomes a three-column grid at `lg`. Scroll snapping is the browser's own gesture,
-           * so there is no touch handler to get wrong and it keeps keyboard and trackpad scrolling
-           * for free; a JS swipe library would have been a dependency to reimplement momentum badly.
+           * [83] made every width a vertical ladder, and on a phone that pushed the week and the
+           * month below the fold of an already tall card. A narrow screen gets one period at a
+           * time with dots to say there are more (the browser's own snap gesture, no touch handler
+           * to get wrong); a wide one shows all three at once, which is where the ladder earns its
+           * keep.
+           *
+           * `lg:flex-col-reverse` is doing the ordering work: **DOM order stays Today → Week →
+           * Month**, so the phone swipes into today first and a screen reader hears it first,
+           * while the desktop column renders bottom-up — thin month, medium week, thick today —
+           * the thin-to-thick reading the owner asked for. One container, two readings, and no
+           * duplicated markup to fall out of step.
+           *
+           * It also answers a question the old grid never did: all three periods really are
+           * settled and paid ([23], [58a]) — a monthly bar you can watch fill is what says a
+           * monthly loot box exists.
            */}
-          <div className="mt-5 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 lg:grid lg:grid-cols-3 lg:overflow-visible">
+          <div
+            ref={setPeriodsEl}
+            className="mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto lg:flex-col-reverse lg:gap-5 lg:overflow-visible"
+          >
             {periods.map(({ key, data }) => (
               <PeriodPanel
                 key={key}
@@ -329,13 +357,44 @@ export function HeadToHeadCard() {
               />
             ))}
           </div>
+          {/* Phone only: the ladder shows all three at once and needs no index. */}
+          <ScrollDots scroller={periodsEl} count={periods.length} className="mt-3 lg:hidden" />
         </>
       )}
     </Shell>
   )
 }
 
-/** One period's score, rope and verdict. Three of these sit side by side, or swipe on a phone. */
+/**
+ * Each rung's visual weight — [83]. The point of the table is that the three are *deliberately
+ * unequal*: equal bars stacked read as a list, and the day is the duel you are actually in right
+ * now. Border thickness drops with the bar so the month reads as a slim gauge, not a thin button.
+ */
+const PERIOD_WEIGHT: Record<
+  PeriodType,
+  { bar: string; bolt: string; score: string; verdict: string }
+> = {
+  Daily: {
+    bar: 'h-10 border-[3px]',
+    bolt: 'size-7',
+    score: 'text-2xl',
+    verdict: 'text-sm font-bold',
+  },
+  Weekly: {
+    bar: 'h-6 border-2',
+    bolt: 'size-5',
+    score: 'text-lg',
+    verdict: 'text-xs font-semibold text-muted',
+  },
+  Monthly: {
+    bar: 'h-4 border-2',
+    bolt: 'size-4',
+    score: 'text-base',
+    verdict: 'text-xs font-semibold text-muted',
+  },
+}
+
+/** One period's score, rope and verdict — a rung of the [83] ladder. */
 function PeriodPanel({
   periodType,
   competition,
@@ -368,7 +427,7 @@ function PeriodPanel({
           {periodLabel(periodType)}
         </p>
         <div className="mt-2">
-          <SkeletonBlock label="Loading this period" className="h-16" />
+          <SkeletonBlock label="Loading this period" className="h-10" />
         </div>
       </div>
     )
@@ -378,6 +437,7 @@ function PeriodPanel({
   const { mine, partner: theirs } = tugShares(competition.myPoints, competition.partnerPoints)
   /** A settled or voided period is finished — nothing is being contested, so nothing sparks. */
   const isLive = standing.kind !== 'voided' && !competition.settled
+  const weight = PERIOD_WEIGHT[periodType]
 
   return (
     /*
@@ -388,90 +448,37 @@ function PeriodPanel({
     <div
       role="group"
       aria-label={periodLabel(periodType)}
+      /*
+       * `shrink-0` is what makes the phone a swiper rather than three squeezed columns: a flex item
+       * defaults to `flex-shrink: 1`, so `w-full` alone let all three fit the container and there
+       * was nothing to scroll. `lg:w-auto` hands the width back for the ladder.
+       */
       className="w-full shrink-0 snap-center lg:w-auto"
     >
       <div className="flex items-baseline justify-between gap-2">
         <p className="font-display text-xs font-semibold uppercase tracking-[0.08em] text-muted">
           {periodLabel(periodType)}
         </p>
-        <p className="font-display text-lg font-bold">
+        <p className={`font-display font-bold ${weight.score}`}>
           {competition.myPoints}
           <span className="mx-1 text-muted">–</span>
           {competition.partnerPoints}
         </p>
       </div>
 
-      {/*
-       * Decorative. Every number and every judgement it encodes is in the text above and below,
-       * so exposing it would only make a screen reader repeat itself.
-       *
-       * The centre tick is what makes this read as a tug-of-war rather than a progress bar.
-       * Without it a 100/0 lead is one solid block with nothing to compare against — found only
-       * once screenshots became available; see log `045`.
-       */}
-      <div aria-hidden="true" className="relative mt-2">
-        {/*
-         * A rope with a grip on it, rather than a progress bar (`ui-exp01`).
-         *
-         * The bar reads as a tug now that `tugShares` is driven by the **lead** rather than by
-         * share-of-total — see the note there. The grip is what the two of you are pulling, and
-         * it starts dead centre instead of slamming to one end over a single chore.
-         *
-         * The centre tick stays. It is the reference the grip's offset is read against; without
-         * it a big lead is one solid block with nothing to compare to (log `045`).
-         */}
-        <div className="relative flex h-7 overflow-hidden border-2 border-ink">
-          <div
-            className="bg-primary transition-[width] duration-500"
-            style={{ width: `${mine}%` }}
-          />
-          <div
-            className="bg-success transition-[width] duration-500"
-            style={{ width: `${theirs}%` }}
-          />
-          {/* Halfway. The gap between this and the grip is the lead, made visible. */}
-          <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-ink opacity-40" />
-        </div>
-
-        {/*
-         * The grip sits where the two sides meet — the moving boundary, which is the point of
-         * contention. Square, not a disc: the app has no circles any more.
-         *
-         * Yellow rather than the red flag a tug-of-war would really have. Red is the destructive
-         * colour in this palette (`design-tokens.md` §2.1) and is used for reject and leave, so a
-         * red marker on the dashboard would be the one alarming thing on a screen about doing
-         * chores. Yellow is already the contested/pending colour.
-         *
-         * Live periods only: a settled or voided period is not an active clash.
-         */}
-        {isLive && (
-          <span
-            /*
-             * **The bolt itself, with no chip around it** (`ui-exp01`). Boxing it gave the
-             * animation a bordered card to scale and rotate, so the eye tracked the box and the
-             * bolt read as its contents. A bare mark spinning on the rope is the thing being
-             * fought over; the box was a container for it.
-             */
-            /*
-             * No `text-warning` since [75e]: the bolt carries its own `--mark-bolt` fill.
-             *
-             * [81] E — it lurches when the **lead changes hands**. The bar already animates its
-             * width, so a widening gap is visible; what was invisible was the moment the duel
-             * turned over, which is the only moment in it that is actually news. On the bolt
-             * because that is already where the eye is.
-             */
-            className={[
-              'spark absolute top-1/2 z-10 block transition-[left] duration-500',
-              leadFlipping ? 'lead-flip' : '',
-            ].join(' ')}
-            style={{ left: `${mine}%` }}
-          >
-            <BoltIcon className="size-6.5" />
-          </span>
-        )}
+      {/* One shared rope since [84] — the landing page draws the same one. */}
+      <div className="mt-2">
+        <TugBar
+          mine={mine}
+          theirs={theirs}
+          barClassName={weight.bar}
+          boltClassName={weight.bolt}
+          showBolt={isLive}
+          boltAnimating={leadFlipping}
+        />
       </div>
 
-      <p className="mt-2 font-display text-sm font-bold">{summarise(standing, partnerName)}</p>
+      <p className={`mt-2 font-display ${weight.verdict}`}>{summarise(standing, partnerName)}</p>
     </div>
   )
 }

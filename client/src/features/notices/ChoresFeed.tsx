@@ -3,7 +3,8 @@ import {
   usePartnerActivityLogsQuery,
   type ActivityLogStatus,
 } from '../activity/activityApi'
-import { describeLogPoints, relativeTime } from '../activity/logDisplay'
+import { STATUS_LABEL, relativeTime } from '../activity/logDisplay'
+import { ChoreCredit, ChoreStatusDot, ChoreTitle } from '../activity/choreStatusDisplay'
 import { useMeQuery } from '../auth/authApi'
 import { useGetHouseholdQuery } from '../household/householdApi'
 import { toApiError } from '../../api/apiError'
@@ -34,12 +35,6 @@ type Entry = {
   status: ActivityLogStatus
   points: number
   at: string
-}
-
-const DOT: Record<ActivityLogStatus, string> = {
-  Approved: 'bg-success',
-  Pending: 'bg-warning',
-  Rejected: 'bg-danger',
 }
 
 export function ChoresFeed() {
@@ -81,10 +76,12 @@ export function ChoresFeed() {
 
   return (
     <section aria-labelledby="chores-feed-heading" className={SECTION_SHELL}>
-      <h2
-        id="chores-feed-heading"
-        className="shrink-0 font-display text-sm font-bold uppercase tracking-[0.08em] text-muted"
-      >
+      {/*
+       * `text-lg`, matching the other three sections — [84], owner's call. It was a small uppercase
+       * caption, which made the Notices tab look like three sections and a footnote. The *content*
+       * stays quiet (small text, no colour blocks); only the heading joins the set.
+       */}
+      <h2 id="chores-feed-heading" className="shrink-0 text-lg">
         Chores feed
       </h2>
 
@@ -102,13 +99,10 @@ export function ChoresFeed() {
         ) : (
           <ul className="flex flex-col gap-1.5">
             {entries.slice(0, 10).map((entry) => {
-              const display = describeLogPoints(entry.status, entry.points)
               return (
                 <li key={entry.key} className="flex items-baseline gap-2 text-sm">
-                  <span
-                    aria-hidden="true"
-                    className={`size-2 shrink-0 translate-y-[-1px] border border-ink-accent ${DOT[entry.status]}`}
-                  />
+                  {/* One shared implementation since [84] — see `choreStatusDisplay`. */}
+                  <ChoreStatusDot status={entry.status} className="translate-y-[-1px]" />
                   <span
                     className={[
                       'shrink-0 font-display text-xs font-bold',
@@ -117,16 +111,17 @@ export function ChoresFeed() {
                   >
                     {entry.who}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-muted">{entry.title}</span>
+                  <ChoreTitle status={entry.status} className="min-w-0 flex-1 truncate text-muted">
+                    {entry.title}
+                  </ChoreTitle>
                   {/* The marker the section exists for — a word, not only a colour. */}
-                  <span className="shrink-0 text-xs text-muted">{display.label}</span>
-                  <span className="shrink-0 font-display text-xs font-bold">
-                    {display.tone === 'approved'
-                      ? `+${entry.points}`
-                      : display.tone === 'pending'
-                        ? `(${entry.points})`
-                        : '—'}
-                  </span>
+                  <span className="shrink-0 text-xs text-muted">{STATUS_LABEL[entry.status]}</span>
+                  <ChoreCredit
+                    status={entry.status}
+                    points={entry.points}
+                    className="font-display text-xs font-bold"
+                    markClassName="size-3"
+                  />
                   <span className="hidden shrink-0 text-xs text-muted sm:inline">
                     {relativeTime(entry.at)}
                   </span>

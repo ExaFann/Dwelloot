@@ -5,11 +5,20 @@ import { StoreChanges } from '../features/notices/StoreChanges'
 import { SECTION_ROW_HEIGHT } from '../features/notices/sectionLayout'
 
 /**
- * The Notices tab — three sections, **most to least urgent**, and the order is the design:
+ * The Notices tab — four sections, grouped by **what you have to do about them** ([84]).
  *
- * 1. **Waiting on you** — the only section with anything to decide.
- * 2. **Prizes & rewards** — loud: what either partner has recently gained.
- * 3. **Chores feed** — quiet: what either partner has logged, and whether it counted yet.
+ * | row | sections | why |
+ * |---|---|---|
+ * | 1 | Waiting on you · Store changes | **decisions** — both have a queue and a control |
+ * | 2 | Prizes & rewards · Chores feed | **feeds** — chronological, read-only, nothing to press |
+ *
+ * That grouping is the owner's, and it replaces a layout organised by urgency alone, which had put
+ * the two decision sections at opposite ends of the page with a feed between them. A user arriving
+ * to deal with something now finds both things that need dealing with on the same line.
+ *
+ * The rows appear from `lg` — the width where two columns fit without either becoming a gutter.
+ * Below that, and on a portrait tablet, everything stacks in the same order, so the decisions still
+ * come first.
  *
  * Sections 2 and 3 replace the first pass's "xxx has been busy" and "Your approved chores", which
  * both showed only one person. The owner's point: this is a two-person app, so a feed that hides
@@ -21,11 +30,7 @@ export function NoticesPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl">Notices</h1>
-      {/*
-       * Two columns from `lg` ([58]), and the split follows the section order rather than cutting
-       * across it: the only section with a decision to make keeps the top of the reading order on
-       * its own, and the two feeds — both chronological, both read-only — stack beside it.
-       */}
+
       {/*
        * **No `lg:items-start`.** That was here from [58] and it is what kept the sections
        * content-sized on desktop: with `items-start` a grid item is only as tall as its contents, so
@@ -35,27 +40,12 @@ export function NoticesPage() {
        */}
       <div className={`flex flex-col gap-6 lg:grid lg:grid-cols-2 ${SECTION_ROW_HEIGHT}`}>
         <PendingApprovals />
-        {/*
-         * `min-h-0` again, one level up. Without it this column refuses to shrink below its two
-         * children's content and the row height is ignored — the same trap as inside each section.
-         */}
-        <div className="flex min-h-0 flex-col gap-6">
-          <PrizeRedeemFeed />
-          <ChoresFeed />
-        </div>
+        <StoreChanges />
       </div>
 
-      {/*
-       * Store changes sit **below** the row rather than inside it — task [68].
-       *
-       * The three sections above are a fixed-height row whose two columns are balanced by
-       * construction; a fourth card in either column would break that arithmetic. This one is also
-       * a different kind of thing: like "Waiting on you" it is a decision, not a feed, but it is
-       * rarer, so it goes after the everyday sections rather than competing with the queue for the
-       * top of the reading order.
-       */}
-      <div className="lg:grid lg:grid-cols-2 lg:h-[22rem]">
-        <StoreChanges />
+      <div className={`flex flex-col gap-6 lg:grid lg:grid-cols-2 ${SECTION_ROW_HEIGHT}`}>
+        <PrizeRedeemFeed />
+        <ChoresFeed />
       </div>
     </div>
   )

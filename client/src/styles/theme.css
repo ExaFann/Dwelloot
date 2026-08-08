@@ -820,4 +820,36 @@
     font-family: var(--font-display);
     font-weight: 700;
   }
+
+}
+
+/*
+ * ── Scroll affordances — [84], replacing [83]'s restyled scrollbars ──────────────────────────
+ *
+ * [83] painted the native scrollbar with `::-webkit-scrollbar`. The owner's verdict after looking:
+ * it only ever changed colour — the square thumb and the ink border never appeared, because that
+ * pseudo-element is drawn by the platform's own widget and ignores most of what you tell it. The
+ * rules are gone rather than left in as decoration that half-works.
+ *
+ * What replaces them says the same thing without fighting the platform:
+ *   - vertical: the content **fades out** at the edge it continues past
+ *   - horizontal: **dots** below, the current one turned 45° into a diamond (`ScrollDots`)
+ */
+
+/*
+ * Fades the top and bottom edges of a scroll box, so a cut-off row reads as "there is more" rather
+ * than as a crop. `mask-image` affects painting only — nothing moves, nothing is clipped from the
+ * accessibility tree, and the element still scrolls normally.
+ *
+ * The fade is 16px and symmetric. It stays on at both ends deliberately: making it conditional on
+ * scroll position needs a listener per box for a 16px difference nobody would notice.
+ */
+@utility scroll-fade-y {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 16px,
+    #000 calc(100% - 16px),
+    transparent 100%
+  );
 }

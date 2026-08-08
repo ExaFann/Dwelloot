@@ -762,20 +762,29 @@ describe('the chores feed', () => {
     expect(rows[1]).toMatch(/wash dishes/i)
   })
 
-  /** The marker the section exists for, and it is a word rather than only a colour. */
+  /**
+   * The marker the section exists for, and it is a word rather than only a colour.
+   *
+   * The **figure** follows [83]'s notation since [84], when this feed was moved onto the shared
+   * `choreStatusDisplay` components: approved shows the plain number, pending shows none at all.
+   * That the two surfaces now agree is the point — this feed and the dashboard column were
+   * rendering the same idea from two copies, and only one of them got updated.
+   */
   it('marks whether each one counted', async () => {
     stub({ myLogs: { items: [MY_LOG], total: 1 }, partnerLogs: { items: [THEIR_LOG], total: 1 } })
     renderPage()
 
     const mine = (await screen.findByText('Wash dishes')).closest('li')!
     expect(mine).toHaveTextContent('Approved')
-    expect(mine).toHaveTextContent('+10')
+    expect(mine).toHaveTextContent('10')
+    // The mark is the unit; the sign is gone.
+    expect(mine).not.toHaveTextContent('+10')
 
     const theirs = screen.getByText('Mop the floors').closest('li')!
     expect(theirs).toHaveTextContent('Waiting')
-    // Pending points are not earned, so never a plus.
-    expect(theirs).toHaveTextContent('(15)')
-    expect(theirs).not.toHaveTextContent('+15')
+    // Pending pays nothing yet, so it says nothing — not a bracketed figure, not a plus.
+    expect(theirs).not.toHaveTextContent('15')
+    expect(theirs).not.toHaveTextContent('(15)')
   })
 
   it('names who logged each one', async () => {

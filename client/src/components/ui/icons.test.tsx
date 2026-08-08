@@ -236,16 +236,16 @@ describe('the marks carry the sprite’s strokes and the tokens’ fills — [75
     )
   })
 
-  it('the prize box is loot-orange with the ink stroke, all three parts', () => {
+  it('the prize box wears the chest’s three colours, ink-stroked', () => {
+    /**
+     * [83] — a one-hue box read as a stamp; this is a thumbnail of the chest the reveal opens.
+     * The three distinct fills are the assertion: a refactor collapsing them to one would still
+     * render something plausible, which is exactly how [82] shipped the orange version.
+     */
     const paths = renderedPathAttrs(<PrizeBoxMark />)
-    expect(paths).toHaveLength(3)
+    expect(paths.map((p) => p.fill)).toEqual(['#4CC9F0', '#7C4DFF', '#FFE14A'])
     expect(
-      paths.every(
-        (p) =>
-          p.fill === 'var(--mark-flame)' &&
-          p.stroke === 'var(--ink-surface)' &&
-          p.strokeWidth === '1.4',
-      ),
+      paths.every((p) => p.stroke === 'var(--ink-surface)' && p.strokeWidth === '1.4'),
     ).toBe(true)
   })
 

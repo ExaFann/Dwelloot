@@ -4,37 +4,30 @@ import type { ActivityLogStatus } from './activityApi'
  * Turning a log row into words. Pure, so the rules are tested without rendering.
  */
 
-export type PointsDisplay = {
-  /** What to show. Never a bare number — see below. */
-  text: string
-  /** Which of the brand fills the status badge takes. */
-  tone: 'approved' | 'pending' | 'rejected'
-  label: string
-}
-
 /**
- * Renders `pointsAwarded` **through** the status.
+ * What a log's status is called on screen.
  *
- * `pointsAwarded` is what the chore was worth when it was logged, not what was earned — it is
- * populated on `Pending` rows (not credited yet) and on `Rejected` rows (never will be). Measured in
- * [46]: a rejected "Clean the kitchen bench" still reports `pointsAwarded: 5`.
+ * ### This used to be `describeLogPoints`, and shrinking it is the point
  *
- * So there is no signature here that lets a caller print the number without the context. `+5 pts`
- * beside a rejected log would be a plain lie about the user's balance.
+ * It returned `{ text, tone, label }` and existed to enforce one rule: `pointsAwarded` is what the
+ * chore was *worth* when logged, not what was earned — it is populated on `Pending` rows (not
+ * credited yet) and on `Rejected` rows (never will be). Measured in [46]: a rejected "Clean the
+ * kitchen bench" still reports `pointsAwarded: 5`. So the function refused to hand a caller a bare
+ * number, only strings like `+5 pts` / `5 pts if approved` / `No points`.
+ *
+ * [83] replaced that notation with typography — the figure appears only when it was earned — and
+ * [84] moved the rule into `choreStatusDisplay`, where it is enforced by *not rendering* rather
+ * than by wording. At that point `text` and `tone` reached no screen anywhere in the app, and an
+ * audit found them still here with tests pinning them: a live, tested definition of a notation the
+ * product no longer uses, which is precisely the duplication [84] exists to end. Only the word
+ * survived, so only the word is exported.
+ *
+ * **The rule itself did not go away.** `ChoreCredit` is where it lives now.
  */
-export function describeLogPoints(
-  status: ActivityLogStatus,
-  pointsAwarded: number,
-): PointsDisplay {
-  switch (status) {
-    case 'Approved':
-      return { text: `+${pointsAwarded} pts`, tone: 'approved', label: 'Approved' }
-    case 'Pending':
-      return { text: `${pointsAwarded} pts if approved`, tone: 'pending', label: 'Waiting' }
-    case 'Rejected':
-      // No number at all. Any figure here reads as a credit.
-      return { text: 'No points', tone: 'rejected', label: 'Rejected' }
-  }
+export const STATUS_LABEL: Record<ActivityLogStatus, string> = {
+  Approved: 'Approved',
+  Pending: 'Waiting',
+  Rejected: 'Rejected',
 }
 
 /**

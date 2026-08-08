@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { RejectIcon } from '../../components/ui/icons'
-import { describeLogPoints } from './logDisplay'
+import { STATUS_LABEL } from './logDisplay'
+import { ChoreCredit, ChoreStatusDot, ChoreTitle } from './choreStatusDisplay'
 import type { ActivityLogStatus } from './activityApi'
 
 /**
@@ -19,12 +20,6 @@ export type RecentChore = {
   activityTitle: string
   pointsAwarded: number
   status: ActivityLogStatus
-}
-
-const DOT: Record<ActivityLogStatus, string> = {
-  Approved: 'bg-success',
-  Pending: 'bg-warning',
-  Rejected: 'bg-danger',
 }
 
 export function RecentChoresColumn({
@@ -83,7 +78,8 @@ export function RecentChoresColumn({
 
   return (
     <ul
-      className="mt-3 flex max-h-28 flex-col gap-1.5 overflow-y-auto"
+      // `scroll-fade-y` — [84]: the cut-off row now fades rather than being sliced flat.
+      className="scroll-fade-y mt-3 flex max-h-28 flex-col gap-1.5 overflow-y-auto"
       // The card owns the score; this is supporting detail, so it is not a landmark.
       aria-label="Recent chores"
       /*
@@ -100,7 +96,6 @@ export function RecentChoresColumn({
       }}
     >
       {chores.map((chore) => {
-        const points = describeLogPoints(chore.status, chore.pointsAwarded)
         const removable = Boolean(onRemove) && chore.status === 'Pending'
 
         /*
@@ -171,20 +166,32 @@ export function RecentChoresColumn({
              * A status dot rather than a badge: at this size a word per row would crowd out the
              * chore name, which is the thing being scanned for.
              */}
-            <span
-              aria-hidden="true"
-              className={`size-2 shrink-0 border border-ink-accent ${DOT[chore.status]}`}
+            <ChoreStatusDot status={chore.status} />
+            {/*
+             * The row says its status twice, both times without punctuation — [83], owner's call
+             * replacing the `+N` / `(N)` / `—` notation, which made three states into three bits
+             * of typography to decode:
+             *
+             * - approved: the number and the Points mark, plainly — it happened, this is what it
+             *   paid. No `+`: the mark is the unit, and a sign implies a ledger.
+             * - pending:  **no figure at all.** The dot already says "waiting", and a number on an
+             *   unapproved chore reads as already earned — the exact claim `describeLogPoints`
+             *   exists to prevent, now made by omission instead of brackets.
+             * - rejected: the title struck through. The universal mark for "this didn't count",
+             *   and it needs no legend.
+             *
+             * The sr-only status keeps carrying the state in words for screen readers, where a
+             * strikethrough and a missing number are both silent.
+             */}
+            <ChoreTitle status={chore.status} className="truncate font-display font-semibold">
+              {chore.activityTitle}
+            </ChoreTitle>
+            <ChoreCredit
+              status={chore.status}
+              points={chore.pointsAwarded}
+              className="text-muted"
             />
-            <span className="truncate font-display font-semibold">{chore.activityTitle}</span>
-            {/* `describeLogPoints` keeps a pending or rejected chore from reading as earned. */}
-            <span className="shrink-0 text-muted">
-              {points.tone === 'approved'
-                ? `+${chore.pointsAwarded}`
-                : points.tone === 'pending'
-                  ? `(${chore.pointsAwarded})`
-                  : '—'}
-            </span>
-            <span className="sr-only">{points.label}</span>
+            <span className="sr-only">{STATUS_LABEL[chore.status]}</span>
             {/*
              * Pending only, and only on your own column. An approved chore has already moved the
              * score and may sit in a settled period; taking it back is the partner's job, through
@@ -205,10 +212,12 @@ export function RecentChoresColumn({
                * sees it fade and a keyboard user still sees where they are. Scoped to the button
                * itself because the group — the `<li>` — is not focusable.
                *
-               * `sm:opacity-0` rather than a flat `opacity-0`: hover does not exist on a phone, so
-               * below 640px the trigger stays visible — otherwise deleting would be reachable only
-               * by a gesture nobody discovers. It costs nothing there, because the mis-taps the
-               * owner hit were on a pointer device and the confirm now guards both cases.
+               * **`opacity-0` at every width since [84].** It used to be `sm:opacity-0`, leaving
+               * the × permanently on screen below 640px on the theory that a phone has no hover to
+               * reveal it. The owner's correction: a resting × is exactly the mis-tap target the
+               * confirm step was introduced to remove, and on touch the affordance is already the
+               * row — tapping anywhere on it opens the same confirm. So the glyph is a pointer
+               * convenience only, and a phone shows a clean row.
                */
               <button
                 type="button"
@@ -220,7 +229,7 @@ export function RecentChoresColumn({
                     node.focus()
                   }
                 }}
-                className="focus-ring ml-auto shrink-0 rounded-control p-0.5 text-muted transition-opacity hover:text-danger sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
+                className="focus-ring ml-auto shrink-0 rounded-control p-0.5 text-muted opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover:opacity-100"
               >
                 <RejectIcon className="size-3" />
               </button>

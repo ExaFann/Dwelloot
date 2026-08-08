@@ -56,17 +56,60 @@ describe('the landing page', () => {
   })
 
   /** The two differentiators each hold a band — they are why this page says anything at all. */
-  it('leads with approval and the two-currency rule', () => {
+  it('leads with approval and the two-currency rule, in the [83] voice', () => {
     renderPage()
 
     expect(
-      screen.getByRole('heading', { name: /nobody grades their own homework/i }),
+      screen.getByRole('heading', { name: /tap it\. they okay it\. it counts\./i }),
     ).toBeInTheDocument()
+    // The owner's own line, verbatim — the brief was "simple, positive, easy to want".
+    expect(screen.getByText(/once they approve, you.re good to go/i)).toBeInTheDocument()
     expect(
       screen.getByRole('heading', { name: /points keep score\. coins buy rewards\./i }),
     ).toBeInTheDocument()
-    // The claim behind the second one, in the words the store empty-state also teaches.
-    expect(screen.getByText(/never spent/i)).toBeInTheDocument()
+  })
+
+  /**
+   * The problem band — [83]. The page must name the pain before the pitch, or the product is an
+   * app asking to be admired. Three chips, and the pivot line that turns them into the sell.
+   */
+  it('opens the pitch with the problem', () => {
+    renderPage()
+
+    expect(screen.getByRole('heading', { name: /the dishes\. again\./i })).toBeInTheDocument()
+    expect(screen.getByText(/i did it last time/i)).toBeInTheDocument()
+    expect(screen.getByText(/swaps them for a scoreboard/i)).toBeInTheDocument()
+  })
+
+  /**
+   * The poster must show the **current** product — [84]. It did not: the hero card kept the
+   * pre-[83] chore notation and a centre tick on its tug bar, so a stranger's first sight of
+   * Dwelloot was its previous design. Both are now drawn by the real components, and this is the
+   * assertion that would have caught it.
+   */
+  it('draws the hero card with the app’s own chore notation', () => {
+    renderPage()
+
+    const approved = screen.getByText('Cooked dinner').closest('li')!
+    expect(approved).toHaveTextContent('20')
+    expect(approved).not.toHaveTextContent('+20')
+
+    // A pending chore carries no figure at all — the rule, on the front door.
+    const pending = screen.getByText('Fed the cat').closest('li')!
+    expect(pending).not.toHaveTextContent('5')
+    expect(pending).not.toHaveTextContent('(5)')
+  })
+
+  it('names the two players Alex and Blake', () => {
+    renderPage()
+    expect(screen.getByText('Alex')).toBeInTheDocument()
+    expect(screen.getByText('Blake')).toBeInTheDocument()
+  })
+
+  /** [83]: dark mode is not advertised — nothing to sell there yet, owner's call. */
+  it('does not advertise dark mode', () => {
+    renderPage()
+    expect(screen.queryByText(/dark mode/i)).not.toBeInTheDocument()
   })
 
   it('walks the loop in four steps', () => {
@@ -86,7 +129,7 @@ describe('the landing page', () => {
     renderPage()
 
     const bands = document.querySelectorAll('section.band')
-    expect(bands.length).toBeGreaterThanOrEqual(5)
+    expect(bands.length).toBeGreaterThanOrEqual(6)
     for (const band of bands) expect(band.className).toContain('band-in')
   })
 })
