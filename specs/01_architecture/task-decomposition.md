@@ -51,7 +51,7 @@
 ## Frontend foundation
 
 [38] [Scaffold React + TypeScript + Vite project].
-[39] [Add MUI + base theme tokens]: light/dark color tokens defined, switch not wired yet.
+[39] [Add MUI + base theme tokens]: light/dark color tokens defined, switch not wired yet. **Diverged — MUI was dropped during this task.** A component library's own theme is a second styling system that has to be kept in step with the tokens, and this project wanted a distinct hand-drawn visual identity rather than a themed default one. Replaced by Tailwind CSS v4 with the whole palette declared in `theme.css` and parsed by `tokens.test.ts`. The original spec is kept as `02_prompts/039-mui-theme-tokens-superseded.md`; the replacement is `039-theme-tokens.md`.
 [40] [Add React Router + route skeleton]: empty placeholder pages for every screen in `wireframes.md`.
 [41] [Add Redux Toolkit store + base RTK Query API slice].
 [42] [Add auth flow]: register/login pages, RTK Query endpoints, session persistence.
@@ -72,9 +72,9 @@
 [54] [Add badges screen/shelf component].
 [55] [Add Me/profile screen]: stats display.
 [56] [Add household settings]: invite code, rename, leave.
-[57] [Wire up theme switching]: light/dark toggle connected to the MUI theme tokens from task 39.
-[58] [Responsive layout pass]: mobile breakpoints across all screens.
-[59] [Add frontend unit tests]: dashboard widget, log-activity form, approval queue, store.
+[57] [Wire up theme switching]: light/dark toggle connected to the theme tokens from task [39] (**not** MUI's — see the divergence note there). Shipped with a third mode, "follow system", resolved in JavaScript rather than by a CSS media query so an explicit choice can override the OS.
+[58] [Responsive layout pass]: mobile breakpoints across all screens. **Grew a [58a]** — week/month periods, day-boundary chore clearing, the approval prompt and the nav badge, all of which the responsive pass surfaced as missing.
+[59] [Add frontend unit tests]: dashboard widget, log-activity form, approval queue, store. **Revised:** the test harness landed in [39], so this became a coverage *sweep* — the frontend counterpart of [36] — rather than the first tests.
 
 ## Closeout
 
@@ -87,5 +87,42 @@
 
 [64] [Dockerize the backend]: Dockerfile + local dev compose alongside the database.
 [65] [Dockerize the frontend]: Dockerfile, added to the same compose setup.
-[66] [Add WebSockets for live dashboard updates]: SignalR hub pushing Point/loot-box updates to both partners' dashboards in near-real-time.
-[67] [Add WebSockets to the Notices tab]: live-push new pending approvals and partner achievements instead of requiring a refresh.
+[66] [Add WebSockets for live dashboard updates]: SignalR hub pushing Point/loot-box updates to both partners' dashboards in near-real-time. **Not built.** Superseded by `liveSync.ts` — interval polling with refetch on focus and reconnect, pinned by a source-scanning coverage test. A hub would replace the transport; it would not replace those two, because sockets drop and nothing replays missed messages. The migration path is recorded rather than the option being closed.
+[67] [Add WebSockets to the Notices tab]: live-push new pending approvals and partner achievements instead of requiring a refresh. **Not built** — same reasoning as [66].
+
+---
+
+## Added after [60] — the plan above stopped here, the build did not
+
+Everything below was added to the plan *during* the build, either because a gap was found or because
+a review of the running app called for it. They are listed here so this document describes the
+project that exists rather than the one that was first imagined.
+
+### Features and fixes
+
+[68] [Store changes need the partner's approval]: a new `reward_change_requests` table; solo households apply immediately, paired households queue add/edit/delete for the other person to decide. Closes a real exploit found by review — re-price a reward down, buy it, restore the price.
+[69] [The pausing reward is server-owned]: `pausesCompetition` removed from every client request. The reward that voids a day is undeletable but still re-priceable, because price is the abuse gate, not existence.
+[70] [A solo user can accept an invite code]: joining moves them atomically and deletes their emptied household. A wrong code costs nothing.
+[71] [Delete a pending activity log]: own logs only, Pending only. Safe as a hard delete because everything downstream reads Approved — and deleting a mis-tap *unblocks* a period stuck awaiting approvals.
+[72] [Preset avatars]: a nullable `avatar_key` with a server-side allow-list, chosen from the pairing screen or the Me screen. An unknown key degrades to the generated identicon.
+[73] [The quick-log wall is curatable]: `activities.is_quick`, household-shared, with a manager beside the wall itself — a curatable list needs a visible way to curate it.
+[36a] [Household prize feed]: merges redemptions, the partner's redemptions and household prizes, so everything either partner *obtains* appears whether bought or won. A live production bug fell out of building it.
+[74] [The approval prompt fires only for overdue chores]: "is anything stuck?" is a different question from "is there anything for me?", and only the first deserves an interruption.
+[77] [App icons and manifest]: the designed icon set into `client/public/`, a web manifest, and the Open Graph tags.
+
+### Visual identity and design review
+
+[75] [Brand tokens and icons]: `icons.tsx` — three currency marks, twenty UI icons, twelve badge motifs — transcribed path-for-path from the design source, which a test parses from disk. `lucide-react` removed entirely.
+[76] [Badge wall]: a honeycomb of twelve, locked badges desaturated with the state in the accessible name.
+[53a]/[53b] [The loot reveal becomes a centre-screen dialog]: a chest that rattles and opens, coins that fountain out, then the prize.
+[80]/[81] [Motion]: a survey, then six one-shot CSS animations, each with a `prefers-reduced-motion` answer. No animation library.
+[82] [Landing page]: what a signed-out visitor sees at `/`.
+[84] [One implementation per idea]: the de-duplication round. Four surfaces rendered the same idea from their own copies and each copy was tested against itself, so changing one left the front page stale and the suite green. Structural fix, and the rule the codebase now holds to.
+[86] [Session cache reset]: a 401 belonging to a dead session survived into the next one. Store middleware, because "the identity changed" is a property of the action, not of any component.
+[75a]–[75e], [76a]–[76c], [78], [79], [83], [85], [87], [88] — owner-directed design-review rounds, consolidated into `02_prompts/ui-exp02-design-review-rounds.md`.
+
+### Cut
+
+[64a] [Real avatar upload] — deferred behind presets; storage, a size cap and content-type validation for a feature presets already serve.
+Two-factor authentication: cut. Out of proportion for a two-person household app with no sensitive data and no payment surface.
+A read-only demo mode and onboarding coach-marks: planned, not built, cut for time.
