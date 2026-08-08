@@ -46,7 +46,7 @@ cannot supply without breaking "yellow means Coins". Add them under a **`--deco-
 --deco-blue: #3B6BFF;
 ```
 
-This is the "separate decorative colour ramp" that `project-state-handover.md` §3.5 recorded as
+This is the "separate decorative colour ramp" that the earlier design round recorded as
 deferred. Two values are enough; do not add a full ramp speculatively.
 
 **`tokens.test.ts` parses `theme.css` directly** and asserts that no raw token name collides with a
@@ -207,7 +207,7 @@ fills it reads as a second design language, which is the reason `marks.tsx` exis
 `early-bird` and `night-owl` are **wall-clock** conditions. Settlement already computes periods in
 `Competition:TimeZone` (default `Pacific/Auckland`), **not UTC** — log `023`. Any hour-of-day check
 must use the same zone. `slice(0,10)` / `getUTCHours()` / `toISOString()` will all report the wrong
-hour; this is the same trap that `project-state-handover.md` §5 records for period boundaries.
+hour; this is the same trap that the period-boundary work ran into, recorded in `023`.
 
 ### 6.3 The id lookup stays presentation-only
 

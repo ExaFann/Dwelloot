@@ -11,7 +11,7 @@ since a badge unlocks when your partner approves a chore, which is a moment you 
 Extended by [89] through [92]. Those four are the owner's revision of this page and carry the
 current specification for its layout, copy, FAQ and marks.
 
-Its full specification is in the chat log for this task, and the page it built is respecified
-by `089` through `092`.
+The page it built is respecified in full by `089` through `092`, which are the owner revision of
+it and carry the current layout, copy, FAQ and marks.
 
 Numbered file kept rather than deleted so the numbering has no silent gap.

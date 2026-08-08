@@ -133,7 +133,7 @@ than a left-join expression tree.
 | `API/Controllers/BadgesController.cs`           | New. One `GET`.                                        |
 | `API/Program.cs`                                | Register `IBadgeQueryService`.                         |
 | `Tests/Services/Progression/BadgeListTests.cs`  | New.                                                   |
-| `specs/1_architecture_and_ux/api-design.md`     | `criteria` and the explicit `unlockedAt: null`.        |
+| `specs/01_architecture/api-design.md`     | `criteria` and the explicit `unlockedAt: null`.        |
 
 ## Test requirement
 

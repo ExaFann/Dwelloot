@@ -3,7 +3,7 @@
 /*
  * Dwelloot design tokens — the single source of truth.
  *
- * Documented in specs/1_architecture_and_ux/design-tokens.md, and asserted by
+ * Documented in specs/01_architecture/UI/design-tokens.md, and asserted by
  * src/theme/tokens.test.ts, which parses *this file* rather than a copy of its values. If you change
  * a color here, the test measures the change; it does not measure a duplicate that drifted.
  *

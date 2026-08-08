@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { AA_NON_TEXT, AA_TEXT, contrastRatio } from './contrast'
 
 /**
- * Asserts the rules in specs/1_architecture_and_ux/design-tokens.md §5 against
+ * Asserts the rules in specs/01_architecture/UI/design-tokens.md §5 against
  * `src/styles/theme.css` — **the file the app actually ships**, parsed here rather than mirrored
  * into a TypeScript copy.
  *

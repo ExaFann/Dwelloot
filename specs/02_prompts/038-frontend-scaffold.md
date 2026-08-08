@@ -77,7 +77,7 @@ and its default.
 | `client/vite.config.ts` | `server.port` + `strictPort`. |
 | `client/index.html` | `<title>`. |
 | `client/package.json` | `name`. |
-| `specs/1_architecture_and_ux/api-design.md` | Fix a stale CORS line — see Results. |
+| `specs/01_architecture/api-design.md` | Fix a stale CORS line — see Results. |
 
 ## Test requirement
 

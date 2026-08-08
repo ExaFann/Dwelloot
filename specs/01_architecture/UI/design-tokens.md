@@ -251,7 +251,7 @@ a visible, deliberate feature rather than an ambient default.
 
 ## 7. Why not a component library
 
-Task [39] was first built on MUI and reversed. The record is in `specs/2_chat_logs/theme-tokens-039.md`;
+Task [39] was first built on MUI and reversed. The record is in `specs/02_prompts/039-mui-theme-tokens-superseded.md`;
 the short version is that Material Design's defaults are the opposite of every rule in §1 — soft layered
 shadows, elevation gradients, a ripple that is an animated radial gradient — so the work was
 subtraction, and subtraction that has to be repeated for every component anyone later reaches for.

@@ -61,7 +61,7 @@ Both read one hook, `usePendingCount`, because the failure worth preventing is t
 duel cannot be settled — and no loot box can be won — while chores are outstanding. That is measured
 behaviour, not a guess: [48] watched `partnerPoints` go 0 → 10 the moment a log was approved.
 
-**It is a card, not a modal.** The owner asked for a prompt (提示框); this is a prominent card at the
+**It is a card, not a modal.** The owner asked for a prompt; this is a prominent card at the
 top of the dashboard rather than a dialog over it, because the dashboard is the first screen after
 every sign-in and a modal there would be a thing to dismiss every morning — the fastest way to teach
 someone to dismiss it unread. It sits directly above the standing it is explaining.

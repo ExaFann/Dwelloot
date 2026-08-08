@@ -75,7 +75,7 @@ edge that is the only route in. Named as a trade-off rather than left as a defau
 | `API/Program.cs`                                   | `PORT` binding, forwarded headers, startup migration, `/health`. |
 | `API/appsettings.json`                             | `Database:MigrateOnStartup` documented as absent-means-default.  |
 | `Tests/Deployment/DeploymentConfigurationTests.cs` | New.                                                             |
-| `specs/1_architecture_and_ux/api-design.md`        | `/health` and the deployment notes.                              |
+| `specs/01_architecture/api-design.md`        | `/health` and the deployment notes.                              |
 
 ## Test requirement
 

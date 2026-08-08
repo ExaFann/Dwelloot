@@ -44,7 +44,7 @@ partner can remove it, by rejecting it. This decides the whole undo design.
 
 Built first as a column of identical full-width buttons with a points badge on each, plus a separate
 "Your recent chores" card at the bottom of the page. The owner's verdict: the rows felt oppressive
-(*"一行一行地列着，给人一种压抑的感觉"*), nothing like the "playful geometric" direction; the points
+(the owner's words, translated: *"listed line after line, it feels oppressive"*), nothing like the "playful geometric" direction; the points
 wasted width; a double tap produced two logs with no way back; and the recent feed sat too far from
 the score it explains.
 

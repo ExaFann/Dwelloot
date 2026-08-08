@@ -122,7 +122,7 @@ accepted, so the two cannot drift apart.
 | `API/Controllers/RewardsController.cs`      | New. `GET /api/rewards`.                                         |
 | `API/Program.cs`                            | Register `IRewardService`.                                       |
 | `Tests/Services/RewardServiceTests.cs`      | New.                                                             |
-| `specs/1_architecture_and_ux/api-design.md` | `pausesCompetition` in the example, and the filter axis settled. |
+| `specs/01_architecture/api-design.md` | `pausesCompetition` in the example, and the filter axis settled. |
 
 ## Test requirement
 
