@@ -247,7 +247,37 @@ export function LandingPage() {
         </ul>
       </Band>
 
-      {/* ── 7 · Footer CTA ───────────────────────────────────────────────────────────────── */}
+      {/* ── 7 · Questions ────────────────────────────────────────────────────────────────── */}
+      <Band>
+        <h2 className="text-3xl">Questions</h2>
+        {/*
+         * Owner-written, in the owner's order. Two of these make a claim about the **backend**
+         * rather than about the pitch, and both were checked against the services before shipping —
+         * a marketing page can be vague, but a page that answers "what stops us cheating" with a
+         * mechanism has to be describing the mechanism that exists.
+         */}
+        <ul className="mt-6 flex flex-col gap-3">
+          <Question q="Can we play with three? Or on my own?">
+            Not yet. Dwelloot is built for exactly two, and that limit is what makes the duel work —
+            one person logs, the other approves. Solo and group modes are on the list.
+          </Question>
+          <Question q="Do we both need an account?">
+            Yes. One of you creates the household and gets an invite code; the other joins with it.
+          </Question>
+          <Question q="Who decides what a chore is worth?">
+            You two do. You set the chores, the Points they carry, and the rewards Coins buy.
+          </Question>
+          <Question q="What stops us from logging things we didn’t do?">
+            Each other. Points only land once the other person approves, and you cannot approve your
+            own chore — the app refuses it.
+          </Question>
+          <Question q="What if we tie?">
+            You both win. A tie settles as a win-win and you each open a box.
+          </Question>
+        </ul>
+      </Band>
+
+      {/* ── 8 · Footer CTA ───────────────────────────────────────────────────────────────── */}
       <Band>
         <div className="rounded-base border-[3px] border-ink bg-card p-10 text-center">
           <h2 className="text-4xl">Ready to settle it?</h2>
@@ -264,7 +294,27 @@ export function LandingPage() {
             </Link>
           </div>
         </div>
-        <p className="py-8 text-center text-xs text-muted">Dwelloot — an MSA 2026 Phase 2 project.</p>
+        {/*
+         * The footer is the project line and one link — [91]. No contact page and no form, owner's
+         * call: a form needs somewhere for the message to go, and there is nowhere.
+         *
+         * The repository link opens in a new tab. Of the two annoyances available — a stranger
+         * losing the landing page mid-read, or a link behaving unexpectedly — the first is the
+         * worse one, and "source code opens elsewhere" is the convention nobody is surprised by.
+         */}
+        <footer className="py-8 text-center text-xs text-muted">
+          <p>Dwelloot — an MSA 2026 Phase 2 project.</p>
+          <p className="mt-2">
+            <a
+              href="https://github.com/ExaFann/Dwelloot"
+              target="_blank"
+              rel="noreferrer"
+              className="focus-ring font-display font-bold underline underline-offset-4 hover:text-body"
+            >
+              Source on GitHub
+            </a>
+          </p>
+        </footer>
       </Band>
     </div>
   )
@@ -485,6 +535,42 @@ function LoopTile({
       </div>
       <h3 className="mt-3 font-display text-lg font-bold">{title}</h3>
       <p className="mt-1 text-sm text-muted">{children}</p>
+    </li>
+  )
+}
+
+/**
+ * One FAQ entry — [91], and the app's first `<details>`.
+ *
+ * The existing disclosure in the app (the invite code) is `useState` plus `aria-expanded`, and that
+ * is deliberately **not** the precedent followed here. That panel is *controlled*: it coordinates
+ * with a copy button and a "copied" flash, so its open state has to be readable by other things.
+ * Five questions coordinate with nothing, and `<details>` gives the behaviour, the semantics and the
+ * keyboard support from the platform with no state and no JavaScript — which suits a page whose one
+ * structural promise is that it renders with nothing behind it.
+ *
+ * `<summary>` is left alone: no `tabindex`, no `role`. Both are ways of taking away what the element
+ * already does correctly; it only gains `focus-ring`, so a keyboard user sees the app's own ring.
+ *
+ * The browser's default triangle is suppressed and replaced with `ArrowIcon` turned 90° when open.
+ * Reusing [90]'s chevron rather than drawing a second, nearly identical one is the point: a chevron
+ * is the universal disclosure marker, and both jobs it now does mean "there is more this way".
+ */
+function Question({ q, children }: { q: string; children: React.ReactNode }) {
+  return (
+    <li>
+      <details className="group rounded-base border-[3px] border-ink bg-card">
+        <summary className="focus-ring flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-display text-lg font-bold [&::-webkit-details-marker]:hidden">
+          {q}
+          {/*
+           * `motion-reduce:transition-none` because this file has no global reduced-motion rule —
+           * `pressable` and every keyframe carry their own, so a new transition has to as well. The
+           * marker still turns; it simply stops sliding.
+           */}
+          <ArrowIcon className="size-5 shrink-0 text-muted transition-transform group-open:rotate-90 motion-reduce:transition-none" />
+        </summary>
+        <p className="px-5 pb-5 text-muted">{children}</p>
+      </details>
     </li>
   )
 }

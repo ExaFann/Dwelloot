@@ -275,6 +275,89 @@ describe('the landing page', () => {
     expect(filled?.style.width).toBe(`${tugShares(25, 15).mine}%`)
   })
 
+  /**
+   * [91] — the Questions band sits between "What's in the box" and the closing CTA. Position is
+   * part of the brief, so position is what is asserted; presence alone would pass with the band
+   * anywhere on the page.
+   */
+  it('puts Questions between the box and the closing CTA', () => {
+    renderPage()
+
+    const headings = [...document.querySelectorAll('h2')].map((h) => h.textContent?.trim() ?? '')
+    const box = headings.findIndex((h) => /what.s in the box/i.test(h))
+    const questions = headings.indexOf('Questions')
+    const cta = headings.findIndex((h) => /ready to settle it/i.test(h))
+
+    expect(box).toBeGreaterThanOrEqual(0)
+    expect(questions).toBe(box + 1)
+    expect(cta).toBe(questions + 1)
+  })
+
+  it('asks the five questions, in the owner’s order', () => {
+    renderPage()
+
+    const band = screen.getByRole('heading', { name: 'Questions' }).closest('section')!
+    expect([...band.querySelectorAll('summary')].map((s) => s.textContent?.trim())).toEqual([
+      'Can we play with three? Or on my own?',
+      'Do we both need an account?',
+      'Who decides what a chore is worth?',
+      'What stops us from logging things we didn’t do?',
+      'What if we tie?',
+    ])
+  })
+
+  /**
+   * The platform's disclosure, with nothing taken away from it. `tabindex` and `role` on a
+   * `<summary>` are both ways of overriding behaviour the element already has correct, so their
+   * **absence** is the assertion.
+   */
+  it('uses <details> and leaves <summary> alone', () => {
+    renderPage()
+
+    const band = screen.getByRole('heading', { name: 'Questions' }).closest('section')!
+    const summaries = [...band.querySelectorAll('summary')]
+    expect(summaries).toHaveLength(5)
+
+    for (const summary of summaries) {
+      expect(summary.parentElement?.tagName).toBe('DETAILS')
+      expect(summary).not.toHaveAttribute('tabindex')
+      expect(summary).not.toHaveAttribute('role')
+      // The browser's own triangle is replaced, not left beside the drawn one.
+      expect(summary.className).toContain('list-none')
+      expect(summary.querySelector('svg')).not.toBeNull()
+    }
+  })
+
+  /**
+   * Two answers describe the **backend** rather than the pitch, and both were checked against the
+   * services. Pinned by their wording so a later copy edit cannot quietly make the page promise
+   * something the API does not do.
+   */
+  it('answers the two mechanism questions in the words the code supports', () => {
+    renderPage()
+
+    expect(
+      screen.getByText(/you cannot approve your own chore — the app refuses it/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/a tie settles as a win-win and you each open a box/i),
+    ).toBeInTheDocument()
+  })
+
+  it('closes with the project line and a link to the source', () => {
+    renderPage()
+
+    expect(screen.getByText(/an MSA 2026 Phase 2 project/i)).toBeInTheDocument()
+
+    const repo = screen.getByRole('link', { name: /source on github/i })
+    expect(repo).toHaveAttribute('href', 'https://github.com/ExaFann/Dwelloot')
+    expect(repo).toHaveAttribute('rel', 'noreferrer')
+
+    // No contact page and no form — owner's call, and there is nowhere for a message to go.
+    expect(document.querySelector('form')).toBeNull()
+    expect(document.querySelector('a[href^="mailto:"]')).toBeNull()
+  })
+
   /** No nav bar, no in-page anchors, no sticky header — the page is one scroll, top to bottom. */
   it('has no navigation of its own', () => {
     renderPage()
