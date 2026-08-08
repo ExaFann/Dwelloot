@@ -497,3 +497,13 @@ $RECYCLE.BIN/
 
 
 publish.zip
+
+# Claude Code.
+#
+# `launch.json` IS tracked: it says how to start the dev server, it is the same for everyone, and
+# it is the kind of agent config the assessment asks to see.
+#
+# `settings.local.json` is not. It is the per-machine tool permission allow-list, so it accumulates
+# absolute paths from this computer and the literal commands that were approved - including, in this
+# case, a local test account's password typed into a curl probe. Machine-local by name and by nature.
+.claude/settings.local.json

@@ -34,9 +34,28 @@ export const authApi = baseApi.injectEndpoints({
 
     login: build.mutation<LoginResponse, LoginRequest>({
       query: (body) => ({ url: '/api/auth/login', method: 'POST', body }),
+      /**
+       * The `catch` is not error handling — it is the reason `npm test` exits 0.
+       *
+       * `queryFulfilled` rejects on a failed login, and this lifecycle function's own promise is
+       * one nobody can reach: `LoginPage` awaits the promise returned by `login()`, and the tests
+       * await the one returned by `dispatch(...)`. Neither of those is this one. So a rejection
+       * here became an **unhandled rejection** — eight of them across the login-failure tests,
+       * enough to make the runner exit 1 while every one of its assertions passed.
+       *
+       * A failed login is already handled where it is visible: `LoginPage` catches it and renders
+       * the server's message, and `baseApi` deliberately does not sign the user out on a 401 from
+       * `login`/`register` (a wrong password returns the same status as an expired session). There
+       * is nothing left for this branch to do but decline to sign anyone in, which is what
+       * returning does.
+       */
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        const { data } = await queryFulfilled
-        dispatch(signedIn({ token: data.token, user: data.user }))
+        try {
+          const { data } = await queryFulfilled
+          dispatch(signedIn({ token: data.token, user: data.user }))
+        } catch {
+          return
+        }
       },
       /**
        * Signing in makes every cached response from a previous session wrong. `Me` is invalidated
