@@ -180,18 +180,18 @@ fills it reads as a second design language, which is the reason `marks.tsx` exis
 
 | # | Key | Name (placeholder) | Motif | Suggested criteria |
 |---|---|---|---|---|
-| 1 | `first-chore` | 首次家务 | yellow card + green tick | first approved log |
-| 2 | `streak-3` | 3 日连胜 | blue→yellow→orange rising bars | 3-day win streak |
-| 3 | `first-redemption` | 首次兑换 | parcel, green band | first redemption |
-| 4 | `streak-7` | 7 日连胜 | orange 7-point burst, yellow core | 7-day win streak |
-| 5 | `century` | 百分里程碑 | cut gem, yellow top facet | 100 lifetime Points |
-| 6 | `big-spender` | 大手笔 | three stacked coins | large single redemption |
-| 7 | `early-bird` | 早鸟 | sun over a horizon | a log created between **05:00 and 07:00** |
-| 8 | `night-owl` | 夜猫 | octagon moon + two stars | a log created between **01:00 and 03:00** |
-| 9 | `win-win` | 双赢 | two triangles facing off, yellow bar | one win-win settlement |
-| 10 | `thousand` | 千分 | four diamonds around a yellow core | 1000 lifetime Points |
-| 11 | `veteran-reviewer` | 资深审核家 | **three chevrons, top one yellow** | 100 approvals given |
-| 12 | `collector` | 收藏家 | **rainbow rosette**, dark frame | every other badge unlocked |
+| 1 | `first-chore` | First chore | yellow card + green tick | first approved log |
+| 2 | `streak-3` | 3-day win streak | blue→yellow→orange rising bars | 3-day win streak |
+| 3 | `first-redemption` | First redemption | parcel, green band | first redemption |
+| 4 | `streak-7` | 7-day win streak | orange 7-point burst, yellow core | 7-day win streak |
+| 5 | `century` | Century | cut gem, yellow top facet | 100 lifetime Points |
+| 6 | `big-spender` | Big spender | three stacked coins | large single redemption |
+| 7 | `early-bird` | Early bird | sun over a horizon | a log created between **05:00 and 07:00** |
+| 8 | `night-owl` | Night owl | octagon moon + two stars | a log created between **01:00 and 03:00** |
+| 9 | `win-win` | Win-win | two triangles facing off, yellow bar | one win-win settlement |
+| 10 | `thousand` | Thousand | four diamonds around a yellow core | 1000 lifetime Points |
+| 11 | `veteran-reviewer` | Veteran reviewer | **three chevrons, top one yellow** | 100 approvals given |
+| 12 | `collector` | Collector | **rainbow rosette**, dark frame | every other badge unlocked |
 
 ### 6.1 Two badges break the pattern on purpose
 
