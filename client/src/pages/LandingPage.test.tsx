@@ -276,7 +276,7 @@ describe('the landing page', () => {
   })
 
   /**
-   * [91] — the Questions band sits between "What's in the box" and the closing CTA. Position is
+   * [91] — the Questions band sits between "What you're playing for" and the closing CTA. Position is
    * part of the brief, so position is what is asserted; presence alone would pass with the band
    * anywhere on the page.
    */
@@ -284,7 +284,7 @@ describe('the landing page', () => {
     renderPage()
 
     const headings = [...document.querySelectorAll('h2')].map((h) => h.textContent?.trim() ?? '')
-    const box = headings.findIndex((h) => /what.s in the box/i.test(h))
+    const box = headings.findIndex((h) => /what you.re playing for/i.test(h))
     const questions = headings.indexOf('Questions')
     const cta = headings.findIndex((h) => /ready to settle it/i.test(h))
 
@@ -369,10 +369,64 @@ describe('the landing page', () => {
     expect(header.className).not.toMatch(/\bsticky\b|\bfixed\b/)
   })
 
+  /**
+   * [92] — the rewards card wears the full-colour `RewardMark`, and the mono `RewardIcon` is off
+   * this page entirely. Asserted by looking for a literal fill: the mono glyph has none, so it
+   * inherits `currentColor`, and that difference is the whole reason both exist.
+   */
+  it('shows the rewards card in full colour', () => {
+    renderPage()
+
+    const card = screen.getByRole('heading', { name: /rewards you invent/i }).closest('li')!
+    const fills = [...card.querySelectorAll('svg *')].map((el) => el.getAttribute('fill'))
+
+    expect(fills.filter(Boolean).length).toBeGreaterThanOrEqual(7)
+    expect(fills).toContain('#7C4DFF')
+    expect(fills).toContain('#FFE14A')
+  })
+
   /** [83]: dark mode is not advertised — nothing to sell there yet, owner's call. */
   it('does not advertise dark mode', () => {
     renderPage()
     expect(screen.queryByText(/dark mode/i)).not.toBeInTheDocument()
+  })
+
+  /**
+   * [91a] — the win streak reaches the front door.
+   *
+   * Two assertions, and the second is the one with teeth. The streak's rule is that a tie, a voided
+   * day and a day nobody won are **skipped**, not counted as a break — only the other person winning
+   * ends the run. "Miss a day and it resets" is the copy anyone would write from the word *streak*
+   * alone, and it is false, so the absence of that claim is pinned as well as the presence of the
+   * true one.
+   */
+  it('says what a win streak is, in the words the code supports', () => {
+    renderPage()
+
+    const line = screen.getByText(/win days back to back and your win streak climbs/i)
+    expect(line).toBeInTheDocument()
+    expect(line.closest('p')?.querySelector('svg')).not.toBeNull()
+
+    expect(screen.getByText(/only losing one will/i)).toBeInTheDocument()
+    expect(screen.queryByText(/miss a day|resets|starts over|back to zero/i)).not.toBeInTheDocument()
+
+    // It is a *win* streak everywhere it is named — the ambiguity [91a] closed.
+    expect(screen.queryByText(/\bstreak\b/i)?.textContent ?? '').toMatch(/win streak/i)
+  })
+
+  /**
+   * jsdom cannot evaluate a media query, so the breakpoint itself is measured in the browser. What
+   * is pinned here is the intent: the row is `md`, not `lg`. Stacking until 1024 put a full-width
+   * Points and a full-width Coins on every tablet, which is what the owner rejected.
+   */
+  it('turns the economy band into a row at tablet width, not desktop', () => {
+    renderPage()
+
+    const band = screen.getByRole('heading', { name: /points keep score/i }).closest('section')!
+    const row = band.querySelector('h3')!.closest('div')!.parentElement!
+
+    expect(row.className).toMatch(/\bmd:grid-cols-/)
+    expect(row.className).not.toMatch(/\blg:grid-cols-/)
   })
 
   it('walks the loop in four steps', () => {

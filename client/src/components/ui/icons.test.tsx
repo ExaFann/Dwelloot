@@ -16,6 +16,8 @@ import {
   PointsMark,
   PrizeBoxMark,
   RedeemMark,
+  RewardIcon,
+  RewardMark,
   StoreIcon,
   StreakMark,
   ThemeIcon,
@@ -326,5 +328,55 @@ describe('lucide is gone', () => {
     }
     walk(src)
     expect(offenders).toEqual([])
+  })
+})
+
+/**
+ * `RewardMark` — task [92]. The sprite cannot pin this one (it is owner-supplied and not in
+ * `icons-source.svg`), so the assertions stand in for the fidelity test rather than duplicating it.
+ */
+describe('the reward mark, and the mono glyph it did not replace', () => {
+  it('draws the seven shapes in the owner’s order, with the owner’s fills', () => {
+    const { container } = render(<RewardMark />)
+    const shapes = [...container.querySelectorAll('g > *')]
+
+    expect(shapes.map((el) => el.getAttribute('fill'))).toEqual([
+      '#7C4DFF', // bow, left
+      '#7C4DFF', // bow, right
+      '#FFE14A',
+      '#3DDC97',
+      '#4CC9F0',
+      '#FF8A3D',
+      '#7C4DFF', // the lid, last
+    ])
+
+    // Order is the decision: the lid is a full-width band and has to be drawn over the wedges, or
+    // the parcel reads as a diamond with a stripe behind it.
+    expect(shapes.map((el) => el.tagName.toLowerCase())).toEqual([
+      'path', 'path', 'path', 'path', 'path', 'path', 'rect',
+    ])
+  })
+
+  it('carries the stroke once, on the group', () => {
+    const { container } = render(<RewardMark />)
+    const group = container.querySelector('g')!
+
+    expect(group.getAttribute('stroke')).toBe('#000000')
+    expect(group.getAttribute('stroke-width')).toBe('1.8')
+    for (const shape of group.children) expect(shape.hasAttribute('stroke')).toBe(false)
+  })
+
+  /**
+   * The guard that matters. Now that a prettier gift exists, deleting the mono one looks like
+   * tidying — and it would repaint the nav and the buttons, which need a glyph that takes
+   * `currentColor` through every state.
+   */
+  it('leaves RewardIcon a single currentColor path', () => {
+    const { container } = render(<RewardIcon />)
+    const paths = container.querySelectorAll('path')
+
+    expect(paths).toHaveLength(1)
+    expect(paths[0].hasAttribute('fill')).toBe(false)
+    expect(container.querySelector('svg')?.getAttribute('fill')).toBe('currentColor')
   })
 })

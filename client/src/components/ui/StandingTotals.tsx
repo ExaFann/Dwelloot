@@ -42,7 +42,14 @@ export function StandingTotals({
        * The **current** streak. `users.longest_win_streak` exists but neither `/api/auth/me` nor the
        * household's members return it, and the wireframe asks for "win streak" — satisfied.
        */}
-      <Stat label="Streak" value={currentWinStreak} mark={<StreakMark className="size-6" />} />
+      {/*
+       * "Win streak", not "Streak" — [91a], owner's call. A bare "Streak" in a chore app reads as
+       * *days you logged something*, which is the more common mechanic and is not what this number
+       * is: `currentWinStreak` counts consecutive days you **won**. The field was never ambiguous;
+       * only the label was. One edit covers both people's cards, because [84] made this row a
+       * single module.
+       */}
+      <Stat label="Win streak" value={currentWinStreak} mark={<StreakMark className="size-6" />} />
     </dl>
   )
 }

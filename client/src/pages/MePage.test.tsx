@@ -177,7 +177,7 @@ describe('the profile', () => {
     const coins = await screen.findByText('13')
     expect(coins.closest('div')).toHaveTextContent('Coins')
     expect(screen.getByText('120').closest('div')).toHaveTextContent('Lifetime pts')
-    expect(screen.getByText('2').closest('div')).toHaveTextContent('Streak')
+    expect(screen.getByText('2').closest('div')).toHaveTextContent('Win streak')
   })
 
   /**
@@ -351,7 +351,7 @@ describe('household settings', () => {
     expect(totals).toHaveTextContent('64')
     expect(totals).toHaveTextContent('Lifetime pts')
     expect(totals).toHaveTextContent('Coins')
-    expect(totals).toHaveTextContent('Streak')
+    expect(totals).toHaveTextContent('Win streak')
   })
 
   it('renames with the trimmed name', async () => {

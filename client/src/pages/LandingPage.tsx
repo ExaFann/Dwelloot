@@ -8,7 +8,8 @@ import {
   LogIcon,
   LogoMark,
   PointsMark,
-  RewardIcon,
+  RewardMark,
+  StreakMark,
 } from '../components/ui/icons'
 import { Avatar } from '../components/ui/Avatar'
 import { TugBar } from '../features/competition/TugBar'
@@ -137,6 +138,26 @@ export function LandingPage() {
             Boxes hold Coins. Coins buy rewards you two made up.
           </LoopTile>
         </ol>
+        {/*
+         * The win streak — [91a]. It has a mark and two badges and was mentioned nowhere on this
+         * page, so a stranger met it for the first time inside the app.
+         *
+         * A line rather than a fifth tile: the loop is four steps, and boxing this one would make
+         * the streak a stage you pass through instead of something that accrues across days.
+         *
+         * **The second sentence is the one that had to be checked rather than guessed.** The
+         * obvious copy — "miss a day and it resets" — is false. `ProgressionService` *skips* a tie,
+         * a voided day and a day nobody won ("what lets a run survive a quiet Sunday") and breaks
+         * the run only when the other person wins one. Writing the plausible version would have put
+         * a rule on the front door that the backend does not implement.
+         */}
+        <p className="mt-4 flex items-center gap-2.5 font-semibold text-muted">
+          <StreakMark className="size-7 shrink-0" />
+          <span>
+            Win days back to back and your win streak climbs. A quiet day won&rsquo;t break it —
+            only losing one will.
+          </span>
+        </p>
       </Band>
 
       {/* ── 4 · Approval ─────────────────────────────────────────────────────────────────── */}
@@ -195,15 +216,31 @@ export function LandingPage() {
          * things"; this is one thing that happens *between* two things, and the arrows only read as
          * flow while what they connect looks different from what they pass through.
          */}
-        <div className="mt-6 grid items-center gap-4 lg:grid-cols-[1fr_auto_auto_auto_1fr]">
+        {/*
+         * **The row starts at `md` (768), not `lg`** — [91a], owner's screenshot. Three stacked
+         * blocks is the *phone* layout; on a tablet, Points and Coins each eating a full row is
+         * exactly what the sequence is meant to avoid, because the whole point is reading
+         * left-to-right in one line.
+         *
+         * [90] measured `lg` honestly — at 768 the cards fell to 253px and the Coins body ran to
+         * four lines. But that measured the *existing* padding and type, and the right answer was
+         * never "stack until 1024", it was "make it fit at 768". So the spacing steps up with the
+         * width instead of being constant, and the numbers below are the measured result.
+         */}
+        {/* Cards stretch to a shared height; only the connectors centre themselves. `items-center`
+            on the whole grid let two cards of unequal text sit at different heights, which reads as
+            a mistake rather than as a row. */}
+        <div className="mt-6 grid gap-3 md:grid-cols-[1fr_auto_auto_auto_1fr] lg:gap-4">
           <EconomyCard mark={<PointsMark className="size-10" />} title="Points">
             Do chores, earn Points. Whoever has more when the day ends wins.
           </EconomyCard>
 
           <FlowArrow />
 
-          <div className="flex flex-col items-center gap-2 text-center lg:px-2">
-            <ChestMark className="size-14" />
+          {/* Bigger, but only into space the label already occupied — the middle column is sized by
+              "WIN THE DAY", so the chest grows to just under it and costs the cards nothing. */}
+          <div className="flex flex-col items-center justify-center gap-2 self-center text-center lg:px-2">
+            <ChestMark className="size-20" />
             <p className="font-display text-sm font-bold uppercase tracking-[0.06em]">
               Win the day
             </p>
@@ -219,7 +256,7 @@ export function LandingPage() {
 
       {/* ── 6 · What's inside ────────────────────────────────────────────────────────────── */}
       <Band>
-        <h2 className="text-3xl">What&rsquo;s in the box</h2>
+        <h2 className="text-3xl">What you&rsquo;re playing for</h2>
         {/*
          * A snap-scroller on a phone — the dashboard's own gesture, not a new interaction — and a
          * three-column grid from lg. The dark-mode card is gone ([83], owner's call: nothing to
@@ -240,7 +277,7 @@ export function LandingPage() {
             Daily wins pay small, monthly wins pay big, and one box in ten hides a bonus reward.
           </InsideCard>
           <InsideCard title="Rewards you invent">
-            <RewardIcon className="size-14 text-primary" />
+            <RewardMark className="size-14" />
             A lie-in, movie night picks, control of the playlist — the store sells whatever you two
             agree it sells.
           </InsideCard>
@@ -586,10 +623,12 @@ function EconomyCard({
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-base border-[3px] border-ink bg-card p-6">
+    <div className="rounded-base border-[3px] border-ink bg-card p-4 lg:p-6">
       {mark}
       <h3 className="mt-3 font-display text-xl font-bold">{title}</h3>
-      <p className="mt-1 text-muted">{children}</p>
+      {/* `text-sm` through the tablet row, where every pixel of the card is text; full size once
+          the container is wide enough to spare it. */}
+      <p className="mt-1 text-sm text-muted lg:text-base">{children}</p>
     </div>
   )
 }
@@ -602,7 +641,7 @@ function EconomyCard({
  * always the one nobody looks at ([84]).
  */
 function FlowArrow() {
-  return <ArrowIcon className="mx-auto size-7 rotate-90 text-muted lg:rotate-0" />
+  return <ArrowIcon className="mx-auto size-8 self-center rotate-90 text-muted md:rotate-0" />
 }
 
 function InsideCard({ title, children }: { title: string; children: React.ReactNode }) {

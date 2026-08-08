@@ -258,6 +258,59 @@ export function RewardIcon({ className }: IconProps) {
   )
 }
 
+/**
+ * The same gift, drawn in full colour — task [92], from the owner's SVG, paths verbatim.
+ *
+ * ### Why `RewardIcon` above is not replaced by it
+ *
+ * That one is a single path on `currentColor` with no stroke, so it takes the colour of whatever it
+ * sits in. Its call sites are both inside the loot reveal: one tinted `text-primary` beside a line
+ * of copy, and one at `size-6` inheriting the colour of the row around it. A seven-shape
+ * literal-colour drawing can do neither — it would stay purple-and-yellow through every state and
+ * every scheme, and at `size-4.5` its facets are mud.
+ *
+ * So the mono glyph keeps its call sites and this one has exactly one: the landing page's rewards
+ * card, where the drawing is the point and the surface is a single known card. `ChestMark` and
+ * `LootboxIcon` are the same pairing for the same reason.
+ *
+ * ### It follows the badges' colour mechanism, not the marks'
+ *
+ * The two in this file answer different questions. A **mark** rides `--mark-*` tokens and an ink
+ * stroke because it appears on many surfaces in both schemes; a **badge** carries literal colours
+ * and a literal `#000` stroke because it only ever sits on a card. This is the second kind of
+ * problem — one card, one context — so it takes literals and hoists the shared stroke into a `<g>`,
+ * which is what `Badge` does. No third mechanism.
+ *
+ * ### Two things not to tidy
+ *
+ * **Draw order.** Bow, then the four body wedges, then the lid **last**. The lid is a full-width
+ * band across the middle; drawn earlier, the wedges would cover it and the parcel would read as a
+ * diamond with a stripe behind it instead of a box with a lid in front.
+ *
+ * **The four wedge colours carry no meaning.** Everywhere else here a fill is a claim — yellow is
+ * Coins, blue is Points, purple is you, green is your partner. These four are decorative faceting on
+ * one object, and nothing is encoded by which facet is which. Said out loud because the next reader
+ * will otherwise go looking for the rule.
+ *
+ * Not in `icons-source.svg`, so exempt from the fidelity test by construction, like `BoltIcon`,
+ * `BurstIcon` and `ArrowIcon`.
+ */
+export function RewardMark({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <g stroke="#000000" strokeWidth="1.8" strokeLinejoin="miter" strokeMiterlimit={2}>
+        <path d="M12 5.2 5.5 1.2V5.2Z" fill="#7C4DFF" />
+        <path d="M12 5.2 18.5 1.2V5.2Z" fill="#7C4DFF" />
+        <path d="M3.2 9.6H20.8L12 16Z" fill="#FFE14A" />
+        <path d="M20.8 9.6V22.4L12 16Z" fill="#3DDC97" />
+        <path d="M20.8 22.4H3.2L12 16Z" fill="#4CC9F0" />
+        <path d="M3.2 22.4V9.6L12 16Z" fill="#FF8A3D" />
+        <rect x="1.6" y="5.2" width="20.8" height="4.4" fill="#7C4DFF" />
+      </g>
+    </Svg>
+  )
+}
+
 export function ApproveIcon({ className }: IconProps) {
   return (
     <Svg className={className}>
