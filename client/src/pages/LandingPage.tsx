@@ -11,6 +11,7 @@ import {
 } from '../components/ui/icons'
 import { Avatar } from '../components/ui/Avatar'
 import { TugBar } from '../features/competition/TugBar'
+import { tugShares } from '../features/competition/standing'
 import {
   ChoreCredit,
   ChoreStatusDot,
@@ -41,16 +42,43 @@ export function LandingPage() {
   return (
     <div className="min-h-dvh bg-page">
       {/* ── 1 · Hero ─────────────────────────────────────────────────────────────────────── */}
-      <header className="mx-auto max-w-5xl px-4 pb-14 pt-10 lg:px-6">
+      {/*
+       * `xl:max-w-6xl` — [89]. Capped at `max-w-5xl` (1024px) the hero row could only give the text
+       * column 488px, which is not enough for a 72px headline: it broke to **three** lines at every
+       * width from 1280 up, and the extra 128px is exactly what buys the second line back.
+       * `max-w-7xl` was measured too and buys nothing further — the text column is capped at
+       * `max-w-xl` regardless, so the only thing wider makes bigger is the empty gap.
+       */}
+      <header className="mx-auto max-w-5xl px-4 pb-14 pt-10 lg:px-6 xl:max-w-6xl">
         <div className="flex items-center gap-2.5">
-          <LogoMark className="size-9" />
-          <span className="font-display text-xl font-bold">Dwelloot</span>
+          <LogoMark className="size-11" />
+          <span className="font-display text-2xl font-bold">Dwelloot</span>
         </div>
 
-        <div className="mt-10 flex flex-col items-start gap-10 lg:flex-row lg:items-center">
+        {/*
+         * The row starts at **900px, not at a named breakpoint** — [89], and the number is measured
+         * rather than chosen. `lg:` (1024) leaves every tablet on the phone layout: at 768–1023 the
+         * 576px text column sits in a 753–1009px container with nothing beside it. `md:` (768) is
+         * worse in the other direction — side by side, the text column is squeezed to 297px and the
+         * headline breaks to three lines. Forcing the row at each width in turn puts the boundary
+         * at 900: 880 still gives three lines, 900 gives two.
+         *
+         * Tailwind's scale has nothing between 768 and 1024, so this is an arbitrary variant. It is
+         * written out in full because Tailwind scans source text and a composed class name emits no
+         * CSS at all.
+         */}
+        <div className="mt-10 flex flex-col items-start gap-10 min-[900px]:flex-row min-[900px]:items-center">
           <div className="max-w-xl">
-            {/* Bigger at every step since [83] — the owner's read was that the page whispered. */}
-            <h1 className="page-in font-display text-5xl font-bold leading-none sm:text-6xl lg:text-7xl">
+            {/*
+             * Bigger at every step since [83] — the owner's read was that the page whispered.
+             *
+             * **72px starts at `xl`, not at `lg`** ([89]). It used to start at 1024, where the hero
+             * row can only spare 473–488px for the text, and a 72px headline in 488px is three
+             * chopped lines — "Chores," / "but make" / "it a duel." Holding 60px until 1280, where
+             * the wider container gives it 576px, keeps it to two lines everywhere above 900.
+             * One class to reverse if the owner prefers the larger type over the better break.
+             */}
+            <h1 className="page-in font-display text-5xl font-bold leading-none sm:text-6xl xl:text-7xl">
               Chores, but make it a&nbsp;duel.
             </h1>
             <p className="mt-5 max-w-md text-lg font-semibold text-muted">
@@ -254,7 +282,7 @@ function Band({ children }: { children: React.ReactNode }) {
   const { ref, revealed } = useRevealOnScroll<HTMLElement>()
   return (
     <section ref={ref} className={revealed ? 'band band-in' : 'band'}>
-      <div className="mx-auto max-w-5xl px-4 py-10 lg:px-6">{children}</div>
+      <div className="mx-auto max-w-5xl px-4 py-10 lg:px-6 xl:max-w-6xl">{children}</div>
     </section>
   )
 }
@@ -282,9 +310,15 @@ function HeroDuelCard() {
               <Avatar userId={1} name="Alex" role="self" avatarKey="star" />
               <span className="font-display text-sm font-bold">Alex</span>
             </span>
+            {/*
+             * Three rows against the other column's four, and left unequal on purpose ([89]). Two
+             * people do not do the same number of chores, and squaring the columns off with a
+             * filler row would make the poster less convincing rather than tidier.
+             */}
             <ul className="mt-3 flex flex-col gap-1.5 text-xs">
-              <MockChore title="Cooked dinner" status="Approved" points={20} />
               <MockChore title="Fed the cat" status="Pending" points={5} />
+              <MockChore title="Cooked dinner" status="Approved" points={20} />
+              <MockChore title="Bins out" status="Approved" points={10} />
             </ul>
           </div>
           <div className="text-right">
@@ -292,50 +326,82 @@ function HeroDuelCard() {
               <Avatar userId={2} name="Blake" role="opponent" avatarKey="cactus" />
               <span className="font-display text-sm font-bold">Blake</span>
             </span>
+            {/*
+             * The rejected row is the only place the front door shows a chore being turned down,
+             * and it is doing real work: the approval band above sells "your partner signs off",
+             * and a strike-through is the proof that signing off is a decision rather than a
+             * formality. It carries no figure, same as pending — that rule is `ChoreCredit`'s.
+             */}
             <ul className="mt-3 flex flex-col gap-1.5 text-xs">
+              <MockChore title="Watered plants" status="Pending" points={5} mirrored />
               <MockChore title="Vacuumed" status="Approved" points={15} mirrored />
+              <MockChore title="Made the bed" status="Rejected" points={5} mirrored />
+              <MockChore title="Washed up" status="Approved" points={10} mirrored />
             </ul>
           </div>
         </div>
 
         {/*
-         * The ladder — day, week, month, thin to thick, the same shape [86] settled on for the
-         * real dashboard. The poster tracks the product; that is the whole point of it being
-         * assembled from the app's own parts ([84]).
+         * One rung, not the ladder ([89], owner's call).
+         *
+         * The ladder's thin-to-thick ordering encoded *zooming out* — day thinnest, month thickest.
+         * With a single rung there is no ordering left for thickness to encode, so it takes the
+         * heaviest treatment instead: this is now the card's only product shot and it carries the
+         * verdict, and `MockPeriod` promotes the score to `text-2xl` whenever a verdict is present.
+         * A `h-4` bar under a `text-2xl` score reads as an accident rather than a decision.
          */}
-        <div className="mt-5 flex flex-col gap-4">
-          <MockPeriod label="Today" score="25 — 15" mine={58} bar="h-4 border-2" bolt="size-4" />
-          <MockPeriod label="This week" score="100 — 115" mine={44} bar="h-6 border-2" bolt="size-5" />
+        <div className="mt-5">
           <MockPeriod
-            label="This month"
-            score="310 — 288"
-            mine={53}
+            label="Today"
+            mine={25}
+            theirs={15}
             bar="h-10 border-[3px]"
             bolt="size-7"
-            verdict="Alex is ahead by 22."
+            verdict="Alex is ahead by 10."
           />
+          {/*
+           * Static text, and deliberately not a control. The card is `aria-hidden` and nothing in
+           * it is clickable, so a scroller, dots or a chevron here would be an affordance the
+           * poster cannot honour — a stranger who tries to swipe a picture and gets nothing has
+           * learnt something false about the product. The sentence describes the real app; the
+           * poster does not impersonate it.
+           */}
+          <p className="mt-2 font-display text-xs font-semibold text-muted">
+            Week and month too — swipe on your phone.
+          </p>
         </div>
       </div>
     </div>
   )
 }
 
-/** One rung of the poster's ladder — the real `TugBar`, so it cannot drift from the product. */
+/**
+ * One rung of the poster — the real `TugBar` **and the real `tugShares`**, so neither the rope nor
+ * the grip's position can drift from the product.
+ *
+ * Taking points rather than a pre-computed percentage is [89]'s correction. The three rungs each
+ * carried a hand-written share and **all three were wrong**: 25–15 was drawn at 58 where the real
+ * function returns 62, 100–115 at 44 against 47, 310–288 at 53 against 52. Nothing failed, because a
+ * literal cannot disagree with anything. The grip is measured from the lead rather than from
+ * share-of-total, which is exactly the kind of rule nobody re-derives by eye — so it is called, not
+ * copied ([84]'s rule, one layer down from the components).
+ */
 function MockPeriod({
   label,
-  score,
   mine,
+  theirs,
   bar,
   bolt,
   verdict,
 }: {
   label: string
-  score: string
   mine: number
+  theirs: number
   bar: string
   bolt: string
   verdict?: string
 }) {
+  const share = tugShares(mine, theirs)
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2">
@@ -343,11 +409,16 @@ function MockPeriod({
           {label}
         </span>
         <span className={`font-display font-bold ${verdict ? 'text-2xl' : 'text-base'}`}>
-          {score}
+          {mine} — {theirs}
         </span>
       </div>
       <div className="mt-2">
-        <TugBar mine={mine} theirs={100 - mine} barClassName={bar} boltClassName={bolt} />
+        <TugBar
+          mine={share.mine}
+          theirs={share.partner}
+          barClassName={bar}
+          boltClassName={bolt}
+        />
       </div>
       {verdict && <p className="mt-2 font-display text-sm font-bold">{verdict}</p>}
     </div>

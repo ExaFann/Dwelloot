@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { LandingPage } from './LandingPage'
+import { tugShares } from '../features/competition/standing'
 
 /**
  * The landing page — task [82].
@@ -18,6 +19,24 @@ function renderPage() {
     </MemoryRouter>,
   )
 }
+
+/**
+ * The hero card is `aria-hidden`, so `getByRole` cannot reach anything inside it — every query into
+ * the poster has to start from its text.
+ */
+const heroCard = () => screen.getByText('Head-to-head').closest('.rounded-base') as HTMLElement
+
+/** The status dot's fill, in row order — `choreStatusDisplay`'s map is the source of these. */
+const statuses = (list: Element) =>
+  [...list.querySelectorAll('li')].map(
+    (row) =>
+      ['bg-warning', 'bg-success', 'bg-danger'].find((fill) =>
+        row.querySelector('span[aria-hidden="true"]')?.className.includes(fill),
+      ) ?? 'none',
+  )
+
+const titles = (list: Element) =>
+  [...list.querySelectorAll('li')].map((row) => row.querySelector('span:nth-child(2)')?.textContent)
 
 afterEach(() => {
   cleanup()
@@ -104,6 +123,98 @@ describe('the landing page', () => {
     renderPage()
     expect(screen.getByText('Alex')).toBeInTheDocument()
     expect(screen.getByText('Blake')).toBeInTheDocument()
+  })
+
+  /**
+   * [89] — the card shows **one** rung, not the ladder.
+   *
+   * The absence is the change, so the absence is what is asserted. A test that only checked "Today
+   * is present" would pass unchanged against the three-rung version it replaced, which makes it a
+   * check that cannot fail for the thing it was written for.
+   */
+  it('shows only the Today rung, carrying the verdict', () => {
+    renderPage()
+
+    expect(screen.getByText('Today')).toBeInTheDocument()
+    expect(screen.queryByText(/this week/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/this month/i)).not.toBeInTheDocument()
+
+    // The verdict moved onto Today, and its arithmetic has to match the score above it.
+    expect(screen.getByText('Alex is ahead by 10.')).toBeInTheDocument()
+    expect(heroCard()).toHaveTextContent('25 — 15')
+  })
+
+  /**
+   * The caption is prose, and must stay prose. The card is `aria-hidden` and nothing inside it is
+   * clickable, so a scroller or a chevron would promise a gesture the poster cannot honour.
+   */
+  it('describes the other periods in words, without pretending to be a control', () => {
+    renderPage()
+
+    expect(screen.getByText(/week and month too — swipe on your phone\./i)).toBeInTheDocument()
+
+    const card = heroCard()
+    // The attribute sits on the wrapper, so what matters is that the card is inside that subtree.
+    expect(card.closest('[aria-hidden="true"]')).not.toBeNull()
+    expect(card.querySelector('button')).toBeNull()
+    expect(card.querySelector('[role="button"]')).toBeNull()
+    expect(card.querySelector('[tabindex]')).toBeNull()
+  })
+
+  /**
+   * Three chores against four, and the statuses in a fixed order. The dot classes come from
+   * `choreStatusDisplay`'s map, so this also pins the poster to the shared module rather than to a
+   * colour the page could re-decide locally.
+   */
+  it('runs three chores down one column and four down the other', () => {
+    renderPage()
+
+    const [left, right] = [...heroCard().querySelectorAll('ul')]
+
+    expect(statuses(left)).toEqual(['bg-warning', 'bg-success', 'bg-success'])
+    expect(statuses(right)).toEqual(['bg-warning', 'bg-success', 'bg-danger', 'bg-success'])
+
+    expect(titles(left)).toEqual(['Fed the cat', 'Cooked dinner', 'Bins out'])
+    expect(titles(right)).toEqual(['Watered plants', 'Vacuumed', 'Made the bed', 'Washed up'])
+  })
+
+  /**
+   * The rejected row is new to this page, and it is the one that can silently go wrong:
+   * `pointsAwarded` is populated on all three statuses, so a figure printed here would tell a
+   * stranger that a chore their partner turned down still paid out.
+   */
+  it('strikes the rejected chore through and pays it nothing', () => {
+    renderPage()
+
+    const rejected = screen.getByText('Made the bed')
+    expect(rejected.className).toContain('line-through')
+    expect(rejected.closest('li')).not.toHaveTextContent('5')
+  })
+
+  /**
+   * The rope's position comes from the real `tugShares`, not from a number typed into the poster.
+   *
+   * All three original rungs carried hand-written shares and all three were wrong — 25–15 was drawn
+   * at 58 where the function returns 62. Nothing failed, because a literal cannot disagree with
+   * anything. The grip is measured from the *lead* rather than share-of-total, which is exactly the
+   * kind of rule nobody re-derives by eye.
+   */
+  it('positions the rope with the real tugShares', () => {
+    renderPage()
+
+    const filled = [...heroCard().querySelectorAll('div')].find((el) => el.style.width.endsWith('%'))
+    expect(filled?.style.width).toBe(`${tugShares(25, 15).mine}%`)
+  })
+
+  /** No nav bar, no in-page anchors, no sticky header — the page is one scroll, top to bottom. */
+  it('has no navigation of its own', () => {
+    renderPage()
+
+    expect(document.querySelector('nav')).toBeNull()
+    expect(document.querySelector('a[href^="#"]')).toBeNull()
+
+    const header = document.querySelector('header')!
+    expect(header.className).not.toMatch(/\bsticky\b|\bfixed\b/)
   })
 
   /** [83]: dark mode is not advertised — nothing to sell there yet, owner's call. */
