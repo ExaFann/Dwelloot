@@ -1,0 +1,227 @@
+using API.Dtos;
+using API.Dtos.ActivityLogs;
+using API.Errors;
+using API.Extensions;
+using API.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace API.Controllers;
+
+[ApiController]
+[Authorize]
+[Route("api/activity-logs")]
+public class ActivityLogsController(IActivityLogService logs) : ControllerBase
+{
+    /// <summary>
+    /// The approval queue: the <em>partner's</em> logs in this household. Never the caller's own —
+    /// see <see cref="IActivityLogService.ListForApprovalAsync"/>.
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<PagedResponse<PendingLogResponse>>> List(
+        [FromQuery] ActivityLogQuery query,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await logs.ListForApprovalAsync(userId.Value, query, ct);
+
+        return result.Status switch
+        {
+            ActivityLogStatusCode.Ok => Ok(result.Page),
+
+            ActivityLogStatusCode.NoHousehold =>
+                this.Failure(StatusCodes.Status409Conflict, "You are not in a household yet."),
+
+            _ => Unauthorized()
+        };
+    }
+
+    /// <summary>
+    /// The caller's own logged history — the complement of <see cref="List"/>.
+    /// </summary>
+    [HttpGet("mine")]
+    public async Task<ActionResult<PagedResponse<MyActivityLogResponse>>> Mine(
+        [FromQuery] MyActivityLogQuery query,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await logs.ListMineAsync(userId.Value, query, ct);
+
+        return result.Status switch
+        {
+            ActivityLogStatusCode.Ok => Ok(result.Page),
+
+            ActivityLogStatusCode.NoHousehold =>
+                this.Failure(StatusCodes.Status409Conflict, "You are not in a household yet."),
+
+            _ => Unauthorized()
+        };
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<ActivityLogResponse>> Create(
+        CreateActivityLogRequest request,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await logs.CreateAsync(userId.Value, request.ActivityId, ct);
+
+        return result.Status switch
+        {
+            ActivityLogStatusCode.Ok =>
+                Created($"/api/activity-logs/{result.Log!.Id}", result.Log),
+
+            ActivityLogStatusCode.NoHousehold =>
+                this.Failure(StatusCodes.Status409Conflict, "You are not in a household yet."),
+
+            // Covers "no such chore", "someone else's chore" and "archived chore" alike, so the
+            // endpoint cannot be used to discover which ids exist.
+            ActivityLogStatusCode.ActivityNotFound =>
+                this.Failure(StatusCodes.Status404NotFound, "Chore not found."),
+
+            _ => Unauthorized()
+        };
+    }
+
+    [HttpPatch("{id:int}/approve")]
+    public async Task<ActionResult<ActivityLogDecisionResponse>> Approve(int id, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await logs.ApproveAsync(userId.Value, id, ct);
+
+        return result.Status == ActivityLogStatusCode.Ok
+            ? Ok(result.Log)
+            : MapDecisionFailure(result.Status);
+    }
+
+    [HttpPatch("{id:int}/reject")]
+    public async Task<ActionResult<ActivityLogDecisionResponse>> Reject(
+        int id,
+        RejectActivityLogRequest request,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await logs.RejectAsync(userId.Value, id, request.Reason, ct);
+
+        return result.Status == ActivityLogStatusCode.Ok
+            ? Ok(result.Log)
+            : MapDecisionFailure(result.Status);
+    }
+
+    /// <summary>
+    /// Approves several logs at once, skipping any the caller may not decide.
+    /// </summary>
+    /// <remarks>
+    /// Best-effort: the response reports which ids were approved and which were skipped, and why.
+    /// See <see cref="IActivityLogService.BulkApproveAsync"/>.
+    /// </remarks>
+    [HttpPost("bulk-approve")]
+    public async Task<ActionResult<BulkApproveResponse>> BulkApprove(
+        BulkApproveRequest request,
+        CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await logs.BulkApproveAsync(userId.Value, request.Ids, ct);
+
+        return result.Status == ActivityLogStatusCode.Ok
+            ? Ok(result.Response)
+            : MapDecisionFailure(result.Status);
+    }
+
+    /// <remarks>
+    /// The asymmetry is deliberate. Another household's log is a 404 so ids cannot be enumerated;
+    /// the caller's own log is a <b>403</b>, because they created it and know perfectly well that
+    /// it exists — a 404 there would confuse rather than protect.
+    /// </remarks>
+    /// <summary>
+    /// Removes one of your own pending chores — task [71].
+    /// </summary>
+    /// <remarks>
+    /// The endpoint whose absence shaped task [46]: with no way to unsend a log, "undo" had to mean
+    /// "not sent yet", which is what `useDeferredLog`'s five-second window is. That window stays —
+    /// it still stops a double tap becoming two logs, and it costs no request at all — but after it
+    /// closes there is now a way back that does not involve asking the partner to reject you.
+    /// </remarks>
+    [HttpDelete("{id:int}")]
+    public async Task<ActionResult> Delete(int id, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var status = await logs.DeleteMineAsync(userId.Value, id, ct);
+
+        return status == ActivityLogStatusCode.Ok ? NoContent() : MapDeleteFailure(status);
+    }
+
+    /// <remarks>
+    /// Separate from <see cref="MapDecisionFailure"/> because the same codes mean different things
+    /// here. <c>NotPending</c> on an approval means "your partner already decided"; on a deletion it
+    /// means "this one has been decided, so it is no longer yours alone to remove" — and telling the
+    /// user the wrong one of those sends them looking in the wrong place.
+    /// </remarks>
+    private ActionResult MapDeleteFailure(ActivityLogStatusCode status) => status switch
+    {
+        ActivityLogStatusCode.LogNotFound =>
+            this.Failure(StatusCodes.Status404NotFound, "Log not found."),
+
+        ActivityLogStatusCode.NotPending =>
+            this.Failure(
+                StatusCodes.Status409Conflict,
+                "Your partner has already decided this one, so it can no longer be removed."),
+
+        _ => Unauthorized()
+    };
+
+    private ActionResult MapDecisionFailure(ActivityLogStatusCode status) => status switch
+    {
+        ActivityLogStatusCode.NoHousehold =>
+            this.Failure(StatusCodes.Status409Conflict, "You are not in a household yet."),
+
+        ActivityLogStatusCode.LogNotFound =>
+            this.Failure(StatusCodes.Status404NotFound, "Log not found."),
+
+        ActivityLogStatusCode.SelfApproval =>
+            this.Failure(StatusCodes.Status403Forbidden, "You cannot approve or reject a chore you logged yourself."),
+
+        ActivityLogStatusCode.NotPending =>
+            this.Failure(StatusCodes.Status409Conflict, "This log has already been decided."),
+
+        ActivityLogStatusCode.Conflict =>
+            this.Failure(StatusCodes.Status409Conflict, "This log was decided just now. Refresh and try again."),
+
+        _ => Unauthorized()
+    };
+}

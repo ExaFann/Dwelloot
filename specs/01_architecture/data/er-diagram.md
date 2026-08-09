@@ -1,0 +1,112 @@
+# ER diagram (combined)
+
+The earlier split into three Chen-notation SVGs (household/activity, reward economy, progression) is still useful for close reading — each one is precise about cardinality and easy to follow entity by entity. But nine entities do not fit into one hand-drawn Chen diagram without either shrinking text past readability or overlapping something; that's exactly why the split happened in the first place.
+
+For a single combined "whole picture" diagram, Mermaid's `erDiagram` syntax is the right tool: it lays out automatically, GitHub renders it natively inside a markdown file (no export step, no broken image link), and it fits all nine entities without hand-computed coordinates. Paste the block below into `README.md` or view this file directly on GitHub.
+
+```mermaid
+erDiagram
+    HOUSEHOLD ||--o{ USER : "has (max 2)"
+    USER ||--o{ ACTIVITYLOG : logs
+    USER ||--o{ ACTIVITYLOG : approves
+    ACTIVITY ||--o{ ACTIVITYLOG : "logged as"
+    USER ||--o{ REDEMPTION : redeems
+    REWARD ||--o{ REDEMPTION : "redeemed as"
+    USER ||--o{ USERBADGE : earns
+    BADGE ||--o{ USERBADGE : "unlocked as"
+    HOUSEHOLD ||--o{ COMPETITION : runs
+    USER ||--o{ COMPETITION : wins
+    REWARD ||--o{ COMPETITION : "awarded as loot"
+    COMPETITION ||--o{ COMPETITIONCLAIM : "opened as"
+    USER ||--o{ COMPETITIONCLAIM : opens
+
+    HOUSEHOLD {
+        int id PK
+        string name
+        string invite_code
+        bool is_full
+    }
+    USER {
+        int id PK
+        string name
+        string email
+        string password_hash
+        int household_id FK
+        int lifetime_points
+        int coins
+        int current_win_streak
+        int longest_win_streak
+    }
+    ACTIVITY {
+        int id PK
+        int household_id FK "not null, copied from default templates at household creation"
+        string title
+        int points
+        string category
+        datetime archived_at "nullable - removing a chore archives it so its logs survive"
+    }
+    ACTIVITYLOG {
+        int id PK
+        int activity_id FK
+        int logged_by_user_id FK
+        int approved_by_user_id FK "must differ from logged_by_user_id"
+        string status
+        int points_awarded "snapshot of the chore's points at log time, not a live read"
+        datetime completed_at
+        datetime approved_at
+        string reject_reason
+    }
+    REWARD {
+        int id PK
+        int household_id FK "not null, copied from default templates at household creation"
+        string title
+        int coin_cost
+        bool pauses_competition "true = redeeming voids that day's daily competition"
+        datetime archived_at "nullable - removing a reward archives it so its redemptions survive"
+    }
+    REDEMPTION {
+        int id PK
+        int user_id FK
+        int reward_id FK
+        int coins_spent "snapshot of the reward's price at purchase time, not a live read"
+        datetime redeemed_at
+    }
+    BADGE {
+        int id PK
+        string name
+        string criteria
+    }
+    USERBADGE {
+        int id PK
+        int user_id FK
+        int badge_id FK
+        datetime unlocked_at
+    }
+    COMPETITION {
+        int id PK
+        int household_id FK
+        int winner_user_id FK "nullable, null on a win-win or a voided period"
+        int bonus_reward_id FK "nullable, set when the loot box rolled a reward instead of Coins"
+        string period_type
+        datetime period_start
+        datetime period_end
+        int winner_points
+        int loser_points
+        int coins_awarded
+        bool is_win_win
+        bool is_voided "a pauses_competition reward was redeemed in this period"
+        datetime settled_at "not null - a row exists only once settled"
+    }
+    COMPETITIONCLAIM {
+        int id PK
+        int competition_id FK
+        int user_id FK
+        datetime opened_at
+    }
+```
+
+Notes on reading this against the three split diagrams:
+
+- Mermaid's crow's-foot notation (`||--o{`) reads as "one required, many optional" — e.g. `HOUSEHOLD ||--o{ USER` means one household relates to zero-or-many users (the "max 2" business rule isn't expressible in crow's-foot and is called out in the label instead, same as it's enforced in application code, not a database constraint — see `relational-model.md`).
+- The two relationships between `USER` and `ACTIVITYLOG` (`logs`, `approves`) are drawn as two separate lines here, whereas the split diagram simplified `approves` to a labeled foreign key to keep that one diagram readable. Both are correct descriptions of the same schema; use whichever is clearer for a given conversation.
+- If a static image is needed (for the submission video or a place that can't render Mermaid), paste the block into the [Mermaid Live Editor](https://mermaid.live) and export SVG/PNG from there — that avoids hand-placing 9 entities' worth of coordinates by hand, which is the failure mode a single hand-drawn SVG would hit.

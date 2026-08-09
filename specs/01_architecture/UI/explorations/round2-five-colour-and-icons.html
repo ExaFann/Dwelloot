@@ -1,0 +1,489 @@
+<!--
+  Design exploration, round 2 of 4. A working artefact, not a deliverable: these pages were
+  generated to compare options side by side before the icon set was settled. The rendered
+  swatches, marks and badge sheets are the content; the annotations around them are in the
+  author's first language, because at the time the only reader was the author.
+
+  The decisions these rounds arrived at are written up in English in ../BRAND-ICONS.md, and the
+  finished paths are in ../icons-source.svg, which a test reads from disk to check the React
+  components still match it.
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dwelloot — 五色 Logo B 系列 + 元素图标集</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Public+Sans:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#000; --paper:#fff;
+    --pu:#7C4DFF; --gr:#3DDC97; --ye:#FFE14A; --bl:#4CC9F0; --or:#FF8A3D;
+    --page:#F0EBFF;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:30px 20px 90px;background:var(--ye);color:#000;
+    font-family:"Public Sans","Microsoft YaHei","PingFang SC",sans-serif;font-weight:600;line-height:1.55}
+  .wrap{max-width:1160px;margin:0 auto}
+  h1,h2,h3{font-family:"Archivo Black","Public Sans","Microsoft YaHei",sans-serif;font-weight:900;margin:0;letter-spacing:-.01em}
+  h1{font-size:clamp(30px,5.4vw,56px);line-height:1.03;text-transform:uppercase}
+  h2{font-size:clamp(20px,2.8vw,28px);text-transform:uppercase}
+  h3{font-size:14px;text-transform:uppercase;letter-spacing:.07em}
+  .card{background:#fff;border:4px solid #000;box-shadow:8px 8px 0 #000;padding:24px;margin-bottom:28px}
+  .tag{display:inline-block;background:var(--pu);color:#fff;border:3px solid #000;padding:4px 12px;
+    font-weight:900;font-size:12px;letter-spacing:.14em;text-transform:uppercase;box-shadow:4px 4px 0 #000;margin:0 6px 6px 0}
+  .tag.g{background:var(--gr);color:#000}.tag.y{background:var(--ye);color:#000}
+  .tag.b{background:var(--bl);color:#000}.tag.o{background:var(--or);color:#000}
+  p{margin:0 0 10px}
+  .sm{font-weight:400;font-size:14.5px}
+  .sm b{font-weight:800}
+  code{background:#F0EBFF;border:1px solid #000;padding:0 4px;font-size:12.5px}
+
+  /* palette */
+  .pal{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:16px}
+  .sw{border:3px solid #000;box-shadow:4px 4px 0 #000}
+  .sw .chip{height:64px;border-bottom:3px solid #000}
+  .sw .txt{padding:8px 10px;font-size:12.5px;font-weight:800;background:#fff}
+  .sw .txt small{display:block;font-weight:400;font-size:11.5px;opacity:.7;letter-spacing:.02em}
+
+  /* logo grid */
+  .lgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px;margin-top:18px}
+  .lcard{border:4px solid #000;box-shadow:6px 6px 0 #000;background:#fff}
+  .lcard .top{background:var(--page);border-bottom:4px solid #000;display:grid;place-items:center;padding:20px}
+  .lcard .top svg{width:160px;height:160px;display:block;filter:drop-shadow(5px 5px 0 rgba(0,0,0,.25))}
+  .lcard .meta{padding:14px 16px}
+  .lcard .meta h3{font-size:15px;margin-bottom:6px}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .tile{border:3px solid #000;display:grid;place-items:center;background:var(--page)}
+  .tile.pu{background:var(--pu)}.tile.dk{background:#171226}
+  .t56{width:56px;height:56px}.t36{width:36px;height:36px}.t22{width:22px;height:22px}
+  .t56 svg{width:44px;height:44px}.t36 svg{width:29px;height:29px}.t22 svg{width:18px;height:18px}
+  .dark{--pu:#A87BFF;--gr:#57E6B0;--ye:#FFEA6B;--bl:#6FD6F7;--or:#FFA85C;--paper:#F0EBFF}
+  .cap{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.55;margin-top:5px;text-align:center}
+
+  /* marks */
+  .mrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin-top:18px}
+  .mcell{border:3px solid #000;background:#fff;padding:16px;box-shadow:5px 5px 0 #000}
+  .mcell .big{display:flex;gap:14px;align-items:flex-end;margin-bottom:10px}
+  .mcell .big svg{display:block}
+  .v56{width:56px;height:56px}.v32{width:32px;height:32px}.v20{width:20px;height:20px}.v14{width:14px;height:14px}
+  .alt{display:flex;gap:14px;align-items:center;margin-top:10px;padding-top:10px;border-top:2px dashed #000}
+  .alt svg{width:30px;height:30px}
+  .inline{margin-top:10px;font-size:15px;font-weight:800;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+  .inline svg{width:16px;height:16px;vertical-align:-2px}
+
+  /* badges */
+  .bgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:18px;margin-top:18px}
+  .bcell{text-align:center}
+  .bcell svg{width:104px;height:104px;filter:drop-shadow(4px 4px 0 rgba(0,0,0,.3))}
+  .bcell .n{font-size:13px;font-weight:900;margin-top:8px}
+  .bcell .d{font-size:11.5px;font-weight:400;opacity:.7}
+  .locked{filter:grayscale(1) opacity(.4)}
+
+  /* ui icons */
+  .igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:14px;margin-top:18px}
+  .icell{border:3px solid #000;background:#fff;padding:12px 6px;text-align:center;box-shadow:4px 4px 0 #000}
+  .icell svg{width:34px;height:34px;fill:#000}
+  .icell .n{font-size:11px;font-weight:800;margin-top:7px;letter-spacing:.02em}
+  .icell .s{font-size:10px;font-weight:400;opacity:.6}
+  .navbar{display:flex;gap:0;border:4px solid #000;box-shadow:6px 6px 0 #000;margin-top:18px;background:#fff}
+  .navbar div{flex:1;padding:12px 4px;text-align:center;border-right:3px solid #000;font-size:11px;font-weight:800}
+  .navbar div:last-child{border-right:0}
+  .navbar svg{width:26px;height:26px;display:block;margin:0 auto 4px}
+  .navbar .on{background:var(--pu);color:#fff}
+  .navbar .on svg{fill:#fff}
+
+  .note{border:3px solid #000;background:var(--ye);padding:14px 16px;margin-top:18px;font-size:14px;font-weight:400}
+  .note b{font-weight:900}
+  .foot{text-align:center;font-size:13px;font-weight:700;opacity:.75;margin-top:30px}
+</style>
+</head>
+<body>
+
+<!-- ══════════ SYMBOLS ══════════ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+
+<!-- ─── LOGOS (128) ─── -->
+<symbol id="L1" viewBox="0 0 128 128"><g stroke="var(--ink)" stroke-width="7" stroke-miterlimit="2">
+  <path d="M100 6 105 24 121.2 14.8 112 31 130 36 112 41 121.2 57.2 105 48 100 66 95 48 78.8 57.2 88 41 70 36 88 31 78.8 14.8 95 24Z" fill="var(--or)" stroke-width="6"/>
+  <path d="M24 17 37 30 24 43 11 30Z" fill="var(--bl)" stroke-width="6"/>
+  <g transform="rotate(-7 64 46)"><path d="M14 58H110L94 28H30Z" fill="var(--gr)"/></g>
+  <rect x="24" y="66" width="80" height="46" fill="var(--pu)"/>
+  <rect x="56" y="66" width="16" height="46" fill="var(--ye)"/>
+</g></symbol>
+
+<symbol id="L2" viewBox="0 0 128 128"><g stroke="var(--ink)" stroke-width="7" stroke-miterlimit="2">
+  <g transform="rotate(-17 64 22)"><path d="M24 36H104L88 8H40Z" fill="var(--gr)"/></g>
+  <path d="M30 42 46 58 30 74 14 58Z" fill="var(--bl)" stroke-width="6"/>
+  <path d="M98 40 101.6 51.2 112.1 45.9 106.8 56.4 118 60 106.8 63.6 112.1 74.1 101.6 68.8 98 80 94.4 68.8 83.9 74.1 89.2 63.6 78 60 89.2 56.4 83.9 45.9 94.4 51.2Z" fill="var(--or)" stroke-width="5"/>
+  <path d="M64 42A16 16 0 1 0 64 74 16 16 0 1 0 64 42ZM59 53h10v10H59Z" fill="var(--ye)" fill-rule="evenodd" stroke-width="6"/>
+  <rect x="20" y="78" width="88" height="36" fill="var(--pu)"/>
+  <rect x="20" y="78" width="88" height="10" fill="var(--ye)"/>
+</g></symbol>
+
+<symbol id="L3" viewBox="0 0 128 128"><g stroke="var(--ink)" stroke-width="7" stroke-miterlimit="2">
+  <path d="M94 6 98.6 20.9 112.4 13.6 105.1 27.4 120 32 105.1 36.6 112.4 50.4 98.6 43.1 94 58 89.4 43.1 75.6 50.4 82.9 36.6 68 32 82.9 27.4 75.6 13.6 89.4 20.9Z" fill="var(--or)" stroke-width="5"/>
+  <path d="M30 22 44 36 30 50 16 36Z" fill="var(--bl)" stroke-width="6"/>
+  <path d="M64 4 102 22 64 40 26 22Z" fill="var(--ye)" stroke-width="6"/>
+  <path d="M20 66 64 44 108 66 64 88Z" fill="var(--ink)"/>
+  <path d="M20 66 64 88v30L20 96Z" fill="var(--pu)"/>
+  <path d="M108 66 64 88v30l44-22Z" fill="var(--gr)"/>
+</g></symbol>
+
+<symbol id="L4" viewBox="0 0 128 128"><g stroke="var(--ink)" stroke-width="7" stroke-miterlimit="2">
+  <g transform="rotate(-6 64 30)"><path d="M64 6 16 50h96z" fill="var(--gr)"/></g>
+  <rect x="18" y="58" width="92" height="54" fill="var(--pu)"/>
+  <path d="M40 73A12 12 0 1 0 40 97 12 12 0 1 0 40 73ZM36.5 81.5h7v7h-7z" fill="var(--ye)" fill-rule="evenodd" stroke-width="5"/>
+  <path d="M64 72 77 85 64 98 51 85Z" fill="var(--bl)" stroke-width="5"/>
+  <path d="M90 69 92.9 78.1 101.3 73.7 96.9 82.1 106 85 96.9 87.9 101.3 96.3 92.9 91.9 90 101 87.1 91.9 78.7 96.3 83.1 87.9 74 85 83.1 82.1 78.7 73.7 87.1 78.1Z" fill="var(--or)" stroke-width="5"/>
+</g></symbol>
+
+<symbol id="L5" viewBox="0 0 128 128"><g stroke="var(--ink)" stroke-width="6" stroke-miterlimit="2">
+  <path d="M64 2 77.8 30.7 107.8 20.2 97.3 50.2 126 64 97.3 77.8 107.8 107.8 77.8 97.3 64 126 50.2 97.3 20.2 107.8 30.7 77.8 2 64 30.7 50.2 20.2 20.2 50.2 30.7Z" fill="var(--or)"/>
+  <path d="M64 12A13 13 0 1 0 64 38 13 13 0 1 0 64 12ZM60 22h8v8h-8z" fill="var(--ye)" fill-rule="evenodd" stroke-width="5"/>
+  <g transform="rotate(-8 64 52)"><path d="M30 64H98L86 42H42Z" fill="var(--gr)"/></g>
+  <rect x="36" y="70" width="56" height="38" fill="var(--pu)"/>
+  <rect x="57" y="70" width="14" height="38" fill="var(--bl)"/>
+</g></symbol>
+
+<symbol id="L6" viewBox="0 0 128 128"><g stroke="var(--ink)" stroke-width="7" stroke-miterlimit="2">
+  <path d="M100 2 104.2 15.8 117 9 110.2 21.8 124 26 110.2 30.2 117 43 104.2 36.2 100 50 95.8 36.2 83 43 89.8 30.2 76 26 89.8 21.8 83 9 95.8 15.8Z" fill="var(--or)" stroke-width="5"/>
+  <path d="M24 14 37 27 24 40 11 27Z" fill="var(--bl)" stroke-width="6"/>
+  <g transform="rotate(-9 64 44)"><path d="M30 58V36l34-16 34 16v22Z" fill="var(--gr)"/></g>
+  <rect x="26" y="64" width="76" height="48" fill="var(--pu)"/>
+  <rect x="56" y="64" width="16" height="48" fill="var(--ye)"/>
+</g></symbol>
+
+<!-- ─── CORE MARKS (24) ─── -->
+<symbol id="pt" viewBox="0 0 24 24"><path d="M12 1 23 12 12 23 1 12Z" fill="var(--bl)"/></symbol>
+<symbol id="pt2" viewBox="0 0 24 24"><path d="M12 1 23 12 12 23 1 12ZM12 8 8 12l4 4 4-4Z" fill="var(--bl)" fill-rule="evenodd"/></symbol>
+<symbol id="pt3" viewBox="0 0 24 24"><path d="M12 1 21.5 9 12 17 2.5 9Z" fill="var(--bl)"/><path d="M12 14 21.5 22H2.5Z" fill="var(--bl)" opacity=".45"/></symbol>
+
+<symbol id="cn" viewBox="0 0 24 24"><path d="M12 1A11 11 0 1 0 12 23 11 11 0 1 0 12 1ZM8.8 8.8h6.4v6.4H8.8Z" fill="var(--ye)" fill-rule="evenodd"/></symbol>
+<symbol id="cn2" viewBox="0 0 24 24"><path d="M12 1A11 11 0 1 0 12 23 11 11 0 1 0 12 1ZM12 8A4 4 0 1 1 12 16 4 4 0 1 1 12 8Z" fill="var(--ye)" fill-rule="evenodd"/></symbol>
+<symbol id="cn3" viewBox="0 0 24 24"><path d="M7.64 1.5H16.36L22.5 7.64V16.36L16.36 22.5H7.64L1.5 16.36V7.64ZM9 9h6v6H9Z" fill="var(--ye)" fill-rule="evenodd"/></symbol>
+
+<symbol id="st" viewBox="0 0 24 24"><path d="M12 1 13.8 7.8 19.8 4.2 16.2 10.2 23 12 16.2 13.8 19.8 19.8 13.8 16.2 12 23 10.2 16.2 4.2 19.8 7.8 13.8 1 12 7.8 10.2 4.2 4.2 10.2 7.8Z" fill="var(--or)"/></symbol>
+<symbol id="st2" viewBox="0 0 24 24"><path d="M12 1 14.4 8.1 21.5 5.6 18 12 21.5 18.4 14.4 15.9 12 23 9.6 15.9 2.5 18.4 6 12 2.5 5.6 9.6 8.1Z" fill="var(--or)"/></symbol>
+<symbol id="st3" viewBox="0 0 24 24"><path d="M12 1 13.8 7.8 19.8 4.2 16.2 10.2 23 12 16.2 13.8 19.8 19.8 13.8 16.2 12 23 10.2 16.2 4.2 19.8 7.8 13.8 1 12 7.8 10.2 4.2 4.2 10.2 7.8Z" fill="var(--or)"/><path d="M12 8 16 12 12 16 8 12Z" fill="var(--ye)"/></symbol>
+
+<!-- ─── BADGES (48) ─── -->
+<symbol id="b1" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <rect x="12" y="13" width="24" height="24" fill="var(--ye)" stroke-width="2.5"/>
+  <path d="M21 30 32 19l4.5 4.5L21 39l-9.5-9.5L16 25Z" fill="var(--gr)" stroke-width="2.5"/>
+</g></symbol>
+<symbol id="b2" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5"><rect x="11" y="29" width="8" height="11" fill="var(--bl)"/>
+  <rect x="20" y="22" width="8" height="18" fill="var(--ye)"/>
+  <rect x="29" y="14" width="8" height="26" fill="var(--or)"/></g>
+</g></symbol>
+<symbol id="b3" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5"><rect x="9" y="14" width="30" height="7" fill="var(--bl)"/>
+  <rect x="11" y="22" width="26" height="17" fill="var(--ye)"/>
+  <rect x="20" y="14" width="8" height="25" fill="var(--gr)"/></g>
+</g></symbol>
+<symbol id="b4" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <path d="M24 9 26.8 18.1 35.7 14.6 30.3 22.6 38.6 27.3 29.1 28.1 30.5 37.5 24 30.5 17.5 37.5 18.9 28.1 9.4 27.3 17.7 22.6 12.3 14.6 21.2 18.1Z" fill="var(--or)" stroke-width="2.5"/>
+  <path d="M24 18 30 24 24 30 18 24Z" fill="var(--ye)" stroke-width="2.5"/>
+</g></symbol>
+<symbol id="b5" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5"><path d="M14 13h20l8 10-18 19L6 23Z" fill="var(--bl)"/>
+  <path d="M14 13h20l-10 10Z" fill="var(--ye)"/>
+  <path d="M6 23h36l-18 19Z" fill="var(--bl)"/></g>
+</g></symbol>
+<symbol id="b6" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5"><path d="M14 13h20l5 4-5 4H14l-5-4Z" fill="var(--ye)"/>
+  <path d="M14 22h20l5 4-5 4H14l-5-4Z" fill="var(--or)"/>
+  <path d="M14 31h20l5 4-5 4H14l-5-4Z" fill="var(--ye)"/></g>
+</g></symbol>
+
+<!-- ─── UI ICONS (24, monochrome) ─── -->
+<symbol id="i-vs" viewBox="0 0 24 24"><path d="M2 9h8v13H2zM14 2h8v20h-8z"/></symbol>
+<symbol id="i-log" viewBox="0 0 24 24"><path d="M2 2h13v3.5H2zM2 8h13v3.5H2zM2 14h9v3.5H2zM17.5 20.5 13 16l2.5-2.5 2 2 4.5-4.5L24 13.5z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M11 1h2v3h-2zM5 17 7 8h10l2 9zM9.5 19h5v3h-5z"/></symbol>
+<symbol id="i-store" viewBox="0 0 24 24"><path d="M2 2h20l2 6H0zM3 10h18v12H3zM9 15h6v7H9z" fill-rule="evenodd"/></symbol>
+<symbol id="i-me" viewBox="0 0 24 24"><path d="M8 2h8v8H8zM3 13h18v9H3z"/></symbol>
+<symbol id="i-box" viewBox="0 0 24 24"><path d="M2 4h20v5H2zM3 10h18v11H3zM10 4h4v17h-4z"/></symbol>
+<symbol id="i-gift" viewBox="0 0 24 24"><path d="M12 5 7 1v4zM12 5 17 1v4zM2 6h20v5H2zM3 12h18v10H3zM10 6h4v16h-4z"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M9 16 20 5l3.5 3.5L9 23 .5 14.5 4 11z"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M4 1 12 9l8-8 3 3-8 8 8 8-3 3-8-8-8 8-3-3 8-8-8-8z"/></symbol>
+<symbol id="i-wait" viewBox="0 0 24 24"><path d="M3 1h18v4l-6 7 6 7v4H3v-4l6-7-6-7z"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M9.5 2h5v7.5H22v5h-7.5V22h-5v-7.5H2v-5h7.5z"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M17 1 23 7 9 21 1 23 3 15z"/></symbol>
+<symbol id="i-arch" viewBox="0 0 24 24"><path d="M1 2h22v6H1zM3 9h18v13H3zM9 12h6v3H9z" fill-rule="evenodd"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M12 1 23 11h-4v11h-5v-7h-4v7H5V11H1z"/></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24"><path d="M1 5 7 11 12 1l5 10 6-6v16H1z"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 2v4h10v14h-5V11H9v4L1 8.5z"/></symbol>
+<symbol id="i-theme" viewBox="0 0 24 24"><path d="M2 2h20v20H2zm3 3v14h14z" fill-rule="evenodd"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><path d="M1 6h12v12H1zm3.5 3.5v5h5v-5zM13 10h10v4h-2v3h-3v-3h-5z" fill-rule="evenodd"/></symbol>
+<symbol id="i-pair" viewBox="0 0 24 24"><path d="M2 2h6v6H2zM0 11h10v11H0zM16 2h6v6h-6zM14 11h10v11H14z"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><path d="M12 1 21.5 6.5v11L12 23 2.5 17.5v-11zm-1.5 5v7h7v-3h-4V6z" fill-rule="evenodd"/></symbol>
+</svg>
+
+<div class="wrap">
+
+<!-- ══════════ HERO ══════════ -->
+<div class="card">
+  <span class="tag">Round 2</span><span class="tag g">五色全上</span><span class="tag b">Logo B 系列 ×6</span><span class="tag o">元素图标 ×37</span>
+  <h1 style="margin-top:12px">五色 · B 系列<br>+ 元素图标集</h1>
+  <p class="sm" style="max-width:760px;margin-top:14px">
+    两件事：① Logo 沿着你选的 <b>B「开箱」</b>路线做了 6 个变体，全部把<b>五种颜色都用上</b>；
+    ② 图标集按你的思路做 —— <b>纯几何、不过度设计</b>，Points 蓝菱形、Coins 黄色挖孔圆、Streak 橙色八角尖芒、
+    Badge 紫色六边形蜂巢框 + 内部多色几何。
+  </p>
+</div>
+
+<!-- ══════════ PALETTE ══════════ -->
+<div class="card">
+  <h2>0 · 五色系统（含你补的蓝与橙）</h2>
+  <p class="sm" style="margin-top:8px">这五个色在 <code>theme.css</code> 里各有唯一语义，图标集直接沿用 —— <b>颜色本身就是信息</b>，不需要再配文字。</p>
+  <div class="pal">
+    <div class="sw"><div class="chip" style="background:#7C4DFF"></div><div class="txt">紫 · #7C4DFF<small>brand-primary — 你</small></div></div>
+    <div class="sw"><div class="chip" style="background:#3DDC97"></div><div class="txt">绿 · #3DDC97<small>brand-success — 对手</small></div></div>
+    <div class="sw"><div class="chip" style="background:#FFE14A"></div><div class="txt">黄 · #FFE14A<small>brand-warning — Coins / 待审</small></div></div>
+    <div class="sw"><div class="chip" style="background:#4CC9F0"></div><div class="txt">蓝 · #4CC9F0<small>brand-points — Points 专用</small></div></div>
+    <div class="sw"><div class="chip" style="background:#FF8A3D"></div><div class="txt">橙 · #FF8A3D<small>brand-flame — 连胜专用</small></div></div>
+  </div>
+</div>
+
+<!-- ══════════ LOGOS ══════════ -->
+<div class="card">
+  <h2>1 · Logo — B「开箱」系列 6 变体</h2>
+  <p class="sm" style="margin-top:8px">
+    共同基因：<b>盖子被顶开</b>的那一瞬。差别在于「盖子是什么」「战利品怎么出来」。
+    每个都用满五色，且颜色遵守语义 —— 紫=箱体（你的家）、绿=盖子（对手/共同）、黄=Coins、蓝=Points、橙=连胜尖芒。
+  </p>
+  <div class="lgrid">
+    <div class="lcard">
+      <div class="top"><svg><use href="#L1"/></svg></div>
+      <div class="meta"><h3>L1 · 五色开箱</h3>
+        <p class="sm">上一版 B 的直系升级：梯形盖 + 橙色尖芒，左上补一颗<b>蓝色菱形</b>（Points）与右上的橙芒对称。改动最小，风险最低。</p>
+        <div class="row">
+          <div><div class="tile t56"><svg><use href="#L1"/></svg></div><div class="cap">56</div></div>
+          <div><div class="tile t36 pu"><svg><use href="#L1"/></svg></div><div class="cap">紫底</div></div>
+          <div><div class="tile t22"><svg><use href="#L1"/></svg></div><div class="cap">22</div></div>
+          <div><div class="tile t36 dk dark"><svg><use href="#L1"/></svg></div><div class="cap">dark</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lcard">
+      <div class="top"><svg><use href="#L2"/></svg></div>
+      <div class="meta"><h3>L2 · 喷发</h3>
+        <p class="sm">盖子被彻底顶飞（−17°），箱口喷出<b>蓝菱形 · 黄挖孔币 · 橙菱星</b>三件战利品 —— 图标集里的三个核心 mark 原样装进了 logo。<b>logo 与图标同源</b>，这是它最大的优势。</p>
+        <div class="row">
+          <div><div class="tile t56"><svg><use href="#L2"/></svg></div><div class="cap">56</div></div>
+          <div><div class="tile t36 pu"><svg><use href="#L2"/></svg></div><div class="cap">紫底</div></div>
+          <div><div class="tile t22"><svg><use href="#L2"/></svg></div><div class="cap">22</div></div>
+          <div><div class="tile t36 dk dark"><svg><use href="#L2"/></svg></div><div class="cap">dark</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lcard">
+      <div class="top"><svg><use href="#L3"/></svg></div>
+      <div class="meta"><h3>L3 · 等距箱</h3>
+        <p class="sm">2.5D 等距立方体，由<b>三个菱形面</b>拼成：紫左、绿右、黑色箱口，黄色盖子悬在上方，橙芒 + 蓝菱形飞出。几何纯度最高，也最不像任何家务 app。</p>
+        <div class="row">
+          <div><div class="tile t56"><svg><use href="#L3"/></svg></div><div class="cap">56</div></div>
+          <div><div class="tile t36 pu"><svg><use href="#L3"/></svg></div><div class="cap">紫底</div></div>
+          <div><div class="tile t22"><svg><use href="#L3"/></svg></div><div class="cap">22</div></div>
+          <div><div class="tile t36 dk dark"><svg><use href="#L3"/></svg></div><div class="cap">dark</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lcard">
+      <div class="top"><svg><use href="#L4"/></svg></div>
+      <div class="meta"><h3>L4 · 屋顶盖</h3>
+        <p class="sm">盖子换成<b>三角屋顶</b>，"Dwell" 的味道最重；箱体正面直接陈列三件战利品（黄币 / 蓝菱 / 橙芒）—— 家里装满了奖励。语义最完整的一个。</p>
+        <div class="row">
+          <div><div class="tile t56"><svg><use href="#L4"/></svg></div><div class="cap">56</div></div>
+          <div><div class="tile t36 pu"><svg><use href="#L4"/></svg></div><div class="cap">紫底</div></div>
+          <div><div class="tile t22"><svg><use href="#L4"/></svg></div><div class="cap">22</div></div>
+          <div><div class="tile t36 dk dark"><svg><use href="#L4"/></svg></div><div class="cap">dark</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lcard">
+      <div class="top"><svg><use href="#L5"/></svg></div>
+      <div class="meta"><h3>L5 · 芒中箱</h3>
+        <p class="sm">把橙色八角尖芒放大成<b>整个画布</b>，箱子长在星里，黄币从顶上飞出。冲击力最强、最"中奖"，缺点是外轮廓复杂，24px 会糊。</p>
+        <div class="row">
+          <div><div class="tile t56"><svg><use href="#L5"/></svg></div><div class="cap">56</div></div>
+          <div><div class="tile t36 pu"><svg><use href="#L5"/></svg></div><div class="cap">紫底</div></div>
+          <div><div class="tile t22"><svg><use href="#L5"/></svg></div><div class="cap">22</div></div>
+          <div><div class="tile t36 dk dark"><svg><use href="#L5"/></svg></div><div class="cap">dark</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lcard">
+      <div class="top"><svg><use href="#L6"/></svg></div>
+      <div class="meta"><h3>L6 · 掀盖 D</h3>
+        <p class="sm">盖子是<b>放倒的字母 D</b>（去掉曲线后的五边形），既是盖也是屋脊。保留 B 的新颖，又把<b>名字 Dwelloot 的首字母</b>装了回去 —— 上一版 C 唯一值得留下的东西。</p>
+        <div class="row">
+          <div><div class="tile t56"><svg><use href="#L6"/></svg></div><div class="cap">56</div></div>
+          <div><div class="tile t36 pu"><svg><use href="#L6"/></svg></div><div class="cap">紫底</div></div>
+          <div><div class="tile t22"><svg><use href="#L6"/></svg></div><div class="cap">22</div></div>
+          <div><div class="tile t36 dk dark"><svg><use href="#L6"/></svg></div><div class="cap">dark</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ CORE MARKS ══════════ -->
+<div class="card">
+  <h2>2 · 四个核心元素 mark</h2>
+  <p class="sm" style="margin-top:8px">
+    完全按你给的思路：<b>一个元素 = 一个几何图形 + 一个颜色</b>，不加任何装饰。
+    每个给了 3 个变体，左边那个是我推荐的。全部 24×24，平涂无描边，可以直接替换 <code>marks.tsx</code>。
+  </p>
+  <div class="mrow">
+
+    <div class="mcell">
+      <div class="big"><svg class="v56"><use href="#pt"/></svg><svg class="v32"><use href="#pt"/></svg><svg class="v20"><use href="#pt"/></svg><svg class="v14"><use href="#pt"/></svg></div>
+      <h3>Points · 蓝菱形</h3>
+      <p class="sm" style="margin-top:4px">正菱形，四边等长。<b>永不消费</b>的东西该是最稳定的形 —— 一个立着的正方形。</p>
+      <div class="alt">
+        <svg><use href="#pt"/></svg><svg><use href="#pt2"/></svg><svg><use href="#pt3"/></svg>
+        <span class="sm" style="font-size:12px;opacity:.7">实心 / 挖孔 / 双层</span>
+      </div>
+      <div class="inline"><svg><use href="#pt"/></svg>120 pts · 本周 <svg><use href="#pt"/></svg>34</div>
+    </div>
+
+    <div class="mcell">
+      <div class="big"><svg class="v56"><use href="#cn"/></svg><svg class="v32"><use href="#cn"/></svg><svg class="v20"><use href="#cn"/></svg><svg class="v14"><use href="#cn"/></svg></div>
+      <h3>Coins · 黄色挖孔圆</h3>
+      <p class="sm" style="margin-top:4px">圆 + 正方孔（像铜钱）。<b>唯一一个带曲线的形</b> —— 正因为它是唯一可花的货币，破例反而让它一眼可辨。</p>
+      <div class="alt">
+        <svg><use href="#cn"/></svg><svg><use href="#cn2"/></svg><svg><use href="#cn3"/></svg>
+        <span class="sm" style="font-size:12px;opacity:.7">方孔 / 圆孔 / 八边形（现状）</span>
+      </div>
+      <div class="inline"><svg><use href="#cn"/></svg>48 coins · 售价 <svg><use href="#cn"/></svg>12</div>
+    </div>
+
+    <div class="mcell">
+      <div class="big"><svg class="v56"><use href="#st"/></svg><svg class="v32"><use href="#st"/></svg><svg class="v20"><use href="#st"/></svg><svg class="v14"><use href="#st"/></svg></div>
+      <h3>Streak · 橙色八角尖芒</h3>
+      <p class="sm" style="margin-top:4px">八个尖芒，直接取自 Neobrutalism 的招牌装饰件。<b>比火焰更抽象、更几何</b>，也不会和天气图标撞。</p>
+      <div class="alt">
+        <svg><use href="#st"/></svg><svg><use href="#st2"/></svg><svg><use href="#st3"/></svg>
+        <span class="sm" style="font-size:12px;opacity:.7">八角 / 六角 / 带黄芯</span>
+      </div>
+      <div class="inline"><svg><use href="#st"/></svg>连胜 7 天</div>
+    </div>
+
+    <div class="mcell">
+      <div class="big"><svg class="v56"><use href="#b4"/></svg><svg class="v32"><use href="#b4"/></svg><svg class="v20"><use href="#b4"/></svg></div>
+      <h3>Badge · 紫色蜂巢六边形</h3>
+      <p class="sm" style="margin-top:4px">尖顶六边形 + 3px 黑框 + 紫底，内部用<b>黄橙绿蓝</b>拼出各自的图形。六边形能无缝拼成蜂巢墙 —— 见下一节。</p>
+      <div class="alt">
+        <svg><use href="#b1"/></svg><svg><use href="#b2"/></svg><svg><use href="#b6"/></svg>
+        <span class="sm" style="font-size:12px;opacity:.7">同框，不同芯</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>一个需要你拍板的点：</b>现在 <code>marks.tsx</code> 顶部写着"<b>没有任何曲线，硬币是八边形</b>"。
+    你要的黄色圆形会推翻这条规则。我的看法是 —— <b>值得推翻，但只为 Coins 破这一次例</b>：
+    整套图标里只有一个圆，它就自动成了最高辨识度的那个，而 Coins 恰好是全 app 唯一可消费的东西。
+    如果你想守住原规则，用上面第三个八边形变体，其余不变。
+  </div>
+</div>
+
+<!-- ══════════ BADGES ══════════ -->
+<div class="card">
+  <h2>3 · 徽章系统 — 蜂巢墙</h2>
+  <p class="sm" style="margin-top:8px">
+    对应后端已 seed 的 6 枚徽章。统一：<b>尖顶六边形 + 紫底 + 黑框</b>，内部图形只用黄 / 橙 / 绿 / 蓝，
+    彼此靠<b>形状</b>而不是靠颜色区分。这一版顺手解决了 handover 里记的那个遗留问题 ——
+    "badges 应该是多色的，而不是一整块紫色在解锁时切换"。
+  </p>
+  <div class="bgrid">
+    <div class="bcell"><svg><use href="#b1"/></svg><div class="n">首次家务</div><div class="d">黄卡 + 绿勾</div></div>
+    <div class="bcell"><svg><use href="#b2"/></svg><div class="n">3 日连胜</div><div class="d">蓝→黄→橙 递进柱</div></div>
+    <div class="bcell"><svg><use href="#b3"/></svg><div class="n">首次兑换</div><div class="d">黄包裹 + 绿束带</div></div>
+    <div class="bcell"><svg><use href="#b4"/></svg><div class="n">7 日连胜</div><div class="d">橙七芒 + 黄芯</div></div>
+    <div class="bcell"><svg><use href="#b5"/></svg><div class="n">百分里程碑</div><div class="d">蓝宝石 + 黄切面</div></div>
+    <div class="bcell"><svg><use href="#b6"/></svg><div class="n">大手笔</div><div class="d">黄橙三层币</div></div>
+  </div>
+  <div class="row" style="margin-top:22px;gap:0;justify-content:center">
+    <svg style="width:76px;height:76px"><use href="#b1"/></svg>
+    <svg style="width:76px;height:76px;margin-left:-6px"><use href="#b2"/></svg>
+    <svg style="width:76px;height:76px;margin-left:-6px"><use href="#b3"/></svg>
+    <svg style="width:76px;height:76px;margin-left:-6px" class="locked"><use href="#b4"/></svg>
+    <svg style="width:76px;height:76px;margin-left:-6px" class="locked"><use href="#b5"/></svg>
+    <svg style="width:76px;height:76px;margin-left:-6px" class="locked"><use href="#b6"/></svg>
+  </div>
+  <div class="cap" style="text-align:center">BadgeShelf 密排效果 · 后三枚为未解锁态（去色 + 40% 不透明）</div>
+</div>
+
+<!-- ══════════ UI ICONS ══════════ -->
+<div class="card">
+  <h2>4 · 界面图标 ×20</h2>
+  <p class="sm" style="margin-top:8px">
+    这些是导航和操作用的，<b>只用单色</b>（<code>currentColor</code>），因为它们要跟着按钮和文字变色。
+    同样全部由矩形 / 三角 / 菱形 / 多边形拼成，零曲线、零描边。
+  </p>
+  <div class="igrid">
+    <div class="icell"><svg><use href="#i-vs"/></svg><div class="n">对战</div><div class="s">Dashboard</div></div>
+    <div class="icell"><svg><use href="#i-log"/></svg><div class="n">家务</div><div class="s">Log</div></div>
+    <div class="icell"><svg><use href="#i-bell"/></svg><div class="n">通知</div><div class="s">Notices</div></div>
+    <div class="icell"><svg><use href="#i-store"/></svg><div class="n">商店</div><div class="s">Store</div></div>
+    <div class="icell"><svg><use href="#i-me"/></svg><div class="n">我</div><div class="s">Me</div></div>
+    <div class="icell"><svg><use href="#i-box"/></svg><div class="n">战利箱</div><div class="s">Loot box</div></div>
+    <div class="icell"><svg><use href="#i-gift"/></svg><div class="n">奖励</div><div class="s">Reward</div></div>
+    <div class="icell"><svg><use href="#i-check"/></svg><div class="n">通过</div><div class="s">Approve</div></div>
+    <div class="icell"><svg><use href="#i-x"/></svg><div class="n">驳回</div><div class="s">Reject</div></div>
+    <div class="icell"><svg><use href="#i-wait"/></svg><div class="n">待审</div><div class="s">Pending</div></div>
+    <div class="icell"><svg><use href="#i-clock"/></svg><div class="n">周期</div><div class="s">Period</div></div>
+    <div class="icell"><svg><use href="#i-plus"/></svg><div class="n">新增</div><div class="s">Add</div></div>
+    <div class="icell"><svg><use href="#i-edit"/></svg><div class="n">编辑</div><div class="s">Edit</div></div>
+    <div class="icell"><svg><use href="#i-arch"/></svg><div class="n">归档</div><div class="s">Archive</div></div>
+    <div class="icell"><svg><use href="#i-undo"/></svg><div class="n">撤销</div><div class="s">Undo</div></div>
+    <div class="icell"><svg><use href="#i-home"/></svg><div class="n">家庭</div><div class="s">Household</div></div>
+    <div class="icell"><svg><use href="#i-pair"/></svg><div class="n">配对</div><div class="s">Pairing</div></div>
+    <div class="icell"><svg><use href="#i-key"/></svg><div class="n">邀请码</div><div class="s">Invite</div></div>
+    <div class="icell"><svg><use href="#i-crown"/></svg><div class="n">获胜</div><div class="s">Win</div></div>
+    <div class="icell"><svg><use href="#i-theme"/></svg><div class="n">主题</div><div class="s">Theme</div></div>
+  </div>
+
+  <div class="navbar">
+    <div class="on"><svg><use href="#i-vs"/></svg>对战</div>
+    <div><svg><use href="#i-log"/></svg>家务</div>
+    <div><svg><use href="#i-bell"/></svg>通知</div>
+    <div><svg><use href="#i-store"/></svg>商店</div>
+    <div><svg><use href="#i-me"/></svg>我</div>
+  </div>
+  <div class="cap">BottomNav 实装预览</div>
+</div>
+
+<div class="card" style="background:#7C4DFF;color:#fff">
+  <h2 style="color:#fff">下一步</h2>
+  <p class="sm" style="color:#fff;margin-top:10px">
+    告诉我 <b>L1–L6 选哪个</b>（或者要哪两个杂交），以及 <b>Coins 用圆还是守住八边形</b>。
+    然后我出：全套 App 图标文件（favicon.svg / .ico、apple-touch、PWA 192·512·maskable、OG 图）、
+    一个可直接替换 <code>marks.tsx</code> 的 <b>icons.tsx</b>（含全部 mark 与 UI 图标，TypeScript + currentColor），
+    以及一份放置说明。
+  </p>
+  <p class="sm" style="color:#fff;font-weight:800;margin:0">
+    本轮同样<b>没有改动 project folder 里的任何文件</b>。
+  </p>
+</div>
+
+<div class="foot">Dwelloot · round 2 · 五色系统 · 遵循《Neobrutalism UI (How to)》与 ui-exp01 设计令牌</div>
+</div>
+</body>
+</html>

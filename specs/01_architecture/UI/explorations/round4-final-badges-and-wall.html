@@ -1,0 +1,390 @@
+<!--
+  Design exploration, round 4 of 4. A working artefact, not a deliverable: these pages were
+  generated to compare options side by side before the icon set was settled. The rendered
+  swatches, marks and badge sheets are the content; the annotations around them are in the
+  author's first language, because at the time the only reader was the author.
+
+  The decisions these rounds arrived at are written up in English in ../BRAND-ICONS.md, and the
+  finished paths are in ../icons-source.svg, which a test reads from disk to check the React
+  components still match it.
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dwelloot — 徽章终稿 ×12 · 资深审核家 5 方案 · 蜂巢徽章墙</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Public+Sans:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#000;--pu:#7C4DFF;--gr:#3DDC97;--ye:#FFE14A;--bl:#4CC9F0;--or:#FF8A3D;
+        --red:#FF5C5C;--cy:#4CC9F0;--blue:#3B6BFF;--page:#F0EBFF}
+  *{box-sizing:border-box}
+  body{margin:0;padding:30px 20px 90px;background:var(--ye);color:#000;
+    font-family:"Public Sans","Microsoft YaHei","PingFang SC",sans-serif;font-weight:600;line-height:1.55}
+  .wrap{max-width:1160px;margin:0 auto}
+  h1,h2,h3{font-family:"Archivo Black","Public Sans","Microsoft YaHei",sans-serif;font-weight:900;margin:0;letter-spacing:-.01em}
+  h1{font-size:clamp(28px,5vw,52px);line-height:1.04;text-transform:uppercase}
+  h2{font-size:clamp(19px,2.6vw,27px);text-transform:uppercase}
+  h3{font-size:14px;text-transform:uppercase;letter-spacing:.06em}
+  .card{background:#fff;border:4px solid #000;box-shadow:8px 8px 0 #000;padding:24px;margin-bottom:28px}
+  .tag{display:inline-block;background:var(--pu);color:#fff;border:3px solid #000;padding:4px 12px;
+    font-weight:900;font-size:12px;letter-spacing:.14em;text-transform:uppercase;box-shadow:4px 4px 0 #000;margin:0 6px 6px 0}
+  .tag.g{background:var(--gr);color:#000}.tag.b{background:var(--bl);color:#000}.tag.o{background:var(--or);color:#000}
+  p{margin:0 0 10px}.sm{font-weight:400;font-size:14.5px}.sm b{font-weight:800}
+  code{background:#F0EBFF;border:1px solid #000;padding:0 4px;font-size:12.5px}
+  .cap{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.55;margin-top:6px;text-align:center}
+  .note{border:3px solid #000;background:var(--ye);padding:14px 16px;margin-top:18px;font-size:14px;font-weight:400}
+  .note b{font-weight:900}
+
+  .lockedrow{display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-top:14px}
+  .final{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  .final .box{border:3px solid #000;background:var(--page);padding:14px;box-shadow:5px 5px 0 #000;text-align:center}
+  .final .box svg{display:block;margin:0 auto}
+
+  .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:18px;margin-top:18px}
+  .opt{border:3px solid #000;background:#fff;padding:16px 12px;text-align:center;box-shadow:5px 5px 0 #000}
+  .opt.rec{background:var(--gr)}
+  .opt svg{width:104px;height:104px;filter:drop-shadow(3px 3px 0 rgba(0,0,0,.3))}
+  .opt .n{font-size:13px;font-weight:900;margin-top:8px}
+  .opt .d{font-size:11.5px;font-weight:400;opacity:.75;line-height:1.4;margin-top:3px}
+  .opt .sizes{display:flex;gap:10px;justify-content:center;margin-top:8px;align-items:flex-end}
+  .opt .sizes svg{width:34px;height:34px;filter:none}
+  .opt .sizes svg.xs{width:22px;height:22px}
+
+  .bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:16px;margin-top:18px}
+  .bcell{text-align:center}
+  .bcell svg{width:96px;height:96px;filter:drop-shadow(3px 3px 0 rgba(0,0,0,.3))}
+  .bcell .n{font-size:12.5px;font-weight:900;margin-top:6px}
+  .bcell .d{font-size:11px;font-weight:400;opacity:.68;line-height:1.35}
+
+  /* honeycomb wall */
+  .wallbox{border:4px solid #000;background:var(--page);padding:30px 20px;box-shadow:6px 6px 0 #000;margin-top:18px;overflow-x:auto}
+  .wall{position:relative;width:440px;height:394px;margin:0 auto}
+  .hx{position:absolute;width:130px;height:130px}
+  .hx svg.bd{width:130px;height:130px;display:block}
+  .hx.off svg.bd{filter:grayscale(1) opacity(.7)}
+  .hx .lk{position:absolute;right:12px;bottom:14px;width:42px;height:48px}
+  .legend{display:flex;gap:26px;justify-content:center;flex-wrap:wrap;margin-top:20px;font-size:12.5px;font-weight:800}
+  .legend span{display:flex;align-items:center;gap:8px}
+  .legend svg{width:34px;height:39px}
+  .foot{text-align:center;font-size:13px;font-weight:700;opacity:.75;margin-top:30px}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+
+<!-- 定稿 logo L1-A -->
+<symbol id="L1a" viewBox="0 0 128 128"><g stroke="#000" stroke-width="7" stroke-miterlimit="2">
+  <path d="M100 6 105 24 121.2 14.8 112 31 130 36 112 41 121.2 57.2 105 48 100 66 95 48 78.8 57.2 88 41 70 36 88 31 78.8 14.8 95 24Z" fill="var(--or)" stroke-width="6"/>
+  <path d="M24 17 37 30 24 43 11 30Z" fill="var(--bl)" stroke-width="6"/>
+  <g transform="rotate(-7 64 46)"><path d="M14 58H110L94 28H30Z" fill="var(--gr)"/></g>
+  <rect x="24" y="66" width="80" height="46" fill="var(--pu)"/>
+  <rect x="56" y="66" width="16" height="46" fill="var(--ye)"/>
+</g></symbol>
+<!-- 定稿 marks（处理 A · 平涂） -->
+<symbol id="pt" viewBox="0 0 24 24"><path d="M12 1 23 12 12 23 1 12ZM12 8 8 12l4 4 4-4Z" fill="var(--bl)" fill-rule="evenodd"/></symbol>
+<symbol id="cn" viewBox="0 0 24 24"><path d="M12 1A11 11 0 1 0 12 23 11 11 0 1 0 12 1ZM8.8 8.8h6.4v6.4H8.8Z" fill="var(--ye)" fill-rule="evenodd"/></symbol>
+<symbol id="st" viewBox="0 0 24 24"><path d="M12 1 13.8 7.8 19.8 4.2 16.2 10.2 23 12 16.2 13.8 19.8 19.8 13.8 16.2 12 23 10.2 16.2 4.2 19.8 7.8 13.8 1 12 7.8 10.2 4.2 4.2 10.2 7.8Z" fill="var(--or)"/><path d="M12 8 16 12 12 16 8 12Z" fill="var(--ye)"/></symbol>
+
+<!-- 锁 -->
+<symbol id="lock" viewBox="0 0 48 48">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="#1E1830" stroke="#000" stroke-width="3"/>
+  <g fill="#fff"><path d="M15 24V13h18v11h-5.2v-6.2h-7.6V24Z"/><rect x="12" y="24" width="24" height="15"/></g>
+  <rect x="21.5" y="28" width="5" height="7" fill="#1E1830"/>
+</symbol>
+
+<!-- ═══ 12 枚终稿徽章 ═══ -->
+<symbol id="b1" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <rect x="12" y="13" width="24" height="24" fill="var(--ye)" stroke-width="2.5"/>
+  <path d="M21 30 32 19l4.5 4.5L21 39l-9.5-9.5L16 25Z" fill="var(--gr)" stroke-width="2.5"/></g></symbol>
+
+<symbol id="b2" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5"><rect x="11" y="29" width="8" height="11" fill="var(--bl)"/>
+  <rect x="20" y="22" width="8" height="18" fill="var(--ye)"/>
+  <rect x="29" y="14" width="8" height="26" fill="var(--or)"/></g></g></symbol>
+
+<symbol id="b3" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5"><rect x="9" y="14" width="30" height="7" fill="var(--bl)"/>
+  <rect x="11" y="22" width="26" height="17" fill="var(--ye)"/>
+  <rect x="20" y="14" width="8" height="25" fill="var(--gr)"/></g></g></symbol>
+
+<symbol id="b4" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <path d="M24 9 26.8 18.1 35.7 14.6 30.3 22.6 38.6 27.3 29.1 28.1 30.5 37.5 24 30.5 17.5 37.5 18.9 28.1 9.4 27.3 17.7 22.6 12.3 14.6 21.2 18.1Z" fill="var(--or)" stroke-width="2.5"/>
+  <path d="M24 18 30 24 24 30 18 24Z" fill="var(--ye)" stroke-width="2.5"/></g></symbol>
+
+<symbol id="b5" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5"><path d="M14 13h20l8 10-18 19L6 23Z" fill="var(--bl)"/>
+  <path d="M14 13h20l-10 10Z" fill="var(--ye)"/>
+  <path d="M6 23h36l-18 19Z" fill="var(--bl)"/></g></g></symbol>
+
+<symbol id="b6" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5"><path d="M14 13h20l5 4-5 4H14l-5-4Z" fill="var(--ye)"/>
+  <path d="M14 22h20l5 4-5 4H14l-5-4Z" fill="var(--or)"/>
+  <path d="M14 31h20l5 4-5 4H14l-5-4Z" fill="var(--ye)"/></g></g></symbol>
+
+<!-- 早鸟 -->
+<symbol id="b7" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5"><path d="M12 33V22l7-7h10l7 7v11Z" fill="var(--or)"/>
+  <rect x="7" y="32" width="34" height="6" fill="var(--ye)"/></g></g></symbol>
+
+<!-- 夜猫 -->
+<symbol id="b8" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5"><path d="M15.6 13H26.4L34 20.6V31.4L26.4 39H15.6L8 31.4V20.6Z" fill="var(--bl)"/>
+  <path d="M38 10 42 14 38 18 34 14Z" fill="var(--ye)"/><path d="M39 26 42 29 39 32 36 29Z" fill="var(--ye)"/></g></g></symbol>
+
+<!-- 双赢 -->
+<symbol id="b9" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5"><path d="M9 13 21 24 9 35Z" fill="var(--gr)"/>
+  <path d="M39 13 27 24 39 35Z" fill="var(--bl)"/>
+  <rect x="21" y="18" width="6" height="12" fill="var(--ye)"/></g></g></symbol>
+
+<!-- 千分 -->
+<symbol id="b10" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.2" fill="var(--bl)"><path d="M24 7 30 13 24 19 18 13Z"/><path d="M13 18 19 24 13 30 7 24Z"/><path d="M35 18 41 24 35 30 29 24Z"/><path d="M24 29 30 35 24 41 18 35Z"/></g>
+  <path d="M24 20 28 24 24 28 20 24Z" fill="var(--ye)" stroke-width="2"/></g></symbol>
+
+<!-- 收藏家 · 彩虹蜂巢 -->
+<symbol id="b12" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="#1E1830"/>
+  <g stroke-width="2.2">
+    <path d="M17.9 6.5 23.96 10V17L17.9 20.5 11.84 17V10Z" fill="var(--red)"/>
+    <path d="M30.1 6.5 36.16 10V17L30.1 20.5 24.04 17V10Z" fill="var(--or)"/>
+    <path d="M36.1 17 42.16 20.5V27.5L36.1 31 30.04 27.5V20.5Z" fill="var(--ye)"/>
+    <path d="M30.1 27.5 36.16 31V38L30.1 41.5 24.04 38V31Z" fill="var(--gr)"/>
+    <path d="M17.9 27.5 23.96 31V38L17.9 41.5 11.84 38V31Z" fill="var(--cy)"/>
+    <path d="M11.9 17 17.96 20.5V27.5L11.9 31 5.84 27.5V20.5Z" fill="var(--blue)"/>
+    <path d="M24 17 30.06 20.5V27.5L24 31 17.94 27.5V20.5Z" fill="var(--pu)"/>
+  </g></g></symbol>
+
+<!-- ═══ 资深审核家 · 5 方案 ═══ -->
+<symbol id="v1" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5">
+  <path d="M11 30 24 38 37 30v5.5L24 43.5 11 35.5Z" fill="var(--gr)"/>
+  <path d="M11 21 24 29 37 21v5.5L24 34.5 11 26.5Z" fill="var(--gr)"/>
+  <path d="M11 12 24 20 37 12v5.5L24 25.5 11 17.5Z" fill="var(--ye)"/></g></g></symbol>
+
+<symbol id="v2" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5">
+  <path d="M18.6 9H29.4L37 16.6V27.4L29.4 35H18.6L11 27.4V16.6Z" fill="var(--ye)"/>
+  <path d="M22 27 28.5 20.5 31.5 23.5 22 33l-5.5-5.5 3-3Z" fill="var(--gr)"/>
+  <rect x="12" y="38" width="24" height="5" fill="var(--or)"/></g></g></symbol>
+
+<symbol id="v3" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.2">
+  <rect x="12" y="12" width="7" height="7" fill="var(--gr)"/><rect x="21" y="12" width="7" height="7" fill="var(--gr)"/><rect x="30" y="12" width="7" height="7" fill="var(--gr)"/>
+  <rect x="12" y="21" width="7" height="7" fill="var(--gr)"/><rect x="21" y="21" width="7" height="7" fill="var(--ye)"/><rect x="30" y="21" width="7" height="7" fill="var(--gr)"/>
+  <rect x="12" y="30" width="7" height="7" fill="var(--gr)"/><rect x="21" y="30" width="7" height="7" fill="var(--gr)"/><rect x="30" y="30" width="7" height="7" fill="var(--or)"/></g></g></symbol>
+
+<symbol id="v4" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5">
+  <path d="M7 24 24 11 41 24 24 37Z" fill="var(--bl)"/>
+  <path d="M24 17 31 24 24 31 17 24Z" fill="var(--ye)"/>
+  <rect x="21" y="21" width="6" height="6" fill="#000" stroke="none"/></g></g></symbol>
+
+<symbol id="v5" viewBox="0 0 48 48"><g stroke="#000" stroke-width="3" stroke-miterlimit="2">
+  <path d="M24 2 43.1 13V35L24 46 4.9 35V13Z" fill="var(--pu)"/>
+  <g stroke-width="2.5">
+  <rect x="9" y="32" width="30" height="7" fill="var(--or)"/>
+  <rect x="11" y="24" width="28" height="7" fill="var(--ye)"/>
+  <path d="M20 20 29.5 10.5l3.5 3.5L20 27l-6.5-6.5L17 17Z" fill="var(--gr)"/></g></g></symbol>
+</svg>
+
+<div class="wrap">
+
+<div class="card">
+  <span class="tag">Round 4</span><span class="tag g">L1-A 定稿</span><span class="tag b">mark A 定稿</span><span class="tag o">徽章 ×12</span>
+  <h1 style="margin-top:12px">徽章终稿 ×12<br>+ 蜂巢徽章墙</h1>
+  <div class="final">
+    <div class="box"><svg style="width:96px;height:96px"><use href="#L1a"/></svg><div class="cap">Logo · L1-A</div></div>
+    <div class="box"><svg style="width:40px;height:40px"><use href="#pt"/></svg><div class="cap">Points</div></div>
+    <div class="box"><svg style="width:40px;height:40px"><use href="#cn"/></svg><div class="cap">Coins</div></div>
+    <div class="box"><svg style="width:40px;height:40px"><use href="#st"/></svg><div class="cap">Streak</div></div>
+  </div>
+  <p class="sm" style="margin-top:14px">
+    已锁定：<b>L1-A（紫箱 · 绿盖）</b> + <b>处理 A（平涂无描边）</b>。界面图标 ×20 沿用不变。
+    徽章从 18 收到 <b>12</b>：原 6 枚 + 早鸟 + 夜猫 + 双赢 + 千分 + 资深审核家 + 收藏家。
+  </p>
+</div>
+
+<!-- ═══ 资深审核家 ═══ -->
+<div class="card">
+  <h2>1 · 资深审核家 — 5 个方案</h2>
+  <p class="sm" style="margin-top:8px">
+    条件：<b>累计审核 100 次</b>。难点在于"审核"这件事没有天然的物件 —— 它是一个<b>反复发生的动作</b>。
+    所以五个方案分成两条思路：<b>①「资历」</b>（军衔、印章 —— 强调身份）与
+    <b>②「数量」</b>（九宫格、审批栈 —— 强调次数）。每格下面给了 34px 和 22px，因为徽章墙上它就这么大。
+  </p>
+  <div class="opts">
+    <div class="opt rec">
+      <svg><use href="#v1"/></svg>
+      <div class="n">V1 · 军衔条纹 <span style="background:#000;color:#fff;font-size:9px;padding:1px 5px;vertical-align:2px">推荐</span></div>
+      <div class="d">三道 V 形杠，最上一道是黄色。<b>「资深」的通用符号就是军衔</b>，不需要解释；三道杠也天然暗示"累计到了第三档"。全部由 6 条直线构成，是五个里几何最纯的。</div>
+      <div class="sizes"><svg><use href="#v1"/></svg><svg class="xs"><use href="#v1"/></svg></div>
+    </div>
+    <div class="opt">
+      <svg><use href="#v2"/></svg>
+      <div class="n">V2 · 印章</div>
+      <div class="d">黄色八边形印章 + 绿勾，下面一道橙色墨痕。审批 = 盖章，语义最直白。缺点：和 <b>首次家务</b>（黄卡 + 绿勾）撞了构图，两枚放一起容易混。</div>
+      <div class="sizes"><svg><use href="#v2"/></svg><svg class="xs"><use href="#v2"/></svg></div>
+    </div>
+    <div class="opt">
+      <svg><use href="#v3"/></svg>
+      <div class="n">V3 · 九宫格</div>
+      <div class="d">九格全部批完，中间黄、右下橙 —— "数量"这条思路最直接的画法，也最像一面被填满的墙。缺点：22px 下会退化成一团噪点。</div>
+      <div class="sizes"><svg><use href="#v3"/></svg><svg class="xs"><use href="#v3"/></svg></div>
+    </div>
+    <div class="opt">
+      <svg><use href="#v4"/></svg>
+      <div class="n">V4 · 审视之眼</div>
+      <div class="d">蓝色菱形眼 + 黄色方瞳。"审核 = 看过很多"，抽象度最高、辨识度也最高。缺点：略带监视感，且蓝色在这里不表示 Points，破了色义。</div>
+      <div class="sizes"><svg><use href="#v4"/></svg><svg class="xs"><use href="#v4"/></svg></div>
+    </div>
+    <div class="opt">
+      <svg><use href="#v5"/></svg>
+      <div class="n">V5 · 审批栈</div>
+      <div class="d">两层已批的单子 + 顶上一个绿勾。"批了厚厚一叠"这个意象很准，小尺寸也稳。缺点：勾的元素在整套里已经出现两次了。</div>
+      <div class="sizes"><svg><use href="#v5"/></svg><svg class="xs"><use href="#v5"/></svg></div>
+    </div>
+  </div>
+  <div class="note">
+    <b>我选 V1。</b>三条理由：① 整套 12 枚里已经有两枚用了"勾"（首次家务、以及概念上的审批），V1 是唯一<b>完全不用勾</b>还能表达"审核资历"的；
+    ② 22px 下只剩三条粗横杠，是五个里唯一<b>缩到最小仍然完整</b>的；
+    ③ 它和 <b>3 日连胜</b>（递进柱）在视觉上是一组"递进"语言，但方向不同（竖 vs 横），不会撞。
+    下面的徽章墙先用 V1 摆，你想换成哪个我直接替。
+  </div>
+</div>
+
+<!-- ═══ 收藏家 ═══ -->
+<div class="card">
+  <h2>2 · 收藏家 — 彩虹蜂巢</h2>
+  <div class="final">
+    <div class="box" style="background:#fff"><svg style="width:150px;height:150px;filter:drop-shadow(4px 4px 0 rgba(0,0,0,.3))"><use href="#b12"/></svg><div class="cap">b12 · 收藏家</div></div>
+    <div style="flex:1;min-width:300px">
+      <p class="sm">
+        按你说的做了：<b>7 个小六边形拼成一个大六边形，中间是紫色</b>。外圈顺时针是
+        <span style="background:#FF5C5C;padding:0 5px;border:1px solid #000">红</span>
+        <span style="background:#FF8A3D;padding:0 5px;border:1px solid #000">橙</span>
+        <span style="background:#FFE14A;padding:0 5px;border:1px solid #000">黄</span>
+        <span style="background:#3DDC97;padding:0 5px;border:1px solid #000">绿</span>
+        <span style="background:#4CC9F0;padding:0 5px;border:1px solid #000">青</span>
+        <span style="background:#3B6BFF;padding:0 5px;border:1px solid #000">蓝</span>，中心
+        <span style="background:#7C4DFF;color:#fff;padding:0 5px;border:1px solid #000">紫</span>。
+      </p>
+      <p class="sm">
+        两个我自己加的处理，你可以否掉：<br>
+        ① <b>底框改成近黑的 <code>#1E1830</code></b>，不是紫色。因为中心那格必须是紫的，紫框套紫芯会糊在一起；
+        深色底还让六个彩色格子的黑描边有地方"落"。<br>
+        ② <b>它是全套唯一一枚"图形本身就是徽章墙"的徽章</b> —— 集齐所有徽章，奖励是一面缩小的墙。
+      </p>
+      <div class="note" style="margin-top:12px">
+        <b>破例的代价，说清楚：</b>红 <code>#FF5C5C</code> 和蓝 <code>#3B6BFF</code> 是<b>新色</b>，
+        目前不在 <code>theme.css</code> 里。要落地就得加两个 token —— 建议命名成
+        <code>--deco-red</code> / <code>--deco-blue</code> 这种<b>装饰专用</b>前缀，
+        而不是塞进 <code>--brand-*</code>，否则以后有人会以为红色也有语义。
+        这正好就是 handover 里那句"徽章需要一条<b>独立的装饰色阶</b>，语义色供不出来"。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 12 枚 ═══ -->
+<div class="card">
+  <h2>3 · 12 枚终稿</h2>
+  <div class="bgrid">
+    <div class="bcell"><svg><use href="#b1"/></svg><div class="n">首次家务</div><div class="d">第一次被批准</div></div>
+    <div class="bcell"><svg><use href="#b2"/></svg><div class="n">3 日连胜</div><div class="d">连赢 3 天</div></div>
+    <div class="bcell"><svg><use href="#b3"/></svg><div class="n">首次兑换</div><div class="d">第一次花 Coins</div></div>
+    <div class="bcell"><svg><use href="#b4"/></svg><div class="n">7 日连胜</div><div class="d">连赢 7 天</div></div>
+    <div class="bcell"><svg><use href="#b5"/></svg><div class="n">百分里程碑</div><div class="d">累计 100 Points</div></div>
+    <div class="bcell"><svg><use href="#b6"/></svg><div class="n">大手笔</div><div class="d">单次高额兑换</div></div>
+    <div class="bcell"><svg><use href="#b7"/></svg><div class="n">早鸟</div><div class="d">5–7 点之间记录</div></div>
+    <div class="bcell"><svg><use href="#b8"/></svg><div class="n">夜猫</div><div class="d">1–3 点之间记录</div></div>
+    <div class="bcell"><svg><use href="#b9"/></svg><div class="n">双赢</div><div class="d">触发一次 win-win 结算</div></div>
+    <div class="bcell"><svg><use href="#b10"/></svg><div class="n">千分</div><div class="d">累计 1000 Points</div></div>
+    <div class="bcell"><svg><use href="#v1"/></svg><div class="n">资深审核家</div><div class="d">累计审核 100 次</div></div>
+    <div class="bcell"><svg><use href="#b12"/></svg><div class="n">收藏家</div><div class="d">集齐其余 11 枚</div></div>
+  </div>
+</div>
+
+<!-- ═══ 徽章墙 ═══ -->
+<div class="card">
+  <h2>4 · 蜂巢徽章墙</h2>
+  <p class="sm" style="margin-top:8px">
+    按你手绘的排布做的：<b>2 / 3 / 4 / 3</b> 四行错位蜂巢，六边形边贴边、零缝隙。
+    收藏家单独放在<b>最底一行正中</b> —— 它是集齐其余 11 枚才亮的那一枚，位置本身就是奖赏。
+  </p>
+
+  <div class="wallbox">
+    <div class="wall">
+      <div class="hx" style="left:103.4px;top:0"><svg class="bd"><use href="#b1"/></svg></div>
+      <div class="hx" style="left:206.6px;top:0"><svg class="bd"><use href="#b3"/></svg></div>
+
+      <div class="hx" style="left:51.8px;top:89.4px"><svg class="bd"><use href="#b2"/></svg></div>
+      <div class="hx" style="left:155px;top:89.4px"><svg class="bd"><use href="#b5"/></svg></div>
+      <div class="hx off" style="left:258.2px;top:89.4px"><svg class="bd"><use href="#b4"/></svg><svg class="lk"><use href="#lock"/></svg></div>
+
+      <div class="hx" style="left:0.2px;top:178.8px"><svg class="bd"><use href="#b7"/></svg></div>
+      <div class="hx off" style="left:103.4px;top:178.8px"><svg class="bd"><use href="#b8"/></svg><svg class="lk"><use href="#lock"/></svg></div>
+      <div class="hx off" style="left:206.6px;top:178.8px"><svg class="bd"><use href="#b6"/></svg><svg class="lk"><use href="#lock"/></svg></div>
+      <div class="hx off" style="left:309.8px;top:178.8px"><svg class="bd"><use href="#b9"/></svg><svg class="lk"><use href="#lock"/></svg></div>
+
+      <div class="hx off" style="left:51.8px;top:268.2px"><svg class="bd"><use href="#b10"/></svg><svg class="lk"><use href="#lock"/></svg></div>
+      <div class="hx off" style="left:155px;top:268.2px"><svg class="bd"><use href="#b12"/></svg><svg class="lk"><use href="#lock"/></svg></div>
+      <div class="hx off" style="left:258.2px;top:268.2px"><svg class="bd"><use href="#v1"/></svg><svg class="lk"><use href="#lock"/></svg></div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><svg><use href="#b1"/></svg> 已解锁 · 满色 + 黑描边</span>
+    <span><svg style="filter:grayscale(1) opacity(.7)"><use href="#b4"/></svg> 未解锁 · 去色</span>
+    <span><svg style="width:34px;height:39px"><use href="#lock"/></svg> 锁标识 · 右下角</span>
+  </div>
+
+  <div class="note">
+    <b>未解锁态为什么是"去色"而不是"变成剪影"：</b>去色保留了图形，用户能<b>看见自己还差什么</b>，
+    这才是徽章墙让人想去解锁的原因；剪影只会让人觉得"有一堆看不懂的东西"。
+    锁放在<b>右下角而不是正中</b>也是同一个理由 —— 正中的锁会把图形整个盖住。<br><br>
+    <b>三个实装注意点：</b><br>
+    ① 锁的深色 <code>#1E1830</code> 在 dark 模式下会和背景 <code>#171226</code> 糊在一起，dark 下需要换成
+    <code>--surface-card</code> 那一档，或者给锁加一圈浅色描边。<br>
+    ② 蜂巢是<b>绝对定位</b>的固定像素排布，窄屏放不下 —— 移动端建议退化成普通网格（现有 <code>BadgeShelf</code> 那种），
+    蜂巢只在 <code>md</code> 以上出现。<br>
+    ③ <code>BadgeMark</code> 按 id 查表是<b>纯展示</b>逻辑：徽章的名字和解锁条件仍然归后端的
+    <code>name</code> / <code>criteria</code>（log <code>027</code> 那条约定）。这 12 枚的中文名和条件是我按你说的写的占位，
+    真要上线以后端 seed 为准。
+  </div>
+</div>
+
+<div class="card" style="background:#7C4DFF;color:#fff">
+  <h2 style="color:#fff">还差一个决定</h2>
+  <p class="sm" style="color:#fff;margin-top:10px">
+    <b>资深审核家用 V1–V5 哪个？</b>定了之后我一次性交付：<br>
+    · App 图标全套 —— favicon.svg / favicon.ico(16·32·48)、apple-touch-icon 180、PWA 192·512·maskable 512、OG 1200×630<br>
+    · <code>icons.tsx</code> —— 12 枚徽章 + 3 个 mark + 20 个界面图标 + 锁，TypeScript，可直接替换 <code>marks.tsx</code><br>
+    · <code>BadgeWall.tsx</code> —— 蜂巢排布组件（含窄屏降级）<br>
+    · <code>ICONS.md</code> —— 放置位置、<code>index.html</code> 要加的几行、以及新增两个装饰色 token 的建议写法
+  </p>
+  <p class="sm" style="color:#fff;font-weight:800;margin:0">Project folder 至今零改动。</p>
+</div>
+
+<div class="foot">Dwelloot · round 4 · 遵循《Neobrutalism UI (How to)》与 ui-exp01 设计令牌</div>
+</div>
+</body>
+</html>

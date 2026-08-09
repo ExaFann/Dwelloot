@@ -1,0 +1,12 @@
+# Netlify / Cloudflare Pages SPA fallback.
+#
+# Kept alongside `staticwebapp.config.json` so the build output works on whichever host is chosen —
+# each platform reads only its own file and ignores the other, so carrying both costs nothing but
+# means the deploy does not depend on having picked the host before the build.
+#
+# Without a rule like this, `/store` is a request for a file that does not exist: the build produces
+# one `index.html` and an `assets/` folder, and every route below is resolved by React Router *after*
+# that document loads. A static host answering literally returns 404 on any refresh or shared link.
+#
+# Vercel reads neither file — it needs `vercel.json` with a rewrite, see the runbook in log `060`.
+/*    /index.html   200

@@ -1,0 +1,53 @@
+<svg width="1450" height="700" viewBox="0 0 1450 700" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Dwelloot ER diagram 2 — reward economy</title>
+<desc>Entity relationship diagram showing User, Redemption, and Reward entities, key attributes, and the redeems and for relationships between them. User is abbreviated here; its full attribute set is in diagram 1.</desc>
+
+<rect x="20" y="15" width="50" height="30" rx="4" fill="#FDF3E3" stroke="#C87F0A" stroke-width="1.5"/>
+<text x="80" y="34" font-size="13" fill="#333" font-family="sans-serif">Entity</text>
+<ellipse cx="250" cy="30" rx="35" ry="16" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="300" y="34" font-size="13" fill="#333" font-family="sans-serif">Attribute (underline = primary key)</text>
+<polygon points="700,10 735,30 700,50 665,30" fill="#EAF7EE" stroke="#2E8B57" stroke-width="1.5"/>
+<text x="750" y="34" font-size="13" fill="#333" font-family="sans-serif">Relationship</text>
+
+<rect x="60" y="340" width="180" height="70" rx="6" fill="#FDF3E3" stroke="#C87F0A" stroke-width="1.5"/>
+<text x="150" y="375" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#8A5A06" font-family="sans-serif">User</text>
+<line x1="150" y1="173" x2="150" y2="340" stroke="#999" stroke-width="1"/>
+<ellipse cx="150" cy="150" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="150" y="150" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif" text-decoration="underline">Id</text>
+<text x="150" y="460" text-anchor="middle" font-size="11" fill="#666" font-family="sans-serif">Full attributes in diagram 1</text>
+
+<line x1="240" y1="375" x2="330" y2="375" stroke="#888" stroke-width="1.5"/>
+<line x1="470" y1="375" x2="560" y2="375" stroke="#888" stroke-width="1.5"/>
+<polygon points="400,330 470,375 400,420 330,375" fill="#EAF7EE" stroke="#2E8B57" stroke-width="1.5"/>
+<text x="400" y="375" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F6B45" font-family="sans-serif">redeems</text>
+<text x="285" y="362" text-anchor="middle" font-size="12" fill="#666" font-family="sans-serif">(0,*)</text>
+<text x="515" y="362" text-anchor="middle" font-size="12" fill="#666" font-family="sans-serif">(1,1)</text>
+
+<rect x="560" y="340" width="180" height="70" rx="6" fill="#FDF3E3" stroke="#C87F0A" stroke-width="1.5"/>
+<text x="650" y="375" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#8A5A06" font-family="sans-serif">Redemption</text>
+<line x1="550" y1="173" x2="610" y2="340" stroke="#999" stroke-width="1"/>
+<ellipse cx="550" cy="150" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="550" y="150" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif" text-decoration="underline">Id</text>
+<line x1="750" y1="173" x2="690" y2="340" stroke="#999" stroke-width="1"/>
+<ellipse cx="750" cy="150" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="750" y="150" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif">RedeemedAt</text>
+
+<line x1="740" y1="375" x2="830" y2="375" stroke="#888" stroke-width="1.5"/>
+<line x1="970" y1="375" x2="1060" y2="375" stroke="#888" stroke-width="1.5"/>
+<polygon points="900,330 970,375 900,420 830,375" fill="#EAF7EE" stroke="#2E8B57" stroke-width="1.5"/>
+<text x="900" y="375" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F6B45" font-family="sans-serif">for</text>
+<text x="785" y="362" text-anchor="middle" font-size="12" fill="#666" font-family="sans-serif">(1,1)</text>
+<text x="1015" y="362" text-anchor="middle" font-size="12" fill="#666" font-family="sans-serif">(0,*)</text>
+
+<rect x="1060" y="340" width="180" height="70" rx="6" fill="#FDF3E3" stroke="#C87F0A" stroke-width="1.5"/>
+<text x="1150" y="375" text-anchor="middle" dominant-baseline="central" font-size="16" fill="#8A5A06" font-family="sans-serif">Reward</text>
+<line x1="1050" y1="173" x2="1110" y2="340" stroke="#999" stroke-width="1"/>
+<ellipse cx="1050" cy="150" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="1050" y="150" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif" text-decoration="underline">Id</text>
+<line x1="1250" y1="173" x2="1190" y2="340" stroke="#999" stroke-width="1"/>
+<ellipse cx="1250" cy="150" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="1250" y="150" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif">Title</text>
+<line x1="1150" y1="577" x2="1150" y2="410" stroke="#999" stroke-width="1"/>
+<ellipse cx="1150" cy="600" rx="70" ry="23" fill="#EAF2FB" stroke="#3B77C4" stroke-width="1.5"/>
+<text x="1150" y="600" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#1F4E86" font-family="sans-serif">CoinCost</text>
+</svg>

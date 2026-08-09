@@ -1,0 +1,22 @@
+# Netlify build configuration.
+#
+# The repository is a monorepo: the .NET API lives in API/, the frontend in client/.
+# Netlify only ever builds client/, so `base` points there and `publish` is relative
+# to it.
+#
+# VITE_API_BASE_URL is NOT set here on purpose. It is baked into the bundle at build
+# time, so it belongs in the site's build environment (Site configuration →
+# Environment variables) where it can differ per context without a commit. Without it
+# the build prints a warning and the deployed app throws on load.
+#
+# No redirect rules here either: client/public/_redirects ships the SPA fallback into
+# dist/ on every build and is the rule that was verified against the live site. One
+# source of truth — adding a second here would only raise the question of which wins.
+
+[build]
+  base = "client"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"

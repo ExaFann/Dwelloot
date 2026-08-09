@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dwelloot</title>
+    <meta
+      name="description"
+      content="A household chore app for two people. Log what you did, your partner signs off, win the period and open a loot box."
+    />
+
+    <!--
+      Icons, task [77]. The SVG is listed after the .ico deliberately: a browser that understands
+      `type="image/svg+xml"` takes it and scales cleanly, and one that does not falls back to the
+      bitmap rather than showing nothing.
+
+      `favicon.svg` and `favicon.ico` are not the same drawing, and that is on purpose rather than an
+      oversight. The SVG is generated from `LogoMark` and `favicon.test.ts` pins it path-for-path
+      against that component, so the two can never drift; the .ico is the designed asset, which
+      carries a `#F0EBFF` plate because a 16px transparent mark disappears against a dark tab strip.
+    -->
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!--
+      `theme-color` colours the browser's own chrome, and its only selector is
+      `prefers-color-scheme` — so it follows the **OS**, while the app follows the mode saved in
+      `dwelloot.theme` (see the boot script below). A user running the app in dark on a light OS
+      therefore gets light browser chrome above a dark page. There is no meta equivalent of
+      `data-theme`, so this is as close as static markup gets; it is the OS default in both
+      directions, which is the case that is right most of the time.
+    -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F0EBFF" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171226" />
+
+    <!--
+      Open Graph. `og:url` is absolute because a relative one is ignored by every scraper, and it
+      names the deployed origin rather than the current one — the right trade, since these tags
+      exist to be read by crawlers fetching the public site and nothing else consumes them.
+
+      **There is deliberately no `og:image`.** The designed share image carried a line of Chinese
+      copy and this repository is English-only, so the asset was removed rather than shipped — and
+      the tag went with it. An `og:image` pointing at a file that is not there is worse than no tag
+      at all: a scraper renders the broken result instead of falling back to the title and
+      description. `twitter:card` is `summary` for the same reason; `summary_large_image` promises
+      an image.
+
+      Restoring it needs the asset redrawn with English-only copy. The title and description below
+      are already the words it should carry.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Dwelloot" />
+    <meta property="og:title" content="Dwelloot — chores, but make it a duel" />
+    <meta
+      property="og:description"
+      content="Log what you did. Your partner signs off. Win the day, open a box, spend the loot."
+    />
+    <meta property="og:url" content="https://dwelloot.netlify.app/" />
+    <meta name="twitter:card" content="summary" />
+    <!--
+      Applies the saved theme before the first paint.
+
+      This cannot live in React: `createRoot().render()` runs after the browser has already painted,
+      so a dark-mode user would get a full-brightness flash of #F0EBFF on every load before the app
+      corrected it.
+
+      It is a second copy of the logic in src/theme/themeMode.ts, in a file that module cannot
+      import. `src/theme/themeBoot.test.ts` reads this file and pins the storage key, the attribute
+      and the mode strings against the module, so the two cannot drift apart silently.
+
+      Note for [60]: this is an inline script, so a deployed Content-Security-Policy needs a hash or
+      nonce for it rather than a blanket `script-src 'self'`.
+    -->
+    <script>
+      (function () {
+        try {
+          var mode = localStorage.getItem('dwelloot.theme') || 'system'
+          var dark =
+            mode === 'dark' ||
+            (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          if (dark) document.documentElement.setAttribute('data-theme', 'dark')
+        } catch (e) {
+          // Storage blocked, or no matchMedia. The light scheme is the default and renders fine.
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

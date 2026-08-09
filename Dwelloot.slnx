@@ -2,4 +2,7 @@
   <Folder Name="/API/">
     <Project Path="API/Dwelloot.csproj" />
   </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/Dwelloot.Tests.csproj" />
+  </Folder>
 </Solution>

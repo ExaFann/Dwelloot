@@ -1,0 +1,901 @@
+@import 'tailwindcss';
+
+/*
+ * Dwelloot design tokens — the single source of truth.
+ *
+ * Documented in specs/01_architecture/UI/design-tokens.md, and asserted by
+ * src/theme/tokens.test.ts, which parses *this file* rather than a copy of its values. If you change
+ * a color here, the test measures the change; it does not measure a duplicate that drifted.
+ *
+ * Layout of the file:
+ *   1. `@custom-variant dark` — how the dark scheme is selected
+ *   2. `:root` / `[data-theme=dark]` — raw scheme-dependent values
+ *   3. `@theme inline` — maps the raw values onto Tailwind's namespaces, producing utilities
+ *   4. `@utility` — the press physics
+ *   5. `@layer base` — element defaults
+ */
+
+/*
+ * Dark applies **only** when [data-theme="dark"] is set on a container. Not `prefers-color-scheme`.
+ *
+ * Tailwind's default is the media query, which would make the app follow the OS with nothing written
+ * to switch it. That is the theme switch half-implemented — and task [57] owns switching, which is
+ * one of the three assessed advanced requirements. It also has a practical cost: every screenshot and
+ * every UI task from [40] to [58] would render differently depending on the developer's OS setting.
+ *
+ * [57] writes the attribute. It can still offer a "follow system" option; that is a question of what
+ * sets the attribute, not of what this file defines.
+ */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root {
+  /*
+   * Brand fills, and the foreground measured against each. See design-tokens.md §2.
+   *
+   * **Softened in `ui-exp01`.** The first palette was picked for maximum punch and read as alarming
+   * once it was on real screens: `#FF3B5C` is a warning light, `#00C96F` a highlighter, `#6C00FF`
+   * close to pure spectral violet. Neo-brutalism gets its energy from flat fills and heavy black
+   * outlines, not from saturation — so every hue keeps its identity and steps back from the edge.
+   * Purple and green still lead.
+   *
+   * Every value below is checked by `tokens.test.ts` for AA against its own foreground *and* for a
+   * ≥3:1 black border, in both schemes. The measured ratios are in design-tokens.md §2.
+   */
+  --brand-primary: #7c4dff;
+  --brand-primary-fg: #ffffff;
+  --brand-success: #3ddc97;
+  --brand-success-fg: #0a0a0a;
+  --brand-warning: #ffe14a;
+  --brand-warning-fg: #0a0a0a;
+  --brand-danger: #ff7a70;
+  --brand-danger-fg: #0a0a0a;
+  /*
+   * Points get their own hue, and it is the one cool accent in the set.
+   *
+   * Purple was standing in for Points on the profile, but purple already means **you** — on the
+   * head-to-head card it is the colour of a *person*, not of a currency. Using it for a stat made
+   * one token carry two unrelated jobs, which is why that tile never looked like it belonged with
+   * the other two.
+   *
+   * Blue is also the only hue far enough from yellow and orange to keep the three stats apart: the
+   * three now step 0.76 → 0.50 → 0.40 in luminance *and* sit at three different points on the wheel,
+   * so they separate by brightness and by hue rather than relying on either alone.
+   */
+  --brand-points: #4cc9f0;
+  --brand-points-fg: #0a0a0a;
+  /*
+   * A fifth hue, added for the streak.
+   *
+   * The three profile stats needed three fills, and the existing four could not supply them: green
+   * is the *opponent's* colour and red is destructive, so "Coins / Points / Streak" in yellow, green
+   * and red read as "good, neutral, something is wrong". Orange is a flame, which is what a streak
+   * already is, and it sits between the yellow and the red without borrowing either one's meaning.
+   */
+  /* Deepened so it reads as a distinct hue beside the yellow, not a duller version of it. */
+  --brand-flame: #ff8a3d;
+  --brand-flame-fg: #0a0a0a;
+
+  --surface-page: #f0ebff;
+  --surface-card: #ffffff;
+  --text-primary: #0a0a0a;
+  --text-secondary: #4a4458;
+  /*
+   * Placeholder text, and a third step down rather than a reuse of `--text-secondary`.
+   *
+   * Every input was rendering its placeholder in the secondary ink, which is 9:1 on a white card —
+   * as dark as a caption. An empty field then looked like a filled one, and the owner read the hint
+   * as a value they had typed. A placeholder has to be legible *and* obviously not content.
+   *
+   * 3.7:1 on the light card and 3.6:1 on the dark one: above the 3:1 large-text bar, below anything
+   * that could be mistaken for body copy. Deliberately not AA — a placeholder is never the only
+   * carrier of information here, because every field also has a real `<label>`.
+   */
+  --text-placeholder: #8a8299;
+
+  /*
+   * Ink — three tokens, not one. `--ink-accent` deliberately does NOT change between schemes:
+   * a light border on a #FFD600 fill is 1.21:1, which is not a border. See design-tokens.md §3.
+   */
+  --ink-accent: #000000;
+  --ink-surface: #000000;
+  --ink-shadow: #000000;
+
+  /* Hard offsets: zero blur, zero spread. The trailing `0 0` is the whole style. */
+  --shadow-press: 2px 2px 0 0 var(--ink-shadow);
+  --shadow-rest: 4px 4px 0 0 var(--ink-shadow);
+  --shadow-raised: 5px 5px 0 0 var(--ink-shadow);
+
+  --border-width: 2px;
+  /*
+   * Named `--geometry-radius`, not `--radius-base`. `--radius-*` is one of Tailwind's own theme
+   * namespaces, and the `@theme inline` block below maps into it — declaring the raw value under the
+   * same name produced `--radius-base: var(--radius-base)`, a self-reference that resolved to
+   * nothing. `tokens.test.ts` now pins that no raw name is reused as a mapped name.
+   */
+  /*
+   * **Zero, from `ui-exp01`.** Rounded corners were softening the one thing the style is built on:
+   * neo-brutalism is hard edges and flat fills, and an 8px radius on every card, input and chip read
+   * as a generic app wearing a bold palette. One token squares the whole app, which is the argument
+   * for having had it as a token in the first place.
+   */
+  --geometry-radius: 0px;
+  /*
+   * **Controls keep their corners.** Surfaces are square; things you press are not.
+   *
+   * Squaring everything made a button look like a small card with a shadow under it rather than a
+   * physical key — the shadow alone was doing all the work of saying "this lifts". A rounded cap on
+   * a hard-offset shadow reads as an object with a top and a side; a square one reads as a sheet of
+   * paper. So `--geometry-radius` squares every surface and `--geometry-radius-control` keeps the
+   * press affordance three-dimensional. Owner's call, `ui-exp01`.
+   *
+   * The bottom nav is deliberately *not* a control here: its tabs are navigation, not buttons, and
+   * they stay square with the surfaces.
+   */
+  --geometry-radius-control: 8px;
+  --press-travel: 2px;
+
+  /*
+   * Decorative ramp — badge artwork only, task [75]. `--deco-`, never `--brand-`: red and blue here
+   * carry NO meaning, and the prefix is what stops someone later assuming they do. They exist for
+   * the collector badge's rainbow rosette, which needs a red and a true blue that the semantic
+   * palette cannot supply without breaking "yellow means Coins" (BRAND-ICONS.md §1.1). Scheme-
+   * invariant, like the badge artwork that uses them — artwork does not re-tint in dark. Two values
+   * only; a fuller ramp waits for something that needs it.
+   */
+  --deco-red: #FF5C5C;
+  --deco-blue: #3B6BFF;
+
+  /*
+   * The three currency marks' fills — [75d], the lever [75c] named. Light values ARE the sprite's
+   * literals (light mode is already right); dark values are the same hues genuinely deepened, so
+   * the marks' near-white ink stroke has something to bite against. NOT the `--brand-*` family:
+   * those lighten in dark because they carry text-grade AA on their own, and a mark bounded by an
+   * ink outline is exactly the thing that does not.
+   */
+  --mark-points: #4CC9F0;
+  --mark-coins: #FFE14A;
+  --mark-flame: #FF8A3D;
+  /*
+   * The tug bolt ([75e]). Same values as --mark-coins today, deliberately its own name: this
+   * yellow means *energy/contention*, not Coins — tune one and the other must not move with it
+   * (the --deco-* reasoning).
+   */
+  --mark-bolt: #FFE14A;
+
+  /*
+   * Person tints — [78]. The prize feed's rows were yellow, on a page where yellow means Coins:
+   * the row's own colour was arguing with the figure printed on it. These say *whose* event a row
+   * is, in the language the app already speaks — purple is you, green is your opponent
+   * (`AvatarRole`, design-tokens.md §2.1).
+   *
+   * Surfaces, not fills, and the distinction decides their ink: a fill takes the black
+   * `--ink-accent`, a surface takes `--ink-surface`, which inverts. Black on the dark tint measures
+   * 1.74:1 — that is what forced the row's border to `border-ink`.
+   *
+   * Every value is measured against its text, its muted text and its ink in both schemes by
+   * `tokens.test.ts`. A deeper green was tried and rejected: #215446 drops muted text to 4.16:1.
+   */
+  --surface-self: #CDBAFF;
+  --surface-opponent: #A3E6C7;
+}
+
+[data-theme='dark'] {
+  /* Purple and green are lightened to read as accents on a dark ground; yellow already does. */
+  --brand-primary: #a87bff;
+  /* Black, not white: white on #A87BFF is 1.90:1. The one scheme-dependent foreground. */
+  --brand-primary-fg: #0a0a0a;
+  --brand-success: #57e6b0;
+  --brand-success-fg: #0a0a0a;
+  --brand-warning: #ffea6b;
+  --brand-warning-fg: #0a0a0a;
+  --brand-danger: #ff9a90;
+  --brand-danger-fg: #0a0a0a;
+  --brand-flame: #ffa85c;
+  --brand-flame-fg: #0a0a0a;
+  --brand-points: #6fd6f7;
+  --brand-points-fg: #0a0a0a;
+
+  --surface-page: #171226;
+  --surface-card: #241c3d;
+  --text-primary: #f5f1ff;
+  --text-secondary: #b8aed6;
+  --text-placeholder: #7d7397;
+
+  /*
+   * Borders on bright fills stay black; surfaces and shadows invert.
+   *
+   * **Both inverted inks are muted, and the reason is that a contrast ratio is a floor, not a
+   * target.** They were the page's own near-white, `#F0EBFF`, which measured 8.59:1 against the
+   * lightest dark surface and 15.67:1 against the page — three to five times the 3:1 a border needs.
+   * The cost is paid on every card at once: a 2px outline on every surface plus a hard offset slab
+   * under everything pressable, all of it at near-maximum contrast, which is a field of glare rather
+   * than a set of edges. Meeting the requirement several times over is not a stronger result; past
+   * the floor the extra contrast buys nothing and costs legibility of the whole screen.
+   *
+   * Surface ink is now a lavender that still clears every dark surface — the binding constraints are
+   * the two person tints, `--surface-self` at 3.92:1 and `--surface-opponent` at 3.92:1, not the page.
+   * Shadow ink goes further because it answers to the page alone (4.00:1): a shadow is one element's
+   * depth cue, not a container edge, so it does not need to survive being drawn on a tint.
+   *
+   * A shadow *darker* than the page is impossible here rather than merely unconventional: the page
+   * is dark enough that no colour is 3:1 below it. Lighter-than-the-page is forced; how much lighter
+   * is the part that was chosen badly.
+   */
+  --ink-accent: #000000;
+  --ink-surface: #a79ad6;
+  --ink-shadow: #7a6cb0;
+
+  /* Deepened, not lightened — see the light block's note. */
+  --mark-points: #2B9DC7;
+  --mark-coins: #EAB308;
+  --mark-flame: #E56B14;
+  --mark-bolt: #EAB308;
+
+  /* Deep enough to sit on the dark card, light enough to keep AA under both text inks. */
+  --surface-self: #443473;
+  --surface-opponent: #1E4A3C;
+}
+
+/*
+ * `inline` matters here: it makes each utility emit the *resolved* expression, e.g.
+ * `.bg-primary { background-color: var(--brand-primary) }`, so the value is read from whichever
+ * scheme is active on the element. Without `inline` the utility would reference `--color-primary`,
+ * which is defined once at `:root` and would freeze the light value.
+ */
+@theme inline {
+  --color-primary: var(--brand-primary);
+  --color-primary-fg: var(--brand-primary-fg);
+  --color-success: var(--brand-success);
+  --color-success-fg: var(--brand-success-fg);
+  --color-warning: var(--brand-warning);
+  --color-warning-fg: var(--brand-warning-fg);
+  --color-danger: var(--brand-danger);
+  --color-danger-fg: var(--brand-danger-fg);
+  --color-flame: var(--brand-flame);
+  --color-flame-fg: var(--brand-flame-fg);
+  --color-points: var(--brand-points);
+  --color-points-fg: var(--brand-points-fg);
+
+  --color-page: var(--surface-page);
+  --color-card: var(--surface-card);
+  --color-self: var(--surface-self);
+  --color-opponent: var(--surface-opponent);
+  --color-body: var(--text-primary);
+  --color-muted: var(--text-secondary);
+  --color-placeholder: var(--text-placeholder);
+
+  --color-ink: var(--ink-surface);
+  --color-ink-accent: var(--ink-accent);
+
+  --shadow-hard-sm: var(--shadow-press);
+  --shadow-hard: var(--shadow-rest);
+  --shadow-hard-lg: var(--shadow-raised);
+
+  --radius-base: var(--geometry-radius);
+  --radius-control: var(--geometry-radius-control);
+
+  --font-display: 'Chakra Petch', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/*
+ * The physical press, as one utility so the physics live with the tokens rather than being retyped
+ * as six classes on every control — which is how the four rules in design-tokens.md §1 drift apart.
+ *
+ * Both axes, not just Y: the shadow is on a diagonal, so contracting it 4px→2px while moving only
+ * vertically leaves the horizontal gap unchanged and reads as sliding rather than pressing.
+ */
+/*
+ * **Reversed in `ui-exp01`, because the original had it backwards.** Hover used to *contract* the
+ * shadow and push the element down — the look of a button already held down — while a real click
+ * only changed colour. The strongest physical signal fired for the weakest input, and the actual
+ * press had no physics at all.
+ *
+ * | State  | Shadow | Transform | Reads as |
+ * |--------|--------|-----------|----------|
+ * | rest   | 4px    | none      | sitting on the page |
+ * | hover  | 5px    | −1px      | lifted, ready to take |
+ * | active | none   | +4px      | pushed flat into its own shadow |
+ *
+ * Releasing overshoots slightly (the `1.4` in the curve) so the button rebounds rather than gliding
+ * back — the bounce the press was missing. Down is faster than up, which is also how a key feels.
+ *
+ * **Only genuinely pressable things may wear this.** A card that does nothing when clicked is flat.
+ */
+@utility pressable {
+  box-shadow: var(--shadow-rest);
+  transition:
+    transform 140ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    box-shadow 140ms ease;
+
+  &:hover {
+    box-shadow: var(--shadow-raised);
+    transform: translate(-1px, -1px);
+  }
+
+  &:active {
+    box-shadow: none;
+    transform: translate(4px, 4px);
+    transition-duration: 60ms;
+  }
+
+  /* The travel still happens — only the animation is removed, so the affordance survives. */
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/*
+ * The same physics at a smaller offset, for controls that repeat down the page.
+ *
+ * A 4px shadow under a full-width row is a 4px-tall black band the width of the screen; five of them
+ * stacked read as a striped page rather than five liftable objects. Standalone buttons keep
+ * `pressable`. Owner's note reviewing [46].
+ */
+@utility pressable-sm {
+  box-shadow: var(--shadow-press);
+  transition:
+    transform 140ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    box-shadow 140ms ease;
+
+  &:hover {
+    box-shadow: var(--shadow-rest);
+    transform: translate(-1px, -1px);
+  }
+
+  &:active {
+    box-shadow: none;
+    transform: translate(var(--press-travel), var(--press-travel));
+    transition-duration: 60ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/*
+ * The spark where the two sides of the tug bar meet.
+ *
+ * Flicker only — no glow, no gradient, nothing that would break the flat-fill rule. The element is
+ * decorative and `aria-hidden`; under `prefers-reduced-motion` it holds still rather than
+ * disappearing, so the clash point is still marked.
+ */
+@keyframes dwelloot-spark {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  40% {
+    transform: scale(1.2) rotate(-8deg);
+  }
+  60% {
+    transform: scale(0.92) rotate(6deg);
+  }
+}
+
+@utility spark {
+  /*
+   * Centring uses the standalone `translate` property, **not** `transform`.
+   *
+   * Putting `translate(-50%, -50%)` inside the keyframes would tie the element's position to the
+   * animation running — and `prefers-reduced-motion` switches the animation off, which would leave
+   * the spark hanging off its own anchor point for exactly the users least able to cope with a
+   * layout surprise. `translate` and `transform` compose, so the keyframes only do scale and rotate.
+   */
+  translate: -50% -50%;
+  animation: dwelloot-spark 900ms steps(1, end) infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/*
+ * The loot box prize arriving — the app's one celebratory moment, task [53].
+ *
+ * Scale and rotate only. No glow, no gradient: `design-tokens.md`'s flat-fill rule holds here too,
+ * and a soft halo on a hard-shadowed yellow badge would be the one Material-ish thing in the app.
+ *
+ * `transform` is deliberately untouched, for the reason log `045` found with the spark: an element
+ * that depends on its animation to sit in the right place ends up stranded when
+ * `prefers-reduced-motion` switches the animation off. Here that means the prize simply appears at
+ * full size rather than popping — which is exactly what reduced motion should mean.
+ */
+@keyframes dwelloot-loot-pop {
+  0% {
+    scale: 0.6;
+    rotate: -6deg;
+  }
+  60% {
+    scale: 1.08;
+    rotate: 2deg;
+  }
+  100% {
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+
+@utility loot-pop {
+  animation: dwelloot-loot-pop 320ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/*
+ * A badge spinning into the wall's overlay — task [76a].
+ *
+ * Two full turns about the y axis with loot-pop's overshoot at the end. Discrete `scale` and
+ * `rotate` properties, never `transform`, for the standing reason (log `045`, and the notes on the
+ * spark above): the element's position must not depend on the animation running, because
+ * `prefers-reduced-motion` switches the animation off — under it the badge simply appears.
+ */
+@keyframes dwelloot-badge-reveal {
+  0% {
+    scale: 0.5;
+    rotate: y 0turn;
+  }
+  70% {
+    scale: 1.06;
+    rotate: y 1.6turn;
+  }
+  100% {
+    scale: 1;
+    rotate: y 2turn;
+  }
+}
+
+@utility badge-reveal {
+  animation: dwelloot-badge-reveal 900ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/*
+ * The loot chest opening, centre-screen — [53a] built the timeline, [53b] gave it a real chest.
+ * One fixed sequence: the chest rattles (~900ms), its lid swings open (900ms), the coins fountain
+ * from the mouth (950ms, coins prize only), the chest fades down (1500ms) and the prize arrives
+ * (1600ms). The roll is already known when this mounts — the sequence is theatre, so it needs no
+ * JS timeline.
+ *
+ * Discrete `scale`/`rotate`/`translate`, never `transform` (log `045`'s standing rule), and the
+ * stages overlap via grid cells rather than positioning transforms — so under
+ * `prefers-reduced-motion` nothing is stranded: the chest-and-coins stage is simply not shown,
+ * and the prize's **natural** state is visible (its entrance uses `backwards` fill purely to hide
+ * it through the delay).
+ */
+@keyframes dwelloot-box-rattle {
+  0%,
+  100% {
+    rotate: 0deg;
+    scale: 1;
+  }
+  15% {
+    rotate: -7deg;
+  }
+  30% {
+    rotate: 6deg;
+    scale: 1.03;
+  }
+  45% {
+    rotate: -6deg;
+  }
+  60% {
+    rotate: 5deg;
+    scale: 1.06;
+  }
+  75% {
+    rotate: -3deg;
+  }
+  90% {
+    rotate: 2deg;
+    scale: 1.1;
+  }
+}
+
+@keyframes dwelloot-chest-fade {
+  to {
+    scale: 0.9;
+    opacity: 0;
+  }
+}
+
+/* The whole chest stage: rattle, then fade down once the coins are past. */
+@utility chest-open {
+  animation:
+    dwelloot-box-rattle 900ms ease-in-out,
+    dwelloot-chest-fade 300ms ease-in 1500ms forwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    display: none;
+  }
+}
+
+@keyframes dwelloot-lid-pop {
+  to {
+    rotate: -40deg;
+  }
+}
+
+/*
+ * The lid's swing — applied to a `<g>` inside `ChestMark` via its `lidClassName` hook.
+ * `transform-box: fill-box` makes the origin the lid's own box (SVG default is the viewport,
+ * which would swing it around the canvas corner). The origin is the lid's bottom-LEFT corner —
+ * the hinge — and the pose is rotation only: adding a translate detaches the lid from the box
+ * (measured, not guessed: -40° reads as open-and-attached, -70° as flying off). The chest svg
+ * must be `overflow-visible` or the swung lid is clipped at the viewBox. No reduced-motion rule
+ * of its own: the whole stage is hidden by chest-open.
+ */
+@utility lid-pop {
+  transform-box: fill-box;
+  transform-origin: 0% 100%;
+  animation: dwelloot-lid-pop 380ms cubic-bezier(0.2, 0.8, 0.3, 1.2) 900ms forwards;
+}
+
+@keyframes dwelloot-coin-fly {
+  0% {
+    translate: 0 0;
+    scale: 0.4;
+    rotate: 0deg;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    scale: 1;
+  }
+  40% {
+    translate: var(--fly-x, 0px) -64px;
+  }
+  100% {
+    translate: calc(var(--fly-x, 0px) * 1.8) 96px;
+    rotate: var(--fly-r, 180deg);
+    opacity: 0;
+  }
+}
+
+/*
+ * One keyframe, eight coins: each carries its own `--fly-x` / `--fly-r` and an inline
+ * `animation-delay` (inline wins over the shorthand's 950ms), so the fountain scatters without
+ * eight keyframe blocks. `both` so a coin is invisible until its delay elapses.
+ */
+@utility coin-fly {
+  animation: dwelloot-coin-fly 820ms ease-in 950ms both;
+
+  @media (prefers-reduced-motion: reduce) {
+    display: none;
+  }
+}
+
+@keyframes dwelloot-prize-arrive {
+  0% {
+    opacity: 0;
+    scale: 0.5;
+    rotate: -6deg;
+  }
+  70% {
+    opacity: 1;
+    scale: 1.1;
+    rotate: 2deg;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+
+@utility prize-arrive {
+  animation: dwelloot-prize-arrive 380ms ease-out 1600ms backwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/*
+ * Confetti — [79], and **only for a bonus reward**.
+ *
+ * A won reward is the rare drop (10%), so it gets the loud reaction; Coins already have their own
+ * fountain and two full-screen effects on the common outcome would make the rare one feel ordinary.
+ *
+ * One keyframe for every piece, with each piece's drift, spin, delay and colour passed in as custom
+ * properties from the component — the same trick the coin fountain uses. `translate`/`rotate` rather
+ * than `transform`, per log `045`'s standing rule.
+ */
+@keyframes dwelloot-confetti-fall {
+  0% {
+    translate: 0 -8vh;
+    rotate: 0deg;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    translate: var(--drift, 0px) 104vh;
+    rotate: var(--spin, 540deg);
+    opacity: 0;
+  }
+}
+
+@utility confetti-piece {
+  animation: dwelloot-confetti-fall var(--fall, 3600ms) linear var(--delay, 0ms) both;
+
+  /*
+   * Nothing is positioned by this animation — the pieces are decorative and `aria-hidden`, and the
+   * prize underneath is laid out by the grid — so hiding the whole layer strands nothing.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    display: none;
+  }
+}
+
+/*
+ * A single visible focus indicator, added in task [40] — the first task with anything focusable.
+ *
+ * `:focus-visible` rather than `:focus`, so a mouse click on a button does not leave a ring behind
+ * while keyboard navigation still shows one. `outline` rather than a box-shadow ring, because every
+ * shadow in this theme is a hard offset and a focus ring drawn as one would be indistinguishable
+ * from the resting elevation.
+ */
+/*
+ * ── Task [81]: the motion the survey in log `080` ranked A–F ────────────────────────────────
+ *
+ * All one-shot, all pure CSS, all with a reduced-motion answer — the standing constraints. Each is
+ * driven by a class the component adds when something *changed*, never by a permanent animation:
+ * motion that loops is decoration, and this set exists to answer "did that just work?".
+ */
+
+/* (A) A number that changed. Colour is left alone — the marks already carry the currency's hue. */
+@keyframes dwelloot-value-pulse {
+  0% {
+    scale: 1;
+  }
+  35% {
+    scale: 1.28;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+@utility value-pulse {
+  animation: dwelloot-value-pulse 340ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/*
+ * (B) A row arriving in a polled list. **Entry only** — an exit animation needs the row kept in the
+ * DOM after the data says it is gone, which is real state machinery rather than a keyframe; the
+ * survey called that out and it stays deferred rather than half-built.
+ */
+@keyframes dwelloot-row-enter {
+  from {
+    opacity: 0;
+    translate: 0 -6px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@utility row-enter {
+  animation: dwelloot-row-enter 200ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* (C) The nav badge, on an increase only — falling counts must not celebrate. */
+@keyframes dwelloot-badge-bump {
+  0%,
+  100% {
+    translate: 0 0;
+    scale: 1;
+  }
+  30% {
+    translate: 0 -4px;
+    scale: 1.2;
+  }
+  60% {
+    translate: 0 0;
+    scale: 0.94;
+  }
+}
+
+@utility badge-bump {
+  animation: dwelloot-badge-bump 420ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* (D) Route changes. The cheapest item on the list, and the least likely to annoy. */
+@keyframes dwelloot-page-in {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@utility page-in {
+  animation: dwelloot-page-in 160ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/*
+ * (E) The lead changed hands. Fires on the bolt, which is already the thing the eye follows along
+ * the bar — a flash somewhere else would be a second place to look.
+ */
+@keyframes dwelloot-lead-flip {
+  0%,
+  100% {
+    scale: 1;
+    rotate: 0deg;
+  }
+  20% {
+    scale: 1.5;
+    rotate: -18deg;
+  }
+  45% {
+    scale: 1.35;
+    rotate: 14deg;
+  }
+  70% {
+    scale: 1.15;
+    rotate: -6deg;
+  }
+}
+
+@utility lead-flip {
+  animation: dwelloot-lead-flip 560ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/*
+ * ── Task [82]: the landing page's reveal-on-scroll ──────────────────────────────────────────
+ *
+ * A band starts low-and-transparent and settles in when it scrolls into view — `useRevealOnScroll`
+ * adds `band-in`. A *transition*, not a keyframe: it must be able to sit in its start state
+ * indefinitely and run whenever the class arrives.
+ *
+ * Reduced motion shows everything immediately: the start state IS the effect, so unlike the app's
+ * keyframes there is nothing to switch off — the base state itself must not apply.
+ */
+@utility band {
+  opacity: 0;
+  translate: 0 16px;
+  transition:
+    opacity 500ms ease-out,
+    translate 500ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    opacity: 1;
+    translate: 0 0;
+    transition: none;
+  }
+}
+
+@utility band-in {
+  opacity: 1;
+  translate: 0 0;
+}
+
+@utility focus-ring {
+  &:focus-visible {
+    outline: 3px solid var(--brand-primary);
+    outline-offset: 2px;
+  }
+}
+
+@layer base {
+  html {
+    /* Keeps form controls and scrollbars in step with the active scheme. */
+    color-scheme: light;
+  }
+
+  html:where([data-theme='dark']) {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--surface-page);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+  }
+
+}
+
+/*
+ * ── Scroll affordances — [84], replacing [83]'s restyled scrollbars ──────────────────────────
+ *
+ * [83] painted the native scrollbar with `::-webkit-scrollbar`. The owner's verdict after looking:
+ * it only ever changed colour — the square thumb and the ink border never appeared, because that
+ * pseudo-element is drawn by the platform's own widget and ignores most of what you tell it. The
+ * rules are gone rather than left in as decoration that half-works.
+ *
+ * What replaces them says the same thing without fighting the platform:
+ *   - vertical: the content **fades out** at the edge it continues past
+ *   - horizontal: **dots** below, the current one turned 45° into a diamond (`ScrollDots`)
+ */
+
+/*
+ * Fades the edge a scroll box continues past, so a cut-off row reads as "there is more" rather than
+ * as a crop. `mask-image` affects painting only — nothing moves, nothing is clipped from the
+ * accessibility tree, and the element still scrolls normally.
+ *
+ * **Each edge is independent, and off by default** — [85]. [84] faded both ends unconditionally,
+ * with a comment claiming a conditional version needed "a listener per box for a 16px difference
+ * nobody would notice". The owner noticed within the day: at rest the top fade lands on the first
+ * row, so the thing most likely to be read is the thing washed out. `useScrollFade` sets the two
+ * lengths from scroll position, so an edge with nothing behind it fades by 0px — a no-op gradient
+ * stop rather than a special case.
+ */
+@utility scroll-fade-y {
+  --fade-top: 0px;
+  --fade-bottom: 0px;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--fade-top),
+    #000 calc(100% - var(--fade-bottom)),
+    transparent 100%
+  );
+}
+
+/*
+ * Hides a scroll box's own scrollbar — [85], owner's call.
+ *
+ * **Only ever on inner boxes, never the page.** These containers already say where you are by
+ * other means: vertical ones fade at the edge they continue past, and the one horizontal one has
+ * `ScrollDots`. What was left was a chunky platform scrollbar inside a 112px card, which is the
+ * loudest thing in it. The page's own scrollbar is untouched — that one is the document's, and
+ * hiding it would take away the only indicator the window has.
+ *
+ * Hiding, not styling: [83] tried to restyle the widget and the platform ignored everything but
+ * the colour. Width is the one property both engines honour.
+ */
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}

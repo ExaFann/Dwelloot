@@ -481,4 +481,29 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-**/appsettings*.json
+# Application configuration
+#
+# appsettings.json and appsettings.Development.json are intentionally TRACKED. They hold
+# no secrets: the database password comes from .NET user secrets locally (see the
+# <UserSecretsId> in API/Dwelloot.csproj) and from the ConnectionStrings__Default
+# environment variable when deployed. A blanket appsettings ignore would leave a fresh
+# clone with no configuration at all, so the API could not start for anyone else.
+#
+# Files that would carry a real secret stay ignored:
+**/appsettings.Production.json
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+**/secrets.json
+
+
+publish.zip
+
+# Claude Code.
+#
+# `launch.json` IS tracked: it says how to start the dev server, it is the same for everyone, and
+# it is the kind of agent config the assessment asks to see.
+#
+# `settings.local.json` is not. It is the per-machine tool permission allow-list, so it accumulates
+# absolute paths from this computer and the literal commands that were approved - including, in this
+# case, a local test account's password typed into a curl probe. Machine-local by name and by nature.
+.claude/settings.local.json
