@@ -38,13 +38,17 @@ export type StoreQueryState = {
 export const PAGE_SIZE = 6
 
 /** The labels are the control's; the pairs are the API's. */
-export const SORT_OPTIONS: { value: SortOption; label: string; sort: string; descending: boolean }[] =
-  [
-    { value: 'cheapest', label: 'Cheapest first', sort: 'coinCost', descending: false },
-    { value: 'dearest', label: 'Most expensive first', sort: 'coinCost', descending: true },
-    { value: 'a-z', label: 'Name A–Z', sort: 'title', descending: false },
-    { value: 'z-a', label: 'Name Z–A', sort: 'title', descending: true },
-  ]
+export const SORT_OPTIONS: {
+  value: SortOption
+  label: string
+  sort: string
+  descending: boolean
+}[] = [
+  { value: 'cheapest', label: 'Cheapest first', sort: 'coinCost', descending: false },
+  { value: 'dearest', label: 'Most expensive first', sort: 'coinCost', descending: true },
+  { value: 'a-z', label: 'Name A–Z', sort: 'title', descending: false },
+  { value: 'z-a', label: 'Name Z–A', sort: 'title', descending: true },
+]
 
 export const FILTER_OPTIONS: { value: Affordability; label: string }[] = [
   { value: 'all', label: 'All' },

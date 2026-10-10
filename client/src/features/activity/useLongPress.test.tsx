@@ -17,7 +17,12 @@ import { useLongPress } from './useLongPress'
 function Harness({ onLongPress }: { onLongPress: () => void }) {
   const { handlers, consumedRef } = useLongPress(onLongPress)
   return (
-    <button type="button" data-testid="target" {...handlers} onClick={() => consumedRef.current && onLongPressConsumed()}>
+    <button
+      type="button"
+      data-testid="target"
+      {...handlers}
+      onClick={() => consumedRef.current && onLongPressConsumed()}
+    >
       hold me
     </button>
   )

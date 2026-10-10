@@ -59,7 +59,10 @@ export function TugBar({
            * a bordered card to scale and rotate, so the eye tracked the box and the bolt read as
            * its contents. A bare mark on the rope is the thing being fought over.
            */
-          className={['spark absolute top-1/2 z-10 block transition-[left] duration-500', boltAnimating ? 'lead-flip' : ''].join(' ')}
+          className={[
+            'spark absolute top-1/2 z-10 block transition-[left] duration-500',
+            boltAnimating ? 'lead-flip' : '',
+          ].join(' ')}
           style={{ left: `${mine}%` }}
         >
           <BoltIcon className={boltClassName} />

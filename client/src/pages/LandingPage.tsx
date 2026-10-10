@@ -14,11 +14,7 @@ import {
 import { Avatar } from '../components/ui/Avatar'
 import { TugBar } from '../features/competition/TugBar'
 import { tugShares } from '../features/competition/standing'
-import {
-  ChoreCredit,
-  ChoreStatusDot,
-  ChoreTitle,
-} from '../features/activity/choreStatusDisplay'
+import { ChoreCredit, ChoreStatusDot, ChoreTitle } from '../features/activity/choreStatusDisplay'
 import type { ActivityLogStatus } from '../features/activity/activityApi'
 import { useRevealOnScroll } from '../app/useRevealOnScroll'
 
@@ -110,7 +106,9 @@ export function LandingPage() {
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           <QuoteChip tilt="-rotate-2">&ldquo;I did it last time.&rdquo;</QuoteChip>
           <QuoteChip tilt="rotate-1">&ldquo;You never notice what I do.&rdquo;</QuoteChip>
-          <QuoteChip tilt="-rotate-1">&ldquo;It&rsquo;s your turn.&rdquo; &ldquo;No, yours.&rdquo;</QuoteChip>
+          <QuoteChip tilt="-rotate-1">
+            &ldquo;It&rsquo;s your turn.&rdquo; &ldquo;No, yours.&rdquo;
+          </QuoteChip>
         </div>
         <p className="mt-6 max-w-lg text-lg font-semibold">
           Every home has the same three arguments. Dwelloot swaps them for a scoreboard.
@@ -128,7 +126,11 @@ export function LandingPage() {
           <LoopTile n={1} icon={<LogIcon className="size-7" />} title="Log it">
             Tap the chore you actually did. No forms, no timers.
           </LoopTile>
-          <LoopTile n={2} icon={<ApproveIcon className="size-7 text-success" />} title="Partner approves">
+          <LoopTile
+            n={2}
+            icon={<ApproveIcon className="size-7 text-success" />}
+            title="Partner approves"
+          >
             Points land only when your partner signs off.
           </LoopTile>
           <LoopTile n={3} icon={<ChestMark className="size-8" />} title="Win the day">
@@ -277,9 +279,8 @@ export function LandingPage() {
             Daily wins pay small, monthly wins pay big, and one box in ten hides a bonus reward.
           </InsideCard>
           <InsideCard title="Rewards you invent">
-            <RewardMark className="size-14" />
-            A lie-in, movie night picks, control of the playlist — the store sells whatever you two
-            agree it sells.
+            <RewardMark className="size-14" />A lie-in, movie night picks, control of the playlist —
+            the store sells whatever you two agree it sells.
           </InsideCard>
         </ul>
       </Band>
@@ -527,12 +528,7 @@ function MockPeriod({
         </span>
       </div>
       <div className="mt-2">
-        <TugBar
-          mine={share.mine}
-          theirs={share.partner}
-          barClassName={bar}
-          boltClassName={bolt}
-        />
+        <TugBar mine={share.mine} theirs={share.partner} barClassName={bar} boltClassName={bolt} />
       </div>
       {verdict && <p className="mt-2 font-display text-sm font-bold">{verdict}</p>}
     </div>

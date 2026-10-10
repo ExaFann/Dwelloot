@@ -142,8 +142,8 @@
    * invariant, like the badge artwork that uses them — artwork does not re-tint in dark. Two values
    * only; a fuller ramp waits for something that needs it.
    */
-  --deco-red: #FF5C5C;
-  --deco-blue: #3B6BFF;
+  --deco-red: #ff5c5c;
+  --deco-blue: #3b6bff;
 
   /*
    * The three currency marks' fills — [75d], the lever [75c] named. Light values ARE the sprite's
@@ -152,15 +152,15 @@
    * those lighten in dark because they carry text-grade AA on their own, and a mark bounded by an
    * ink outline is exactly the thing that does not.
    */
-  --mark-points: #4CC9F0;
-  --mark-coins: #FFE14A;
-  --mark-flame: #FF8A3D;
+  --mark-points: #4cc9f0;
+  --mark-coins: #ffe14a;
+  --mark-flame: #ff8a3d;
   /*
    * The tug bolt ([75e]). Same values as --mark-coins today, deliberately its own name: this
    * yellow means *energy/contention*, not Coins — tune one and the other must not move with it
    * (the --deco-* reasoning).
    */
-  --mark-bolt: #FFE14A;
+  --mark-bolt: #ffe14a;
 
   /*
    * Person tints — [78]. The prize feed's rows were yellow, on a page where yellow means Coins:
@@ -175,8 +175,8 @@
    * Every value is measured against its text, its muted text and its ink in both schemes by
    * `tokens.test.ts`. A deeper green was tried and rejected: #215446 drops muted text to 4.16:1.
    */
-  --surface-self: #CDBAFF;
-  --surface-opponent: #A3E6C7;
+  --surface-self: #cdbaff;
+  --surface-opponent: #a3e6c7;
 }
 
 [data-theme='dark'] {
@@ -226,14 +226,14 @@
   --ink-shadow: #7a6cb0;
 
   /* Deepened, not lightened — see the light block's note. */
-  --mark-points: #2B9DC7;
-  --mark-coins: #EAB308;
-  --mark-flame: #E56B14;
-  --mark-bolt: #EAB308;
+  --mark-points: #2b9dc7;
+  --mark-coins: #eab308;
+  --mark-flame: #e56b14;
+  --mark-bolt: #eab308;
 
   /* Deep enough to sit on the dark card, light enough to keep AA under both text inks. */
   --surface-self: #443473;
-  --surface-opponent: #1E4A3C;
+  --surface-opponent: #1e4a3c;
 }
 
 /*
@@ -839,7 +839,6 @@
     font-family: var(--font-display);
     font-weight: 700;
   }
-
 }
 
 /*

@@ -57,8 +57,7 @@ export function useScrollFade(): {
      * there. `ResizeObserver` on the content, not just the box, because the box's own height is
      * fixed and never changes.
      */
-    const observer =
-      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(read)
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(read)
     observer?.observe(node)
     for (const child of node.children) observer?.observe(child)
 

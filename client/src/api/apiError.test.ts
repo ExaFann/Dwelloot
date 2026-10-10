@@ -64,7 +64,9 @@ const REAL = {
     data: {
       error: 'One or more fields are invalid.',
       errors: {
-        $: ["'n' is an invalid start of a property name. Expected a '\"'. Path: $ | LineNumber: 0 | BytePositionInLine: 1."],
+        $: [
+          "'n' is an invalid start of a property name. Expected a '\"'. Path: $ | LineNumber: 0 | BytePositionInLine: 1.",
+        ],
         request: ['The request field is required.'],
       },
       traceId: '00-db2e6b212d3677f65bec949f11a7e638-534bab5db9dcca13-00',
@@ -164,10 +166,12 @@ describe('bodies that do not match the contract', () => {
   })
 
   it('ignores an errors map whose values are not string arrays', () => {
-    expect(toApiError({ status: 400, data: { error: 'x', errors: { Title: 'nope' } } }).fieldErrors)
-      .toBeNull()
-    expect(toApiError({ status: 400, data: { error: 'x', errors: { Title: [] } } }).fieldErrors)
-      .toBeNull()
+    expect(
+      toApiError({ status: 400, data: { error: 'x', errors: { Title: 'nope' } } }).fieldErrors,
+    ).toBeNull()
+    expect(
+      toApiError({ status: 400, data: { error: 'x', errors: { Title: [] } } }).fieldErrors,
+    ).toBeNull()
   })
 })
 

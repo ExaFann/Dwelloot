@@ -43,7 +43,9 @@ describe('the key set', () => {
 describe('Avatar falls back rather than breaking', () => {
   /** The generated mark: initials, and no preset drawing. */
   it('shows initials when no preset is chosen', () => {
-    const { container } = render(<Avatar userId={7} name="Alex Kirk" role="self" avatarKey={null} />)
+    const { container } = render(
+      <Avatar userId={7} name="Alex Kirk" role="self" avatarKey={null} />,
+    )
     expect(container.textContent).toContain('AK')
     expect(container.querySelector('svg')).toBeNull()
   })

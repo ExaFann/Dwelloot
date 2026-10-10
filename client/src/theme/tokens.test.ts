@@ -90,8 +90,10 @@ describe('theme.css parses', () => {
 describe.each(SCHEMES)('%s scheme', (_schemeName, vars) => {
   it.each(FILL_PAIRS)('%s meets AA against its foreground', (fill, fg) => {
     const ratio = contrastRatio(vars[fill], vars[fg])
-    expect(ratio, `${fill} (${vars[fill]}) on ${fg} (${vars[fg]}) = ${ratio.toFixed(2)}:1`)
-      .toBeGreaterThanOrEqual(AA_TEXT)
+    expect(
+      ratio,
+      `${fill} (${vars[fill]}) on ${fg} (${vars[fg]}) = ${ratio.toFixed(2)}:1`,
+    ).toBeGreaterThanOrEqual(AA_TEXT)
   })
 
   /**
@@ -109,7 +111,9 @@ describe.each(SCHEMES)('%s scheme', (_schemeName, vars) => {
         '--surface-opponent',
       ]) {
         const ratio = contrastRatio(vars[text], vars[surface])
-        expect(ratio, `${text} on ${surface} = ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(AA_TEXT)
+        expect(ratio, `${text} on ${surface} = ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(
+          AA_TEXT,
+        )
       }
     }
   })
@@ -267,9 +271,10 @@ describe('the raw layer and the Tailwind layer do not collide', () => {
     for (const [name, value] of Object.entries(mapped)) {
       const reference = value.match(/var\((--[\w-]+)\)/)
       if (!reference) continue // literals like the font stacks are fine
-      expect(light, `${name} references ${reference[1]}, which :root does not define`).toHaveProperty(
-        reference[1],
-      )
+      expect(
+        light,
+        `${name} references ${reference[1]}, which :root does not define`,
+      ).toHaveProperty(reference[1])
     }
   })
 })

@@ -24,7 +24,9 @@ export function describeBadge(badge: Badge, now: Date = new Date()): BadgeDispla
        * The null branch is not decoration: `unlocked` and `unlockedAt` are separate fields, so the
        * combination is expressible even though the server should never send it.
        */
-      detail: badge.unlockedAt ? `Earned ${relativeTime(badge.unlockedAt, now).toLowerCase()}` : 'Earned',
+      detail: badge.unlockedAt
+        ? `Earned ${relativeTime(badge.unlockedAt, now).toLowerCase()}`
+        : 'Earned',
     }
   }
 

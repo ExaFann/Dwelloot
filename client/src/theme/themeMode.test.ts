@@ -23,9 +23,12 @@ describe('resolveScheme', () => {
     ['light', false, 'light'],
     ['dark', true, 'dark'],
     ['dark', false, 'dark'],
-  ] as const)('%s ignores the system preference (prefersDark=%s)', (mode, prefersDark, expected) => {
-    expect(resolveScheme(mode, prefersDark)).toBe(expected)
-  })
+  ] as const)(
+    '%s ignores the system preference (prefersDark=%s)',
+    (mode, prefersDark, expected) => {
+      expect(resolveScheme(mode, prefersDark)).toBe(expected)
+    },
+  )
 
   it('system follows the device, both ways', () => {
     expect(resolveScheme('system', true)).toBe('dark')
@@ -99,7 +102,10 @@ describe('storage', () => {
 
 describe('systemPrefersDark', () => {
   it.each([true, false])('reports the media query (%s)', (matches) => {
-    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches })))
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({ matches })),
+    )
     expect(systemPrefersDark()).toBe(matches)
   })
 

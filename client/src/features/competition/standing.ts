@@ -92,7 +92,10 @@ export function describeStanding(
 const SETTLING_SCALE = 30
 const MAX_LEAN = 46
 
-export function tugShares(myPoints: number, partnerPoints: number): { mine: number; partner: number } {
+export function tugShares(
+  myPoints: number,
+  partnerPoints: number,
+): { mine: number; partner: number } {
   const lead = myPoints - partnerPoints
   // An even split is the honest picture of 0–0, and zero-width segments read as a broken component.
   if (lead === 0) return { mine: 50, partner: 50 }

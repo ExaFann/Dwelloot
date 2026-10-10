@@ -78,7 +78,9 @@ describe('the chore list', () => {
     stub()
     renderPage()
 
-    expect(await screen.findByRole('button', { name: /^change the bed sheets/i })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: /^change the bed sheets/i }),
+    ).toBeInTheDocument()
     expect(chore(/^clean the bathroom/i)).toHaveTextContent('25 pts')
   })
 
@@ -300,9 +302,7 @@ describe('sorting — [78]', () => {
 
     await userEvent.setup().selectOptions(screen.getByLabelText('Sort'), 'fewest')
 
-    await waitFor(() =>
-      expect(calls.some((c) => c.search.includes('sort=points'))).toBe(true),
-    )
+    await waitFor(() => expect(calls.some((c) => c.search.includes('sort=points'))).toBe(true))
     // `descending=false` is the server's default and says nothing; sending it is noise.
     expect(calls.every((c) => !c.search.includes('descending'))).toBe(true)
   })
@@ -317,9 +317,9 @@ describe('search', () => {
     await userEvent.setup().type(screen.getByLabelText('Search'), 'clean')
 
     await waitFor(() =>
-      expect(calls.some((c) => c.path === '/api/activities' && c.search.includes('search=clean'))).toBe(
-        true,
-      ),
+      expect(
+        calls.some((c) => c.path === '/api/activities' && c.search.includes('search=clean')),
+      ).toBe(true),
     )
   })
 

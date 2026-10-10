@@ -213,9 +213,7 @@ describe('the marks carry the sprite’s strokes and the tokens’ fills — [75
        * pins the transcription, the dark≠light check pins that the deepening exists at all (a
        * forgotten dark override silently renders the light value).
        */
-      expect(renderedPathAttrs(element).map((p) => p.fill)).toEqual(
-        tokens.map((t) => `var(${t})`),
-      )
+      expect(renderedPathAttrs(element).map((p) => p.fill)).toEqual(tokens.map((t) => `var(${t})`))
       expect(spritePathAttrs(symbolId).map((p) => p.fill && normalizeHex(p.fill))).toEqual(
         tokens.map((t) => lightTokenValue(t)),
       )
@@ -246,9 +244,9 @@ describe('the marks carry the sprite’s strokes and the tokens’ fills — [75
      */
     const paths = renderedPathAttrs(<PrizeBoxMark />)
     expect(paths.map((p) => p.fill)).toEqual(['#4CC9F0', '#7C4DFF', '#FFE14A'])
-    expect(
-      paths.every((p) => p.stroke === 'var(--ink-surface)' && p.strokeWidth === '1.4'),
-    ).toBe(true)
+    expect(paths.every((p) => p.stroke === 'var(--ink-surface)' && p.strokeWidth === '1.4')).toBe(
+      true,
+    )
   })
 
   it('the bolt: ink stroke, --mark-bolt fill, and the mitre limit that keeps it sharp', () => {
@@ -353,7 +351,13 @@ describe('the reward mark, and the mono glyph it did not replace', () => {
     // Order is the decision: the lid is a full-width band and has to be drawn over the wedges, or
     // the parcel reads as a diamond with a stripe behind it.
     expect(shapes.map((el) => el.tagName.toLowerCase())).toEqual([
-      'path', 'path', 'path', 'path', 'path', 'path', 'rect',
+      'path',
+      'path',
+      'path',
+      'path',
+      'path',
+      'path',
+      'rect',
     ])
   })
 

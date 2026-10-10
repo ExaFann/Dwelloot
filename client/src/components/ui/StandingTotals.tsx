@@ -21,7 +21,8 @@ import { CoinMark, PointsMark, StreakMark } from './icons'
  * as one string would break. `sr-only` hides it from eyes only. Written as one complete literal
  * because Tailwind scans source text — an assembled `` `${bp}:not-sr-only` `` emits no CSS at all.
  */
-const LABEL = 'sr-only font-display text-[0.7rem] font-semibold uppercase tracking-[0.06em] text-muted sm:not-sr-only'
+const LABEL =
+  'sr-only font-display text-[0.7rem] font-semibold uppercase tracking-[0.06em] text-muted sm:not-sr-only'
 
 export function StandingTotals({
   coins,

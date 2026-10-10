@@ -32,7 +32,10 @@ export function AppLayout() {
        * in the middle of the screen. The cards inside are already two-column at `lg`, so the width
        * goes to them rather than to longer text lines.
        */}
-      <main id="main" className="mx-auto max-w-2xl px-4 pb-24 pt-6 md:pb-10 lg:max-w-6xl lg:px-8 xl:max-w-7xl">
+      <main
+        id="main"
+        className="mx-auto max-w-2xl px-4 pb-24 pt-6 md:pb-10 lg:max-w-6xl lg:px-8 xl:max-w-7xl"
+      >
         {/*
          * [81] D — a 160ms fade-and-rise on each route change.
          *

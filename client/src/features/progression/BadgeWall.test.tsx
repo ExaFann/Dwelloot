@@ -236,7 +236,6 @@ describe('the overlay — [76a], unlocked badges only since [76b]', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
-
 })
 
 describe('the locked tip — [76b]', () => {

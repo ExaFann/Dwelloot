@@ -78,7 +78,12 @@ function renderAt(path: string, householdId: number | null = 10) {
         })
       }
       if (requestPath.startsWith('/api/households/')) {
-        return json({ id: 10, name: 'House', inviteCode: 'ABC123', members: [{ id: 7, name: 'Alex' }] })
+        return json({
+          id: 10,
+          name: 'House',
+          inviteCode: 'ABC123',
+          members: [{ id: 7, name: 'Alex' }],
+        })
       }
       if (requestPath === '/api/auth/me') {
         return json({
@@ -251,7 +256,9 @@ describe('unknown paths', () => {
    */
   it('matches case-insensitively, so /LOG is the Log screen and not a 404', async () => {
     renderAt('/LOG')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Log a chore' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Log a chore' }),
+    ).toBeInTheDocument()
   })
 
   // A missing catch-all renders nothing at all, which is easy to mistake for a styling problem.

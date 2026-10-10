@@ -39,7 +39,13 @@ const DOT: Record<ActivityLogStatus, string> = {
  * The status square. `aria-hidden` by construction: colour alone never carries meaning here, so
  * every caller pairs it with the status in words — visible in the feed, `sr-only` on the dashboard.
  */
-export function ChoreStatusDot({ status, className = '' }: { status: ActivityLogStatus; className?: string }) {
+export function ChoreStatusDot({
+  status,
+  className = '',
+}: {
+  status: ActivityLogStatus
+  className?: string
+}) {
   return (
     <span
       aria-hidden="true"

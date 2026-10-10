@@ -57,10 +57,7 @@ describe('contrastRatio', () => {
   })
 
   it('does not depend on argument order', () => {
-    expect(contrastRatio('#6C00FF', '#FFFFFF')).toBeCloseTo(
-      contrastRatio('#FFFFFF', '#6C00FF'),
-      10,
-    )
+    expect(contrastRatio('#6C00FF', '#FFFFFF')).toBeCloseTo(contrastRatio('#FFFFFF', '#6C00FF'), 10)
   })
 
   it('matches a known third-party value', () => {

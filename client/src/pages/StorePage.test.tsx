@@ -49,7 +49,10 @@ function stub(o: Overrides = {}) {
   const calls: { path: string; search: string; method: string; body?: string }[] = []
   const json = (body: unknown, status = 200) =>
     Promise.resolve(
-      new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }),
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+      }),
     )
 
   vi.stubGlobal(
@@ -72,7 +75,13 @@ function stub(o: Overrides = {}) {
       if (url.pathname === '/api/redemptions' && input.method === 'POST') {
         const r = o.redeem ?? {
           status: 201,
-          body: { id: 41, rewardId: 361, coinsSpent: 25, coinsRemaining: 7, redeemedAt: '2026-08-04T11:00:00Z' },
+          body: {
+            id: 41,
+            rewardId: 361,
+            coinsSpent: 25,
+            coinsRemaining: 7,
+            redeemedAt: '2026-08-04T11:00:00Z',
+          },
         }
         return json(r.body, r.status)
       }
@@ -150,7 +159,9 @@ describe('the catalogue', () => {
   })
 
   it('reports a load failure rather than rendering an empty store', async () => {
-    stub({ listError: { status: 500, body: { error: 'An unexpected error occurred.', errors: null } } })
+    stub({
+      listError: { status: 500, body: { error: 'An unexpected error occurred.', errors: null } },
+    })
     renderPage()
 
     expect(await screen.findByRole('alert')).toHaveTextContent('An unexpected error occurred.')
@@ -175,7 +186,9 @@ describe('redeeming', () => {
 
     // 25 against a cost of 25 — inclusive, exactly as the server's `coins >= coinCost`.
     expect(within(card('Foot massage')).getByRole('button', { name: /^redeem$/i })).toBeEnabled()
-    expect(within(card('Full chore day off')).getByRole('button', { name: /^redeem$/i })).toBeDisabled()
+    expect(
+      within(card('Full chore day off')).getByRole('button', { name: /^redeem$/i }),
+    ).toBeDisabled()
     expect(card('Full chore day off')).toHaveTextContent('55 more Coins to go.')
   })
 
@@ -184,7 +197,9 @@ describe('redeeming', () => {
     renderPage()
     await screen.findByText('Foot massage')
 
-    await userEvent.setup().click(within(card('Foot massage')).getByRole('button', { name: /^redeem$/i }))
+    await userEvent
+      .setup()
+      .click(within(card('Foot massage')).getByRole('button', { name: /^redeem$/i }))
 
     expect(screen.getByText(/redeem foot massage for 25 coins\?/i)).toBeInTheDocument()
     expect(calls.filter((c) => c.path === '/api/redemptions')).toHaveLength(0)
@@ -241,7 +256,10 @@ describe('redeeming', () => {
   it('surfaces the server’s refusal in its own words', async () => {
     stub({
       coins: 40,
-      redeem: { status: 400, body: { error: 'Not enough Coins.', errors: null, traceId: '00-a-b-00' } },
+      redeem: {
+        status: 400,
+        body: { error: 'Not enough Coins.', errors: null, traceId: '00-a-b-00' },
+      },
     })
     renderPage()
     const user = userEvent.setup()
@@ -282,7 +300,9 @@ describe('the pausing disclosure', () => {
     await screen.findByText('Foot massage')
 
     await user.click(within(card('Duel truce')).getByRole('button', { name: /^redeem$/i }))
-    expect(screen.getByText(/nobody wins it, and neither of you gets a loot box/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/nobody wins it, and neither of you gets a loot box/i),
+    ).toBeInTheDocument()
   })
 
   it('says nothing of the sort for an ordinary reward', async () => {
@@ -306,7 +326,9 @@ describe('search', () => {
 
     await userEvent.setup().type(screen.getByLabelText('Search'), 'massage')
 
-    await waitFor(() => expect(rewardCalls(calls).some((c) => c.search.includes('search=massage'))).toBe(true))
+    await waitFor(() =>
+      expect(rewardCalls(calls).some((c) => c.search.includes('search=massage'))).toBe(true),
+    )
   })
 
   it('never sends an empty search parameter', async () => {
@@ -337,7 +359,9 @@ describe('sorting', () => {
 
     await waitFor(() =>
       expect(
-        rewardCalls(calls).some((c) => c.search.includes('sort=title') && c.search.includes('descending=true')),
+        rewardCalls(calls).some(
+          (c) => c.search.includes('sort=title') && c.search.includes('descending=true'),
+        ),
       ).toBe(true),
     )
   })
@@ -345,24 +369,34 @@ describe('sorting', () => {
 
 describe('the affordability filter', () => {
   it('asks for what the balance covers', async () => {
-    const calls = stub({ coins: 25, byQuery: { 'affordable=true': { items: [REWARDS[0], REWARDS[1]], total: 2 } } })
+    const calls = stub({
+      coins: 25,
+      byQuery: { 'affordable=true': { items: [REWARDS[0], REWARDS[1]], total: 2 } },
+    })
     renderPage()
     await screen.findByText('Foot massage')
 
     await userEvent.setup().click(screen.getByRole('button', { name: 'Can afford' }))
 
-    await waitFor(() => expect(rewardCalls(calls).some((c) => c.search.includes('affordable=true'))).toBe(true))
+    await waitFor(() =>
+      expect(rewardCalls(calls).some((c) => c.search.includes('affordable=true'))).toBe(true),
+    )
   })
 
   /** The complement branch log `028` built. A UI that could only send `true` fails here. */
   it('asks for the complement — what you are saving for', async () => {
-    const calls = stub({ coins: 25, byQuery: { 'affordable=false': { items: [REWARDS[2]], total: 1 } } })
+    const calls = stub({
+      coins: 25,
+      byQuery: { 'affordable=false': { items: [REWARDS[2]], total: 1 } },
+    })
     renderPage()
     await screen.findByText('Foot massage')
 
     await userEvent.setup().click(screen.getByRole('button', { name: 'Saving for' }))
 
-    await waitFor(() => expect(rewardCalls(calls).some((c) => c.search.includes('affordable=false'))).toBe(true))
+    await waitFor(() =>
+      expect(rewardCalls(calls).some((c) => c.search.includes('affordable=false'))).toBe(true),
+    )
   })
 
   it('omits the parameter for All', async () => {
@@ -410,7 +444,9 @@ describe('pagination', () => {
     expect(screen.getByRole('button', { name: /previous/i })).toBeDisabled()
     await user.click(screen.getByRole('button', { name: /next/i }))
 
-    await waitFor(() => expect(rewardCalls(calls).some((c) => c.search.includes('page=2'))).toBe(true))
+    await waitFor(() =>
+      expect(rewardCalls(calls).some((c) => c.search.includes('page=2'))).toBe(true),
+    )
     expect(await screen.findByText('Page 2 of 2')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /next/i })).toBeDisabled()
   })
@@ -426,7 +462,9 @@ describe('pagination', () => {
     await screen.findByText('Foot massage')
 
     await user.click(screen.getByRole('button', { name: /next/i }))
-    await waitFor(() => expect(rewardCalls(calls).some((c) => c.search.includes('page=2'))).toBe(true))
+    await waitFor(() =>
+      expect(rewardCalls(calls).some((c) => c.search.includes('page=2'))).toBe(true),
+    )
 
     await user.type(screen.getByLabelText('Search'), 'massage')
 
@@ -444,7 +482,9 @@ describe('pagination', () => {
     await screen.findByText('Foot massage')
 
     await user.click(screen.getByRole('button', { name: /next/i }))
-    await waitFor(() => expect(rewardCalls(calls).some((c) => c.search.includes('page=2'))).toBe(true))
+    await waitFor(() =>
+      expect(rewardCalls(calls).some((c) => c.search.includes('page=2'))).toBe(true),
+    )
 
     await user.click(screen.getByRole('button', { name: 'Can afford' }))
 

@@ -26,9 +26,9 @@ const DUEL: Record<PeriodType, string> = {
 
 export function describeWin(periodType: PeriodType, isWinWin: boolean): string {
   return isWinWin
-    // A genuine tie pays out twice — one prize, received by both (log `025`). Saying "you won"
-    // would take credit for the draw the partner also earned.
-    ? `You both took ${DUEL[periodType]}. A draw pays out for both of you.`
+    ? // A genuine tie pays out twice — one prize, received by both (log `025`). Saying "you won"
+      // would take credit for the draw the partner also earned.
+      `You both took ${DUEL[periodType]}. A draw pays out for both of you.`
     : `You won ${DUEL[periodType]}.`
 }
 

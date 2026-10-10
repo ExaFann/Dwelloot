@@ -210,7 +210,10 @@ describe('removing a pending chore', () => {
   })
 
   it.each([
-    ['Keep', (title: string) => fireEvent.click(screen.getByRole('button', { name: `Keep ${title}` }))],
+    [
+      'Keep',
+      (title: string) => fireEvent.click(screen.getByRole('button', { name: `Keep ${title}` })),
+    ],
     ['Escape', () => fireEvent.keyDown(screen.getByRole('list'), { key: 'Escape' })],
   ])('backs out on %s without sending anything', (_name, back) => {
     const onRemove = vi.fn()
@@ -263,7 +266,9 @@ describe('removing a pending chore', () => {
       chores[0],
       { id: 4, activityTitle: 'Laundry', pointsAwarded: 8, status: 'Pending' as const },
     ]
-    render(<RecentChoresColumn chores={twoPending} align="left" emptyLabel="—" onRemove={() => {}} />)
+    render(
+      <RecentChoresColumn chores={twoPending} align="left" emptyLabel="—" onRemove={() => {}} />,
+    )
 
     fireEvent.click(screen.getByRole('button', { name: /remove dishes/i }))
     fireEvent.click(screen.getByRole('button', { name: /remove laundry/i }))

@@ -271,7 +271,9 @@ describe('the landing page', () => {
   it('positions the rope with the real tugShares', () => {
     renderPage()
 
-    const filled = [...heroCard().querySelectorAll('div')].find((el) => el.style.width.endsWith('%'))
+    const filled = [...heroCard().querySelectorAll('div')].find((el) =>
+      el.style.width.endsWith('%'),
+    )
     expect(filled?.style.width).toBe(`${tugShares(25, 15).mine}%`)
   })
 
@@ -339,9 +341,7 @@ describe('the landing page', () => {
     expect(
       screen.getByText(/you cannot approve your own chore — the app refuses it/i),
     ).toBeInTheDocument()
-    expect(
-      screen.getByText(/it settles as a win-win and you each open a box/i),
-    ).toBeInTheDocument()
+    expect(screen.getByText(/it settles as a win-win and you each open a box/i)).toBeInTheDocument()
     /*
      * [91b] — the qualifier is the assertion. `IsWinWin = top.Value > 0 && other.Value > 0`, so a
      * 0–0 day is an equal score that pays nobody; without this sentence the page promised a box
@@ -415,7 +415,9 @@ describe('the landing page', () => {
     expect(line.closest('p')?.querySelector('svg')).not.toBeNull()
 
     expect(screen.getByText(/only losing one will/i)).toBeInTheDocument()
-    expect(screen.queryByText(/miss a day|resets|starts over|back to zero/i)).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(/miss a day|resets|starts over|back to zero/i),
+    ).not.toBeInTheDocument()
 
     // It is a *win* streak everywhere it is named — the ambiguity [91a] closed.
     expect(screen.queryByText(/\bstreak\b/i)?.textContent ?? '').toMatch(/win streak/i)

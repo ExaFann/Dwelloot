@@ -83,10 +83,12 @@ describe('the API cache follows the session', () => {
       getState: () => ({}),
     } as unknown as Parameters<Middleware>[0]
 
-    sessionCacheReset(store)(() => order.push('reducer'))(signedIn({
-      token: 't',
-      user: { id: 1, name: 'Alex' },
-    }))
+    sessionCacheReset(store)(() => order.push('reducer'))(
+      signedIn({
+        token: 't',
+        user: { id: 1, name: 'Alex' },
+      }),
+    )
 
     expect(order).toEqual(['reducer', 'reset'])
   })

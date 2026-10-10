@@ -37,7 +37,13 @@ function stub() {
       calls.push(url.pathname)
       const body = url.pathname.endsWith('/competitions/current')
         ? COMPETITION
-        : { id: 41, rewardId: 5, coinsSpent: 30, coinsRemaining: 10, redeemedAt: '2026-08-04T11:00:00Z' }
+        : {
+            id: 41,
+            rewardId: 5,
+            coinsSpent: 30,
+            coinsRemaining: 10,
+            redeemedAt: '2026-08-04T11:00:00Z',
+          }
       return new Response(JSON.stringify(body), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },

@@ -32,7 +32,10 @@ function stubMatchMedia(initialMatches: boolean) {
       if (index >= 0) listeners.splice(index, 1)
     },
   }
-  vi.stubGlobal('matchMedia', vi.fn(() => query))
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => query),
+  )
 
   return {
     listenerCount: () => listeners.length,

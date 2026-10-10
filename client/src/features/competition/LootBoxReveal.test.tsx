@@ -44,7 +44,10 @@ function stub(o: Overrides = {}) {
 
   const json = (body: unknown, status = 200) =>
     Promise.resolve(
-      new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }),
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+      }),
     )
 
   vi.stubGlobal(
@@ -105,7 +108,9 @@ describe('when there is nothing to open', () => {
     const calls = stub({ boxes: [null] })
     renderReveal()
 
-    await waitFor(() => expect(calls.some((c) => c.path.endsWith('/competitions/current'))).toBe(true))
+    await waitFor(() =>
+      expect(calls.some((c) => c.path.endsWith('/competitions/current'))).toBe(true),
+    )
     expect(screen.queryByRole('heading', { name: /loot box/i })).not.toBeInTheDocument()
   })
 
@@ -148,7 +153,9 @@ describe('when a box is waiting', () => {
 
     await waitFor(() =>
       expect(
-        calls.some((c) => c.path === '/api/households/45/competitions/453/open-box' && c.method === 'POST'),
+        calls.some(
+          (c) => c.path === '/api/households/45/competitions/453/open-box' && c.method === 'POST',
+        ),
       ).toBe(true),
     )
   })

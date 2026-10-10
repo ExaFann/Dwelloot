@@ -23,10 +23,13 @@ function stub() {
       if (new URL(input.url).pathname === '/api/activity-logs' && input.method === 'POST') {
         posts.push(await input.clone().text())
       }
-      return new Response(JSON.stringify({ id: 1, activityId: 1, status: 'Pending', completedAt: '' }), {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return new Response(
+        JSON.stringify({ id: 1, activityId: 1, status: 'Pending', completedAt: '' }),
+        {
+          status: 201,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }),
   )
   return posts
@@ -224,11 +227,12 @@ describe('when the send fails', () => {
   it('says so, because the undo window has already gone', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () =>
-        new Response(JSON.stringify({ error: 'You are not in a household yet.', errors: null }), {
-          status: 409,
-          headers: { 'Content-Type': 'application/json' },
-        }),
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ error: 'You are not in a household yet.', errors: null }), {
+            status: 409,
+            headers: { 'Content-Type': 'application/json' },
+          }),
       ),
     )
     const { result } = renderHook(() => useDeferredLog({ delayMs: 5000 }), { wrapper })

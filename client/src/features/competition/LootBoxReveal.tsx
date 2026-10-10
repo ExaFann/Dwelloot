@@ -182,9 +182,7 @@ function ConfettiPiece({ kind, colour }: { kind: ConfettiKind; colour: string })
   return (
     <span
       className={`block border-ink-accent ${shape} ${kind === 'triangle' ? '' : 'border'}`}
-      style={
-        kind === 'triangle' ? { borderBottomColor: colour } : { backgroundColor: colour }
-      }
+      style={kind === 'triangle' ? { borderBottomColor: colour } : { backgroundColor: colour }}
     />
   )
 }
@@ -210,13 +208,7 @@ const COIN_FLIGHTS = [
  * the dialog while it is up (the keydown handler needs it, and a screen reader should hear it) and
  * the section takes it back afterwards.
  */
-function Revealed({
-  result,
-  onDismiss,
-}: {
-  result: OpenLootBoxResult
-  onDismiss: () => void
-}) {
+function Revealed({ result, onDismiss }: { result: OpenLootBoxResult; onDismiss: () => void }) {
   const prize = describePrize(result)
   const dialogRef = useRef<HTMLDivElement>(null)
   useEffect(() => {

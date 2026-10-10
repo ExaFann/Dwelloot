@@ -12,7 +12,9 @@ const withPartner = { hasPartner: true }
 
 describe('no partner', () => {
   it('is not a contest, whatever the points say', () => {
-    expect(describeStanding({ myPoints: 0, partnerPoints: 0, ...live }, { hasPartner: false })).toEqual({
+    expect(
+      describeStanding({ myPoints: 0, partnerPoints: 0, ...live }, { hasPartner: false }),
+    ).toEqual({
       kind: 'noPartner',
     })
   })
@@ -126,7 +128,9 @@ describe('a settled period', () => {
 
   it('is distinguishable from the same score still in progress', () => {
     const scores = { myPoints: 30, partnerPoints: 5 }
-    expect(describeStanding({ ...scores, settled: true, voided: false }, withPartner).kind).toBe('won')
+    expect(describeStanding({ ...scores, settled: true, voided: false }, withPartner).kind).toBe(
+      'won',
+    )
     expect(describeStanding({ ...scores, settled: false, voided: false }, withPartner).kind).toBe(
       'leading',
     )
@@ -169,7 +173,12 @@ describe('tugShares', () => {
 
   /** Even a hopeless margin leaves both colours on the rope — it is still a contest. */
   it('keeps the marker off both ends', () => {
-    for (const [mine, theirs] of [[999, 0], [0, 999], [50, 1], [1, 50]]) {
+    for (const [mine, theirs] of [
+      [999, 0],
+      [0, 999],
+      [50, 1],
+      [1, 50],
+    ]) {
       const shares = tugShares(mine, theirs)
       expect(shares.mine).toBeGreaterThanOrEqual(4)
       expect(shares.mine).toBeLessThanOrEqual(96)

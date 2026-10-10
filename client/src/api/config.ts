@@ -38,7 +38,7 @@ export function resolveApiBaseUrl(raw: string | undefined, isDev: boolean): stri
 
   throw new Error(
     'VITE_API_BASE_URL is not set. A production build needs the API origin at build time — ' +
-      'without it every request would resolve against this app\'s own origin and return index.html ' +
+      "without it every request would resolve against this app's own origin and return index.html " +
       'with a 200. Set it and rebuild.',
   )
 }

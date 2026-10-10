@@ -39,8 +39,7 @@ export type MyRedemption = {
 export const redemptionApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     partnerRedemptions: build.query<Paged<HouseholdRedemption>, { take?: number }>({
-      query: ({ take = 5 }) =>
-        `/api/redemptions?scope=household&excludeMine=true&take=${take}`,
+      query: ({ take = 5 }) => `/api/redemptions?scope=household&excludeMine=true&take=${take}`,
       providesTags: ['Redemption'],
     }),
 

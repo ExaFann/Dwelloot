@@ -1,7 +1,12 @@
 import { useEffect } from 'react'
 import { useAppSelector } from '../../app/hooks'
 import { selectThemeMode } from './themeSlice'
-import { SYSTEM_DARK_QUERY, applyScheme, resolveScheme, systemPrefersDark } from '../../theme/themeMode'
+import {
+  SYSTEM_DARK_QUERY,
+  applyScheme,
+  resolveScheme,
+  systemPrefersDark,
+} from '../../theme/themeMode'
 
 /**
  * Keeps `data-theme` in step with the chosen mode, and with the OS while the mode is `system`.
@@ -28,7 +33,8 @@ export function useThemeEffect(): void {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
 
     const query = window.matchMedia(SYSTEM_DARK_QUERY)
-    const onChange = (event: MediaQueryListEvent) => applyScheme(resolveScheme('system', event.matches))
+    const onChange = (event: MediaQueryListEvent) =>
+      applyScheme(resolveScheme('system', event.matches))
     query.addEventListener('change', onChange)
     return () => query.removeEventListener('change', onChange)
   }, [mode])

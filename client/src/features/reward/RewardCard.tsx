@@ -72,7 +72,9 @@ export function RewardCard({ reward, balance, onEdit, onRedeemed, onFailed }: Pr
        * does. Shown here as well as in the confirmation, so it is not a surprise at the last step.
        */}
       {reward.pausesCompetition && (
-        <p className="mt-1.5 font-display text-xs font-semibold text-muted">Pauses the duel that day</p>
+        <p className="mt-1.5 font-display text-xs font-semibold text-muted">
+          Pauses the duel that day
+        </p>
       )}
 
       {confirming ? (
