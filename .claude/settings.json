@@ -1,0 +1,29 @@
+{
+  "enabledPlugins": {
+    "claude-code-setup@anthropic-plugin-directory": true
+  },
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(!**/.env.development)",
+      "Read(!**/.env.example)",
+      "Read(**/appsettings.*.Local.json)",
+      "Read(~/AppData/Roaming/Microsoft/UserSecrets/**)",
+      "Edit(**/package-lock.json)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-on-edit.mjs\""
+          }
+        ]
+      }
+    ]
+  }
+}
