@@ -507,3 +507,8 @@ publish.zip
 # absolute paths from this computer and the literal commands that were approved - including, in this
 # case, a local test account's password typed into a curl probe. Machine-local by name and by nature.
 .claude/settings.local.json
+
+# The ui-verifier agent's test login (email + password of a LOCAL test account) and the
+# screenshots Playwright MCP saves while checking pages. Both are per-machine.
+.claude/ui-test-account.local.json
+.playwright-mcp/
