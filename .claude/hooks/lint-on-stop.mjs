@@ -1,6 +1,7 @@
 // Stop hook: when Claude finishes a task, lint the client files changed in the working tree. If
-// ESLint still finds problems, exit 2 so Claude is sent back to fix them and tell the user —
-// once per task, instead of interrupting every edit (see format-on-edit.mjs).
+// ESLint finds problems, exit 2 so Claude is sent back to fix them and tell the user — once per
+// task, instead of interrupting every edit. Formatting is not checked here: it runs for everyone
+// at commit time (client/.husky/pre-commit + client/.lintstagedrc.json).
 import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
