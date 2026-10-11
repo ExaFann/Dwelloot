@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@0.0.83"]
+    },
+    "postgres": {
+      "command": "uvx",
+      "args": ["--with", "mcp~=1.0", "postgres-mcp==0.3.0", "--access-mode=restricted"],
+      "env": {
+        "DATABASE_URI": "${DWELLOOT_MCP_DATABASE_URI}"
+      }
+    }
+  }
+}
