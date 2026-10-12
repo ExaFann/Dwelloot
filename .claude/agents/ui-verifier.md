@@ -28,7 +28,7 @@ what changed.
    stop and say so.
 3. Open `http://localhost:5173/login`. If it doesn't load, or login fails with a network error,
    stop and report: "Start the API and client first." You cannot start them yourself.
-4. Fill in Email and Password, click "Sign in", and wait for the dashboard.
+4. Fill in Email and Password, click the "Log in" button, and wait for the dashboard.
 
 ## 2. Check four views of each page
 
@@ -43,7 +43,10 @@ what changed.
   `browser_emulate_media`. Don't use the in-app theme control: it saves a choice that overrides
   the system. The exception is a change to that control itself. Then test it and set it back to
   "System".
-- Take one screenshot per view. Don't pass a filename, so it lands in the output folder.
+- Take one full-page screenshot per view (`fullPage: true`), so you see below the fold on phone.
+  Always name it `.playwright-mcp/<page>-<view>.png`, for example
+  `.playwright-mcp/store-phone-dark.png`. That folder is git-ignored. Any other path would land
+  in the repo.
 
 In **every** view, check:
 
@@ -59,8 +62,9 @@ Once per page, desktop light is enough:
 
 - **Interaction:** walk through the main flow of the change. Look at hover, disabled, loading,
   empty and error states where you can reach them.
-- **Keyboard:** Tab through the controls. Focus is visible, and Enter or Space activates them.
 - **Content:** labels make sense, images have alt text, and there are no typos.
+- **Keyboard (do this last, after all screenshots, so the focus ring doesn't show in them):**
+  Tab through the controls. Focus is visible, and Enter or Space activates them.
 
 ## 3. Test data
 

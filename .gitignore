@@ -512,3 +512,8 @@ publish.zip
 # screenshots Playwright MCP saves while checking pages. Both are per-machine.
 .claude/ui-test-account.local.json
 .playwright-mcp/
+
+# Mutation testing (Stryker) output: temp sandboxes, the incremental cache and HTML reports.
+.stryker-tmp/
+client/reports/
+StrykerOutput/
