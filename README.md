@@ -315,8 +315,14 @@ cd client && npm test
 ```
 
 **677 backend and just over 1,000 frontend, all passing.** `npm run lint`, `npx tsc -b`,
-`npm run build` and `npm audit` are all clean, including **0 vulnerabilities**, which has been true
-since the CORS task.
+`npm run build` and `npm audit` are all clean, including **0 vulnerabilities** (last checked
+2026-10-12).
+
+**Mutation testing** checks that the tests would actually catch bugs. Stryker plants small bugs in
+the changed files, like `>` becoming `>=`, and reports any the tests miss. Run it on changed files only;
+a full run takes hours. The steps are in `.claude/skills/mutation-check/SKILL.md`, and why it is set
+up this way (including the Vitest 4 pin) is in
+[`docs/adr/0001`](docs/adr/0001-mutation-testing-with-stryker.md).
 
 ## Repository layout
 
