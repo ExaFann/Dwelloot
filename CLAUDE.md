@@ -15,6 +15,8 @@ Chore-gamification app for two flatmates.
   was built the way it was.
 - When a spec and the code disagree, trust the code. Tell me about the difference.
   Do not change code to match an old spec, and do not edit the old specs.
+- `docs/handover.md` (written by `/handover`) is the latest session's note: what was done,
+  decisions and next steps. Read it when resuming work. Like any doc, the code wins if they disagree.
 - Comments that cite task numbers like `[57]` or spec files are history. Do not add new ones.
 - Record new design decisions in `docs/adr/NNNN-short-title.md`
   with four headings: Context, Options, Decision, Consequences.
